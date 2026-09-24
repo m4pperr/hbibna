@@ -5,11 +5,14 @@ import Link from 'next/link';
 import { ArrowRight, ShieldCheck, AlertCircle, Mail, CheckCircle2, Lock, Store, User } from 'lucide-react';
 import { signUpBusiness, type AuthActionResult } from '@/actions/auth';
 import { HbibnaLogo } from '@/components/brand/HbibnaLogo';
+import { LanguageSelector } from '@/components/common/LanguageSelector';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [verificationNeeded, setVerificationNeeded] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -40,12 +43,15 @@ export default function SignUpPage() {
           <HbibnaLogo size="md" />
         </Link>
 
-        <p className="text-xs text-[#736B63]">
-          Already have an account?{' '}
-          <Link href="/login" className="font-semibold text-[#B88E3E] hover:underline">
-            Sign in
-          </Link>
-        </p>
+        <div className="flex items-center gap-3">
+          <LanguageSelector />
+          <p className="hidden sm:block text-xs text-[#736B63]">
+            {t('auth.alreadyHaveAccount')}{' '}
+            <Link href="/login" className="font-semibold text-[#B88E3E] hover:underline">
+              {t('auth.signIn')}
+            </Link>
+          </p>
+        </div>
       </header>
 
       {/* Main Container */}
@@ -59,25 +65,28 @@ export default function SignUpPage() {
               </div>
 
               <div className="space-y-2">
-                <h2 className="text-2xl font-bold text-[#191817]">Confirm your email</h2>
+                <h2 className="text-2xl font-bold text-[#191817]">
+                  {t('auth.confirmEmailTitle')}
+                </h2>
                 <p className="text-sm text-[#736B63] leading-relaxed">
-                  We sent a confirmation link to <span className="font-semibold text-[#191817]">{verificationNeeded}</span>.
+                  {t('auth.confirmEmailDesc')}{' '}
+                  <span className="font-semibold text-[#191817]">{verificationNeeded}</span>.
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#E6DDCF] text-xs text-[#736B63] text-left space-y-1.5">
+              <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#E6DDCF] text-xs text-[#736B63] text-start space-y-1.5">
                 <p className="font-semibold text-[#191817] flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>Next step:</span>
+                  <span>{t('auth.nextStep')}</span>
                 </p>
-                <p>Click the link in your email to instantly verify your account and activate your business loyalty dashboard.</p>
+                <p>{t('auth.nextStepDesc')}</p>
               </div>
 
               <Link
                 href="/login"
                 className="inline-flex items-center justify-center w-full py-3 rounded-xl bg-[#B88E3E] hover:bg-[#A37B30] text-white text-xs font-semibold shadow-soft transition-colors"
               >
-                Proceed to Sign In
+                {t('auth.proceedToSignIn')}
               </Link>
             </div>
           ) : (
@@ -86,22 +95,22 @@ export default function SignUpPage() {
               {/* Header Title & Subtitle */}
               <div className="space-y-2 text-center">
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-[#191817] tracking-tight">
-                  Start building customer loyalty with Hbibna.
+                  {t('auth.startLoyalty')}
                 </h1>
                 <p className="text-xs sm:text-sm text-[#736B63] max-w-sm mx-auto">
-                  Launch your own isolated loyalty program in under 2 minutes.
+                  {t('auth.startLoyaltyDesc')}
                 </p>
               </div>
 
               {/* Price Banner */}
               <div className="p-3.5 rounded-2xl bg-[#FBF6EB] border border-[#DFC99F]/70 flex items-center justify-between text-xs">
-                <div>
-                  <span className="font-bold text-[#191817]">Hbibna Business Plan</span>
-                  <p className="text-[11px] text-[#736B63]">All features included • Cancel anytime</p>
+                <div className="text-start">
+                  <span className="font-bold text-[#191817]">{t('pricing.planName')}</span>
+                  <p className="text-[11px] text-[#736B63]">{t('auth.allFeaturesIncluded')}</p>
                 </div>
-                <div className="text-right">
-                  <span className="font-extrabold text-sm text-[#191817]">9,800 DA</span>
-                  <span className="text-[10px] text-[#736B63]"> / mo</span>
+                <div className="ltr:text-right rtl:text-left">
+                  <span className="font-extrabold text-sm text-[#191817]">9,800 {t('common.da')}</span>
+                  <span className="text-[10px] text-[#736B63]"> {t('pricing.perMonth')}</span>
                 </div>
               </div>
 
@@ -116,69 +125,69 @@ export default function SignUpPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Business Name */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#191817] mb-1.5">
-                    Business Name
+                  <label className="block text-xs font-semibold text-[#191817] mb-1.5 text-start">
+                    {t('auth.businessName')}
                   </label>
                   <div className="relative">
-                    <Store className="w-4 h-4 text-[#736B63] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Store className="w-4 h-4 text-[#736B63] absolute ltr:left-3.5 rtl:right-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
                       name="businessName"
                       required
                       placeholder="e.g. Café Dar El Beida"
-                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
+                      className="w-full ltr:pl-10 ltr:pr-3.5 rtl:pr-10 rtl:pl-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
                     />
                   </div>
                 </div>
 
                 {/* Owner Name */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#191817] mb-1.5">
-                    Owner / Manager Name
+                  <label className="block text-xs font-semibold text-[#191817] mb-1.5 text-start">
+                    {t('auth.ownerName')}
                   </label>
                   <div className="relative">
-                    <User className="w-4 h-4 text-[#736B63] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <User className="w-4 h-4 text-[#736B63] absolute ltr:left-3.5 rtl:right-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
                       name="ownerName"
                       required
                       placeholder="e.g. Karim B."
-                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
+                      className="w-full ltr:pl-10 ltr:pr-3.5 rtl:pr-10 rtl:pl-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
                     />
                   </div>
                 </div>
 
                 {/* Business Email */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#191817] mb-1.5">
-                    Business Email
+                  <label className="block text-xs font-semibold text-[#191817] mb-1.5 text-start">
+                    {t('auth.businessEmail')}
                   </label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-[#736B63] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Mail className="w-4 h-4 text-[#736B63] absolute ltr:left-3.5 rtl:right-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type="email"
                       name="email"
                       required
                       placeholder="contact@cafedar.com"
-                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
+                      className="w-full ltr:pl-10 ltr:pr-3.5 rtl:pr-10 rtl:pl-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
                     />
                   </div>
                 </div>
 
                 {/* Password */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#191817] mb-1.5">
-                    Password
+                  <label className="block text-xs font-semibold text-[#191817] mb-1.5 text-start">
+                    {t('auth.password')}
                   </label>
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-[#736B63] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Lock className="w-4 h-4 text-[#736B63] absolute ltr:left-3.5 rtl:right-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type="password"
                       name="password"
                       required
                       minLength={6}
                       placeholder="At least 6 characters"
-                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
+                      className="w-full ltr:pl-10 ltr:pr-3.5 rtl:pr-10 rtl:pl-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
                     />
                   </div>
                 </div>
@@ -189,15 +198,15 @@ export default function SignUpPage() {
                   disabled={loading}
                   className="w-full py-3 rounded-xl bg-[#B88E3E] hover:bg-[#A37B30] text-white font-semibold text-sm shadow-soft transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-2 cursor-pointer"
                 >
-                  <span>{loading ? 'Creating Your Program...' : 'Start with Hbibna'}</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span>{loading ? t('auth.creatingAccount') : t('home.startFree')}</span>
+                  <ArrowRight className="w-4 h-4 rtl:rotate-180" />
                 </button>
               </form>
 
               {/* Security note */}
               <div className="pt-2 flex items-center justify-center gap-2 text-center text-xs text-[#736B63]">
                 <ShieldCheck className="w-4 h-4 text-[#B88E3E]" />
-                <span>Isolated tenant data with bank-grade security</span>
+                <span>{t('business.tenantSecurityDesc')}</span>
               </div>
             </div>
           )}
@@ -206,7 +215,7 @@ export default function SignUpPage() {
 
       {/* Footer */}
       <footer className="py-6 text-center text-xs text-[#736B63] border-t border-[#E6DDCF]">
-        <p>© {new Date().getFullYear()} Hbibna. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} {t('common.appName')}. {t('footer.allRightsReserved')}</p>
       </footer>
     </div>
   );

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { X, Gift, CheckCircle2, AlertCircle, ArrowRight, User } from 'lucide-react';
 import { redeemRewardAction, type RedemptionActionResult } from '@/actions/rewards';
 import type { Customer, Reward } from '@/types/database';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface RedeemRewardModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export function RedeemRewardModal({
   reward: initialReward,
   rewards = [],
 }: RedeemRewardModalProps) {
+  const { t } = useLanguage();
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>(
     initialCustomer?.id || (customers[0]?.id ?? '')
   );
@@ -41,9 +43,9 @@ export function RedeemRewardModal({
   const currentReward =
     initialReward || rewards.find((r) => r.id === selectedRewardId) || rewards[0];
 
-  const customerName = currentCustomer?.name || 'Customer';
+  const customerName = currentCustomer?.name || t('business.customer');
   const currentBalance = currentCustomer?.points_balance || 0;
-  const rewardName = currentReward?.name || 'Reward';
+  const rewardName = currentReward?.name || t('business.reward');
   const costPoints = currentReward?.points_required || 0;
   const remainingPoints = currentBalance - costPoints;
   const hasEnoughPoints = currentBalance >= costPoints;
@@ -93,13 +95,18 @@ export function RedeemRewardModal({
               <Gift className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <h3 className="font-bold text-[#191817] text-base leading-tight truncate">Redeem Reward</h3>
-              <p className="text-[11px] text-[#736B63] truncate">Counter gift redemption</p>
+              <h3 className="font-bold text-[#191817] text-base leading-tight truncate">
+                {t('modals.redeemRewardTitle')}
+              </h3>
+              <p className="text-[11px] text-[#736B63] truncate">
+                {t('modals.redeemRewardDesc')}
+              </p>
             </div>
           </div>
           <button
             onClick={onClose}
             className="text-[#736B63] hover:text-[#191817] p-1.5 rounded-lg hover:bg-[#FAF8F5] transition-colors cursor-pointer shrink-0"
+            aria-label={t('common.close')}
           >
             <X className="w-4 h-4" />
           </button>
@@ -113,18 +120,19 @@ export function RedeemRewardModal({
               <CheckCircle2 className="w-7 h-7" />
             </div>
             <div className="space-y-1">
-              <h4 className="font-extrabold text-[#191817] text-xl">Redemption Successful!</h4>
+              <h4 className="font-extrabold text-[#191817] text-xl">
+                {t('modals.redemptionSuccess')}
+              </h4>
               <p className="text-sm text-[#736B63]">
-                Redeemed <span className="font-bold text-[#191817]">{result.rewardName}</span> for{' '}
-                <span className="font-semibold text-[#191817]">{result.customerName}</span>.
+                {result.rewardName} • <span className="font-semibold text-[#191817]">{result.customerName}</span>
               </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#E6DDCF] space-y-1">
-              <span className="text-xs text-[#736B63]">Remaining Points Balance:</span>
+              <span className="text-xs text-[#736B63]">{t('modals.remainingBalance')}:</span>
               <p className="text-3xl font-black text-[#B88E3E]">
                 {result.newBalance?.toLocaleString()}{' '}
-                <span className="text-sm font-bold text-[#B88E3E]">pts</span>
+                <span className="text-sm font-bold text-[#B88E3E]">{t('common.pts')}</span>
               </p>
             </div>
 
@@ -135,7 +143,7 @@ export function RedeemRewardModal({
               }}
               className="w-full py-3 rounded-xl bg-[#B88E3E] text-white text-xs font-semibold hover:bg-[#A37B30] shadow-soft transition-colors cursor-pointer min-h-[44px]"
             >
-              Done
+              {t('common.done')}
             </button>
           </div>
         ) : (
@@ -151,7 +159,7 @@ export function RedeemRewardModal({
             {!initialCustomer && customers.length > 0 && (
               <div>
                 <label className="block text-xs font-bold text-[#191817] mb-1.5">
-                  Select Customer
+                  {t('modals.selectCustomer')}
                 </label>
                 <select
                   value={selectedCustomerId}
@@ -160,7 +168,7 @@ export function RedeemRewardModal({
                 >
                   {customers.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.name} ({c.points_balance} pts)
+                      {c.name} ({c.points_balance} {t('common.pts')})
                     </option>
                   ))}
                 </select>
@@ -171,7 +179,7 @@ export function RedeemRewardModal({
             {!initialReward && rewards.length > 0 && (
               <div>
                 <label className="block text-xs font-bold text-[#191817] mb-1.5">
-                  Select Reward
+                  {t('modals.selectReward')}
                 </label>
                 <select
                   value={selectedRewardId}
@@ -180,7 +188,7 @@ export function RedeemRewardModal({
                 >
                   {rewards.map((r) => (
                     <option key={r.id} value={r.id}>
-                      {r.name} ({r.points_required} pts)
+                      {r.name} ({r.points_required} {t('common.pts')})
                     </option>
                   ))}
                 </select>
@@ -192,7 +200,7 @@ export function RedeemRewardModal({
               {/* Customer Name */}
               <div>
                 <span className="text-[11px] uppercase tracking-wider font-semibold text-[#736B63]">
-                  Customer
+                  {t('business.customer')}
                 </span>
                 <p className="text-base font-extrabold text-[#191817] mt-0.5">
                   {customerName}
@@ -201,35 +209,35 @@ export function RedeemRewardModal({
 
               {/* Current balance */}
               <div className="pt-2 border-t border-[#DFC99F]/50 flex items-center justify-between">
-                <span className="text-xs font-medium text-[#736B63]">Current balance:</span>
+                <span className="text-xs font-medium text-[#736B63]">{t('customer.balance')}:</span>
                 <span className="text-sm font-bold text-[#191817]">
-                  {currentBalance.toLocaleString()} points
+                  {currentBalance.toLocaleString()} {t('business.points')}
                 </span>
               </div>
 
               {/* Reward & Cost */}
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-xs font-medium text-[#736B63]">Reward:</span>
+                  <span className="text-xs font-medium text-[#736B63]">{t('business.reward')}:</span>
                   <p className="text-xs font-bold text-[#191817]">{rewardName}</p>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs font-medium text-[#736B63]">Cost:</span>
+                  <span className="text-xs font-medium text-[#736B63]">{t('modals.pointsCost')}:</span>
                   <p className="text-xs font-bold text-[#B88E3E]">
-                    {costPoints.toLocaleString()} points
+                    {costPoints.toLocaleString()} {t('business.points')}
                   </p>
                 </div>
               </div>
 
               {/* Remaining */}
               <div className="pt-3 border-t border-[#DFC99F]/70 flex items-center justify-between">
-                <span className="text-xs font-bold text-[#191817]">Remaining:</span>
+                <span className="text-xs font-bold text-[#191817]">{t('modals.remainingPoints')}:</span>
                 <span
                   className={`text-base font-black ${
                     hasEnoughPoints ? 'text-[#B88E3E]' : 'text-rose-600'
                   }`}
                 >
-                  {remainingPoints.toLocaleString()} points
+                  {remainingPoints.toLocaleString()} {t('business.points')}
                 </span>
               </div>
 
@@ -237,7 +245,7 @@ export function RedeemRewardModal({
               {!hasEnoughPoints && (
                 <div className="pt-2 text-center text-xs font-bold text-rose-600 flex items-center justify-center gap-1.5">
                   <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-                  <span>Not enough points to redeem this reward.</span>
+                  <span>{t('modals.insufficientPoints')}</span>
                 </div>
               )}
             </div>
@@ -249,7 +257,7 @@ export function RedeemRewardModal({
                 onClick={onClose}
                 className="px-4 py-2 text-xs font-semibold text-[#736B63] hover:text-[#191817] hover:bg-[#FAF8F5] rounded-xl transition-colors cursor-pointer min-h-[44px] flex items-center justify-center border border-[#E6DDCF] sm:border-transparent"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
 
               <button
@@ -257,7 +265,7 @@ export function RedeemRewardModal({
                 disabled={loading || !hasEnoughPoints || !currentReward}
                 className="px-6 py-2.5 text-xs font-bold text-white bg-[#B88E3E] hover:bg-[#A37B30] rounded-xl shadow-soft disabled:opacity-50 transition-colors cursor-pointer min-h-[44px] flex items-center justify-center"
               >
-                {loading ? 'Redeeming...' : 'Confirm'}
+                {loading ? t('modals.redeeming') : t('common.confirm')}
               </button>
             </div>
           </form>

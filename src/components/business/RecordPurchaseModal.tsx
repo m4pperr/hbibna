@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Receipt, CheckCircle2, AlertCircle, Sparkles, User, UserPlus } from 'lucide-react';
+import { X, Receipt, CheckCircle2, AlertCircle, Sparkles, User } from 'lucide-react';
 import { recordPurchase, type RecordPurchaseResult } from '@/actions/transactions';
 import { calculateLoyaltyPoints } from '@/lib/loyalty-engine';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import type { Customer, LoyaltyProgram } from '@/types/database';
 
 interface RecordPurchaseModalProps {
@@ -21,6 +22,7 @@ export function RecordPurchaseModal({
   defaultCustomerId,
   loyaltyRule,
 }: RecordPurchaseModalProps) {
+  const { t, language } = useLanguage();
   const [selectedCustomerId, setSelectedCustomerId] = useState(
     defaultCustomerId || (customers[0]?.id ?? '')
   );
@@ -56,19 +58,18 @@ export function RecordPurchaseModal({
 
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
-      setError('Please enter a valid purchase amount in DA greater than 0.');
+      setError(language === 'ar' ? 'يرجى إدخال مبلغ صحيح أكبر من 0 د.ج.' : 'Please enter a valid purchase amount in DA greater than 0.');
       setLoading(false);
       return;
     }
 
     if (!selectedCustomerId) {
-      setError('Please select a customer.');
+      setError(language === 'ar' ? 'يرجى اختيار العميل.' : 'Please select a customer.');
       setLoading(false);
       return;
     }
 
     try {
-      // Security: Only send customerId and amount. Server calculates points using saved loyalty rules.
       const res: RecordPurchaseResult = await recordPurchase({
         customerId: selectedCustomerId,
         amount: numAmount,
@@ -87,7 +88,7 @@ export function RecordPurchaseModal({
         setLoading(false);
       }
     } catch {
-      setError('An unexpected error occurred while recording the purchase.');
+      setError(t('common.error'));
       setLoading(false);
     }
   };
@@ -101,9 +102,13 @@ export function RecordPurchaseModal({
             <div className="w-9 h-9 rounded-xl bg-[#FBF6EB] text-[#B88E3E] border border-[#DFC99F]/50 flex items-center justify-center shrink-0">
               <Receipt className="w-4 h-4" />
             </div>
-            <div className="min-w-0">
-              <h3 className="font-bold text-[#191817] text-base leading-tight truncate">Add Purchase</h3>
-              <p className="text-[11px] text-[#736B63] truncate">Record purchase & award loyalty points</p>
+            <div className="min-w-0 text-start">
+              <h3 className="font-bold text-[#191817] text-base leading-tight truncate">
+                {t('modals.recordPurchaseTitle')}
+              </h3>
+              <p className="text-[11px] text-[#736B63] truncate">
+                {t('modals.recordPurchaseDesc')}
+              </p>
             </div>
           </div>
           <button
@@ -122,23 +127,26 @@ export function RecordPurchaseModal({
               <CheckCircle2 className="w-7 h-7" />
             </div>
             <div className="space-y-1">
-              <h4 className="font-extrabold text-[#191817] text-xl">Points Awarded!</h4>
+              <h4 className="font-extrabold text-[#191817] text-xl">
+                {language === 'ar' ? 'تمت إضافة النقاط بنجاح!' : 'Points Awarded!'}
+              </h4>
               <p className="text-sm text-[#736B63]">
-                Credited{' '}
-                <span className="font-bold text-[#B88E3E]">
-                  +{result.pointsAwarded} points
+                {language === 'ar' ? 'تمت إضافة ' : 'Credited '}
+                <span className="font-bold text-[#B88E3E] font-mono">
+                  +{result.pointsAwarded} {t('common.pts')}
                 </span>{' '}
-                to <span className="font-semibold text-[#191817]">{result.customerName}</span>.
+                {language === 'ar' ? 'إلى حساب ' : 'to '}
+                <span className="font-semibold text-[#191817]">{result.customerName}</span>.
               </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-[#FBF6EB] border border-[#DFC99F] space-y-1">
               <span className="text-xs font-semibold uppercase tracking-wider text-[#736B63]">
-                New Total Points Balance
+                {t('customer.pointsBalance')}
               </span>
-              <p className="text-3xl font-black text-[#B88E3E]">
+              <p className="text-3xl font-black text-[#B88E3E] font-mono">
                 {result.newBalance.toLocaleString()}{' '}
-                <span className="text-sm font-bold text-[#B88E3E]">pts</span>
+                <span className="text-sm font-bold text-[#B88E3E]">{t('common.pts')}</span>
               </p>
             </div>
 
@@ -151,7 +159,7 @@ export function RecordPurchaseModal({
               }}
               className="w-full py-3 rounded-xl bg-[#B88E3E] text-white text-xs font-semibold hover:bg-[#A37B30] shadow-soft transition-colors cursor-pointer"
             >
-              Done
+              {t('common.confirm')}
             </button>
           </div>
         ) : customers.length === 0 ? (
@@ -161,21 +169,21 @@ export function RecordPurchaseModal({
               <User className="w-6 h-6" />
             </div>
             <div className="space-y-1">
-              <h4 className="font-bold text-[#191817] text-base">No Customers Yet</h4>
+              <h4 className="font-bold text-[#191817] text-base">{t('catalog.noResults')}</h4>
               <p className="text-xs text-[#736B63]">
-                You need to enroll at least one customer before recording purchases.
+                {language === 'ar' ? 'يجب تسجيل عميل واحد على الأقل قبل تسجيل المشتريات.' : 'You need to enroll at least one customer before recording purchases.'}
               </p>
             </div>
             <button
               onClick={onClose}
               className="w-full py-2.5 rounded-xl bg-[#B88E3E] text-white text-xs font-semibold hover:bg-[#A37B30] transition-colors"
             >
-              Close
+              {t('common.close')}
             </button>
           </div>
         ) : (
           /* Form State */
-          <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto text-start">
             {error && (
               <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2.5">
                 <AlertCircle className="w-4 h-4 shrink-0" />
@@ -186,7 +194,7 @@ export function RecordPurchaseModal({
             {/* Select Customer */}
             <div>
               <label className="block text-xs font-bold text-[#191817] mb-1.5">
-                Select Customer <span className="text-[#B88E3E]">*</span>
+                {t('modals.selectCustomer')} <span className="text-[#B88E3E]">*</span>
               </label>
               <select
                 value={selectedCustomerId}
@@ -196,7 +204,7 @@ export function RecordPurchaseModal({
               >
                 {customers.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name} ({c.phone}) — {c.points_balance} pts
+                    {c.name} ({c.phone}) — {c.points_balance} {t('common.pts')}
                   </option>
                 ))}
               </select>
@@ -205,42 +213,46 @@ export function RecordPurchaseModal({
             {/* Purchase Amount */}
             <div>
               <label className="block text-xs font-bold text-[#191817] mb-1.5">
-                Purchase Amount (DA) <span className="text-[#B88E3E]">*</span>
+                {t('modals.purchaseAmountDa')} <span className="text-[#B88E3E]">*</span>
               </label>
               <div className="relative">
                 <input
                   type="number"
                   step="any"
                   min="1"
-                  placeholder="e.g. 2500"
+                  placeholder="2500"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] font-semibold focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
+                  className="w-full ltr:pl-3.5 ltr:pr-10 rtl:pr-3.5 rtl:pl-10 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] font-semibold focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
                   required
                 />
-                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#736B63]">
-                  DA
+                <span className="absolute ltr:right-3.5 rtl:left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#736B63]">
+                  {t('common.da')}
                 </span>
               </div>
             </div>
 
-            {/* Dynamic Calculation Output: "Customer will earn X points." */}
+            {/* Dynamic Calculation Output */}
             <div className="p-3.5 rounded-2xl bg-[#FBF6EB] border border-[#DFC99F]/70 flex flex-col xs:flex-row xs:items-center justify-between gap-1 text-xs">
-              <span className="text-[#736B63]">Points to be awarded:</span>
+              <span className="text-[#736B63]">{t('modals.pointsToAward')}:</span>
               <div className="flex items-center gap-1.5 font-bold text-[#B88E3E]">
                 <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                <span>Customer will earn {previewCalculation.points} points.</span>
+                <span>
+                  {language === 'ar'
+                    ? `سيكسب العميل ${previewCalculation.points} نقطة.`
+                    : `Customer will earn ${previewCalculation.points} points.`}
+                </span>
               </div>
             </div>
 
             {/* Note / Receipt Ref (Optional) */}
             <div>
               <label className="block text-xs font-bold text-[#191817] mb-1.5">
-                Note / Description <span className="font-normal text-[#736B63]">(optional)</span>
+                {language === 'ar' ? 'ملاحظة (اختياري)' : 'Note / Description (optional)'}
               </label>
               <input
                 type="text"
-                placeholder="e.g. Counter order, Table 3, or Invoice #102"
+                placeholder={language === 'ar' ? 'مثال: طلب الصندوق، طاولة 3، فاتورة #102' : 'e.g. Counter order, Table 3, or Invoice #102'}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
@@ -254,14 +266,14 @@ export function RecordPurchaseModal({
                 onClick={onClose}
                 className="px-4 py-2 text-xs font-semibold text-[#736B63] hover:text-[#191817] hover:bg-[#FAF8F5] rounded-xl transition-colors cursor-pointer min-h-[44px] flex items-center justify-center border border-[#E6DDCF] sm:border-transparent"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 type="submit"
                 disabled={loading}
                 className="px-6 py-2.5 text-xs font-semibold text-white bg-[#B88E3E] hover:bg-[#A37B30] rounded-xl shadow-soft disabled:opacity-50 transition-colors cursor-pointer min-h-[44px] flex items-center justify-center"
               >
-                {loading ? 'Recording...' : 'Add Purchase'}
+                {loading ? t('modals.recording') : t('modals.recordAndAward')}
               </button>
             </div>
           </form>

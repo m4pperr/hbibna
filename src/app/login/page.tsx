@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Sparkles, ArrowRight, Store, User, AlertCircle, Mail, Lock, Phone } from 'lucide-react';
+import { ArrowRight, Store, User, AlertCircle, Mail, Lock, Phone } from 'lucide-react';
 import { signInBusiness, type AuthActionResult } from '@/actions/auth';
 import { HbibnaLogo } from '@/components/brand/HbibnaLogo';
+import { LanguageSelector } from '@/components/common/LanguageSelector';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export default function LoginPage() {
   const [activeTab, setActiveTab] = useState<'business' | 'customer'>('business');
@@ -13,6 +15,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { t } = useLanguage();
 
   const handleBusinessSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -35,7 +38,7 @@ export default function LoginPage() {
   const handleCustomerLookup = (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerPhone.trim()) {
-      setError('Please enter your phone number.');
+      setError(t('auth.enterPhonePrompt'));
       return;
     }
     router.push(`/customer?phone=${encodeURIComponent(customerPhone.trim())}`);
@@ -49,12 +52,15 @@ export default function LoginPage() {
           <HbibnaLogo size="md" />
         </Link>
 
-        <p className="text-xs text-[#736B63]">
-          New business?{' '}
-          <Link href="/signup" className="font-semibold text-[#B88E3E] hover:underline">
-            Register now
-          </Link>
-        </p>
+        <div className="flex items-center gap-3">
+          <LanguageSelector />
+          <p className="hidden sm:block text-xs text-[#736B63]">
+            {t('auth.newBusiness')}{' '}
+            <Link href="/signup" className="font-semibold text-[#B88E3E] hover:underline">
+              {t('auth.registerNow')}
+            </Link>
+          </p>
+        </div>
       </header>
 
       {/* Main card */}
@@ -63,10 +69,10 @@ export default function LoginPage() {
           {/* Header Title */}
           <div className="space-y-1.5 text-center">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#191817] tracking-tight">
-              Welcome back to Hbibna
+              {t('auth.welcomeBack')}
             </h1>
             <p className="text-xs text-[#736B63]">
-              Sign in to manage your loyalty program, customers, and rewards.
+              {t('auth.welcomeBackDesc')}
             </p>
           </div>
 
@@ -78,14 +84,14 @@ export default function LoginPage() {
                 setActiveTab('business');
                 setError(null);
               }}
-              className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === 'business'
-                  ? 'bg-[#FFFFFF] text-[#191817] shadow-xs'
+                  ? 'bg-[#FFFFFF] text-[#191817] shadow-xs font-bold'
                   : 'text-[#736B63] hover:text-[#191817]'
               }`}
             >
               <Store className="w-3.5 h-3.5" />
-              <span>Business Portal</span>
+              <span>{t('auth.businessPortal')}</span>
             </button>
             <button
               type="button"
@@ -93,14 +99,14 @@ export default function LoginPage() {
                 setActiveTab('customer');
                 setError(null);
               }}
-              className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === 'customer'
-                  ? 'bg-[#FFFFFF] text-[#191817] shadow-xs'
+                  ? 'bg-[#FFFFFF] text-[#191817] shadow-xs font-bold'
                   : 'text-[#736B63] hover:text-[#191817]'
               }`}
             >
               <User className="w-3.5 h-3.5" />
-              <span>Customer Pass</span>
+              <span>{t('auth.customerPass')}</span>
             </button>
           </div>
 
@@ -115,17 +121,17 @@ export default function LoginPage() {
             /* Business Login Form */
             <form onSubmit={handleBusinessSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#191817] mb-1.5">
-                  Business Email
+                <label className="block text-xs font-semibold text-[#191817] mb-1.5 text-start">
+                  {t('auth.businessEmail')}
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-[#736B63] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Mail className="w-4 h-4 text-[#736B63] absolute ltr:left-3.5 rtl:right-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="email"
                     name="email"
                     required
                     placeholder="owner@mybusiness.com"
-                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
+                    className="w-full ltr:pl-10 ltr:pr-3.5 rtl:pr-10 rtl:pl-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
                   />
                 </div>
               </div>
@@ -133,23 +139,23 @@ export default function LoginPage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-xs font-semibold text-[#191817]">
-                    Password
+                    {t('auth.password')}
                   </label>
                   <Link
                     href="/forgot-password"
                     className="text-[11px] font-medium text-[#B88E3E] hover:underline"
                   >
-                    Forgot password?
+                    {t('auth.forgotPassword')}
                   </Link>
                 </div>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-[#736B63] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Lock className="w-4 h-4 text-[#736B63] absolute ltr:left-3.5 rtl:right-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="password"
                     name="password"
                     required
                     placeholder="••••••••"
-                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
+                    className="w-full ltr:pl-10 ltr:pr-3.5 rtl:pr-10 rtl:pl-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
                   />
                 </div>
               </div>
@@ -159,30 +165,30 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full py-3 rounded-xl bg-[#B88E3E] hover:bg-[#A37B30] text-white font-semibold text-sm shadow-soft transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-2 cursor-pointer"
               >
-                <span>{loading ? 'Signing in...' : 'Sign In to Dashboard'}</span>
-                <ArrowRight className="w-4 h-4" />
+                <span>{loading ? t('auth.signingIn') : t('auth.signInButton')}</span>
+                <ArrowRight className="w-4 h-4 rtl:rotate-180" />
               </button>
             </form>
           ) : (
             /* Customer Pass Lookup */
             <form onSubmit={handleCustomerLookup} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#191817] mb-1.5">
-                  Your Phone Number
+                <label className="block text-xs font-semibold text-[#191817] mb-1.5 text-start">
+                  {t('auth.customerPhoneTitle')}
                 </label>
                 <div className="relative">
-                  <Phone className="w-4 h-4 text-[#736B63] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Phone className="w-4 h-4 text-[#736B63] absolute ltr:left-3.5 rtl:right-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="tel"
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
                     required
-                    placeholder="e.g. 0555 12 34 56"
-                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
+                    placeholder="0550 12 34 56"
+                    className="w-full ltr:pl-10 ltr:pr-3.5 rtl:pr-10 rtl:pl-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
                   />
                 </div>
-                <p className="text-[11px] text-[#736B63] mt-1.5">
-                  Enter your mobile number to view your card, rewards, and QR code.
+                <p className="text-[11px] text-[#736B63] mt-1.5 text-start">
+                  {t('auth.phoneHelper')}
                 </p>
               </div>
 
@@ -190,17 +196,17 @@ export default function LoginPage() {
                 type="submit"
                 className="w-full py-3 rounded-xl bg-[#B88E3E] hover:bg-[#A37B30] text-white font-semibold text-sm shadow-soft transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>Access My Pass</span>
-                <ArrowRight className="w-4 h-4" />
+                <span>{t('auth.accessPassButton')}</span>
+                <ArrowRight className="w-4 h-4 rtl:rotate-180" />
               </button>
             </form>
           )}
 
           {/* Footer note */}
           <div className="pt-4 border-t border-[#E6DDCF] text-center text-xs text-[#736B63]">
-            Don&apos;t have an account yet?{' '}
+            {t('auth.dontHaveAccount')}{' '}
             <Link href="/signup" className="font-semibold text-[#B88E3E] hover:underline">
-              Register your business
+              {t('auth.registerNow')}
             </Link>
           </div>
         </div>
@@ -208,7 +214,7 @@ export default function LoginPage() {
 
       {/* Footer */}
       <footer className="py-6 text-center text-xs text-[#736B63] border-t border-[#E6DDCF]">
-        <p>© {new Date().getFullYear()} Hbibna. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} {t('common.appName')}. {t('footer.allRightsReserved')}</p>
       </footer>
     </div>
   );

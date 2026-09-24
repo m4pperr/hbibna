@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X, Gift, AlertCircle } from 'lucide-react';
 import { createReward } from '@/actions/rewards';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface CreateRewardModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface CreateRewardModalProps {
 }
 
 export function CreateRewardModal({ isOpen, onClose }: CreateRewardModalProps) {
+  const { t } = useLanguage();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [pointsRequired, setPointsRequired] = useState('50');
@@ -39,7 +41,7 @@ export function CreateRewardModal({ isOpen, onClose }: CreateRewardModalProps) {
         onClose();
       }
     } catch {
-      setError('An unexpected error occurred.');
+      setError(t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -53,9 +55,13 @@ export function CreateRewardModal({ isOpen, onClose }: CreateRewardModalProps) {
             <div className="w-8 h-8 rounded-lg bg-[#FBF6EB] text-[#B88E3E] flex items-center justify-center shrink-0">
               <Gift className="w-4 h-4" />
             </div>
-            <div className="min-w-0">
-              <h3 className="font-semibold text-[#191817] text-base truncate">New Loyalty Reward</h3>
-              <p className="text-[11px] text-[#736B63] truncate">Define what customers can redeem</p>
+            <div className="min-w-0 text-start">
+              <h3 className="font-semibold text-[#191817] text-base truncate">
+                {t('modals.createRewardTitle')}
+              </h3>
+              <p className="text-[11px] text-[#736B63] truncate">
+                {t('modals.createRewardDesc')}
+              </p>
             </div>
           </div>
           <button
@@ -66,7 +72,7 @@ export function CreateRewardModal({ isOpen, onClose }: CreateRewardModalProps) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto text-start">
           {error && (
             <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -76,11 +82,11 @@ export function CreateRewardModal({ isOpen, onClose }: CreateRewardModalProps) {
 
           <div>
             <label className="block text-xs font-semibold text-[#191817] mb-1.5">
-              Reward Name <span className="text-[#B88E3E]">*</span>
+              {t('modals.rewardName')} <span className="text-[#B88E3E]">*</span>
             </label>
             <input
               type="text"
-              placeholder="e.g. 500 DA Discount or Free Specialty Drink"
+              placeholder={t('modals.rewardNamePlaceholder')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full px-3 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
@@ -90,11 +96,11 @@ export function CreateRewardModal({ isOpen, onClose }: CreateRewardModalProps) {
 
           <div>
             <label className="block text-xs font-semibold text-[#191817] mb-1.5">
-              Description <span className="font-normal text-[#736B63]">(optional)</span>
+              {t('modals.rewardDescription')}
             </label>
             <textarea
               rows={2}
-              placeholder="e.g. Valid on any hot beverage. Non-transferable."
+              placeholder={t('modals.rewardDescriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full px-3 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E] resize-none"
@@ -103,37 +109,33 @@ export function CreateRewardModal({ isOpen, onClose }: CreateRewardModalProps) {
 
           <div>
             <label className="block text-xs font-semibold text-[#191817] mb-1.5">
-              Points Required to Redeem <span className="text-[#B88E3E]">*</span>
+              {t('modals.pointsCost')} <span className="text-[#B88E3E]">*</span>
             </label>
-            <div className="relative">
-              <input
-                type="number"
-                min="1"
-                value={pointsRequired}
-                onChange={(e) => setPointsRequired(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
-                required
-              />
-              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#B88E3E]">
-                points
-              </span>
-            </div>
+            <input
+              type="number"
+              min="1"
+              placeholder={t('modals.pointsCostPlaceholder')}
+              value={pointsRequired}
+              onChange={(e) => setPointsRequired(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
+              required
+            />
           </div>
 
-          <div className="pt-2 grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2 sm:gap-2.5">
+          <div className="pt-2 grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2 sm:gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-[#736B63] hover:text-[#191817] hover:bg-[#FAF8F5] rounded-xl transition-colors min-h-[44px] flex items-center justify-center border border-[#E6DDCF] sm:border-transparent"
+              className="px-4 py-2 text-xs font-semibold text-[#736B63] hover:text-[#191817] hover:bg-[#FAF8F5] rounded-xl transition-colors cursor-pointer min-h-[44px] flex items-center justify-center border border-[#E6DDCF] sm:border-transparent"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2.5 text-xs font-semibold text-white bg-[#B88E3E] hover:bg-[#A37B30] rounded-xl shadow-soft disabled:opacity-50 transition-colors min-h-[44px] flex items-center justify-center"
+              className="px-5 py-2.5 text-xs font-semibold text-white bg-[#B88E3E] hover:bg-[#A37B30] rounded-xl shadow-soft disabled:opacity-50 transition-colors cursor-pointer min-h-[44px] flex items-center justify-center"
             >
-              {loading ? 'Creating...' : 'Create Reward'}
+              {loading ? t('common.saving') : t('common.save')}
             </button>
           </div>
         </form>

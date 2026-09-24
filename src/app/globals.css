@@ -42,6 +42,11 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+html[dir="rtl"] body,
+html[lang="ar"] body {
+  font-family: var(--font-arabic), "Cairo", "Segoe UI", Tahoma, Arial, sans-serif;
+}
+
 /* Custom scrollbars and subtle transitions */
 * {
   border-color: var(--surface-border);

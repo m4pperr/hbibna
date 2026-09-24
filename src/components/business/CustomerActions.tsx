@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Receipt, Gift } from 'lucide-react';
 import { RecordPurchaseModal } from './RecordPurchaseModal';
 import { RedeemRewardModal } from './RedeemRewardModal';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import type { Customer, Reward, LoyaltyProgram } from '@/types/database';
 
 interface CustomerActionsProps {
@@ -21,6 +22,7 @@ export function CustomerActions({
 }: CustomerActionsProps) {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [showRedeemModal, setShowRedeemModal] = useState(false);
+  const { t } = useLanguage();
 
   return (
     <>
@@ -30,7 +32,7 @@ export function CustomerActions({
           className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold text-[#191817] bg-[#FAF8F5] border border-[#E6DDCF] hover:bg-[#F3ECE2] transition-colors cursor-pointer"
         >
           <Gift className="w-3.5 h-3.5 text-[#B88E3E]" />
-          <span>Redeem Reward</span>
+          <span>{t('business.redeem')}</span>
         </button>
 
         <button
@@ -38,7 +40,7 @@ export function CustomerActions({
           className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-[#B88E3E] hover:bg-[#A37B30] shadow-soft transition-all cursor-pointer"
         >
           <Receipt className="w-3.5 h-3.5 text-white" />
-          <span>Add Purchase</span>
+          <span>{t('business.addPurchase')}</span>
         </button>
       </div>
 

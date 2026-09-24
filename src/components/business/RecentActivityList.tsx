@@ -1,23 +1,25 @@
 'use client';
 
-import { Receipt, Gift, ArrowUpRight, ArrowDownRight, Clock } from 'lucide-react';
+import { Receipt, Gift, ArrowUpRight, Clock } from 'lucide-react';
 import type { Transaction } from '@/types/database';
-import Link from 'next/link';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface RecentActivityListProps {
   transactions: Transaction[];
 }
 
 export function RecentActivityList({ transactions }: RecentActivityListProps) {
+  const { t, language } = useLanguage();
+
   if (transactions.length === 0) {
     return (
       <div className="bg-[#FFFFFF] border border-[#E6DDCF] rounded-3xl p-10 text-center space-y-3 shadow-soft">
         <div className="w-12 h-12 rounded-2xl bg-[#FBF6EB] text-[#B88E3E] flex items-center justify-center mx-auto">
           <Receipt className="w-6 h-6" />
         </div>
-        <h4 className="font-bold text-[#191817] text-base">No recent activity yet</h4>
+        <h4 className="font-bold text-[#191817] text-base">{t('business.noRecentActivity')}</h4>
         <p className="text-xs text-[#736B63] max-w-sm mx-auto">
-          When you record purchases or redeem rewards for customers, the activity ledger will appear here.
+          {t('business.startByScanning')}
         </p>
       </div>
     );
@@ -27,18 +29,18 @@ export function RecentActivityList({ transactions }: RecentActivityListProps) {
     <div className="bg-[#FFFFFF] border border-[#E6DDCF] rounded-3xl shadow-soft overflow-hidden divide-y divide-[#E6DDCF]">
       {transactions.map((tx) => {
         const isEarn = tx.points > 0;
-        const customerName = tx.customer?.name || 'Valued Customer';
+        const customerName = tx.customer?.name || (language === 'ar' ? 'زبون مميز' : 'Valued Customer');
         const isRedemption = tx.type === 'redeem';
 
-        // Detail text (e.g. "2,500 DA" for purchase, or "Free Coffee" from description)
+        // Detail text
         let detail = tx.description || '';
         if (isEarn && tx.amount > 0) {
-          detail = `${tx.amount.toLocaleString()} DA`;
+          detail = `${tx.amount.toLocaleString()} ${t('common.da')}`;
         } else if (isRedemption && detail.startsWith('Redeemed: ')) {
           detail = detail.replace('Redeemed: ', '');
         }
 
-        const formattedDate = new Date(tx.created_at).toLocaleDateString(undefined, {
+        const formattedDate = new Date(tx.created_at).toLocaleDateString(language === 'ar' ? 'ar-DZ' : 'en-US', {
           month: 'short',
           day: 'numeric',
           hour: '2-digit',
@@ -60,19 +62,19 @@ export function RecentActivityList({ transactions }: RecentActivityListProps) {
                 }`}
               >
                 {isEarn ? (
-                  <ArrowUpRight className="w-5 h-5 text-[#B88E3E]" />
+                  <ArrowUpRight className="w-5 h-5 text-[#B88E3E] rtl:rotate-90" />
                 ) : (
                   <Gift className="w-5 h-5 text-rose-600" />
                 )}
               </div>
 
-              <div>
+              <div className="text-start">
                 <p className="font-bold text-[#191817] text-sm">
                   {customerName}
                 </p>
                 <div className="flex items-center gap-2 text-xs text-[#736B63] mt-0.5">
                   <span className="font-medium text-[#191817]">
-                    {isRedemption ? 'Reward Redemption' : 'Purchase'}
+                    {isRedemption ? t('business.redeem') : t('business.purchase')}
                   </span>
                   {detail && (
                     <>
@@ -93,7 +95,7 @@ export function RecentActivityList({ transactions }: RecentActivityListProps) {
                     : 'bg-zinc-100 text-[#191817] border border-zinc-200'
                 }`}
               >
-                {isEarn ? `+${tx.points} points` : `${tx.points} points`}
+                {isEarn ? `+${tx.points} ${t('common.pts')}` : `${tx.points} ${t('common.pts')}`}
               </span>
               <span className="text-[11px] text-[#736B63] flex items-center gap-1 mt-1 font-medium">
                 <Clock className="w-3 h-3 text-[#736B63]" />

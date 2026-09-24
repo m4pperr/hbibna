@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from 'react';
 import {
-  Sparkles,
   ShoppingBag,
   Coins,
   CheckCircle2,
@@ -12,6 +11,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { updateLoyaltyProgram, type UpdateLoyaltyResult } from '@/actions/loyalty';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import type { LoyaltyProgram, LoyaltyRuleType } from '@/types/database';
 
 interface LoyaltyRuleFormProps {
@@ -19,6 +19,7 @@ interface LoyaltyRuleFormProps {
 }
 
 export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
+  const { t, language } = useLanguage();
   const [ruleType, setRuleType] = useState<LoyaltyRuleType>(
     initialLoyalty?.rule_type || 'per_currency'
   );
@@ -53,15 +54,19 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
 
   if (ruleType === 'per_purchase') {
     previewPoints = !isNaN(parsedPointsPurchase) && parsedPointsPurchase > 0 ? parsedPointsPurchase : 0;
-    previewExplanation = `${previewPoints} points awarded on any purchase`;
+    previewExplanation = language === 'ar'
+      ? `${previewPoints} نقطة تُمنح مع كل عملية شراء`
+      : `${previewPoints} points awarded on any purchase`;
   } else {
     if (!isNaN(parsedUnit) && parsedUnit > 0 && !isNaN(parsedPointsPerUnit) && parsedPointsPerUnit > 0) {
       const units = Math.floor(parsedAmount / parsedUnit);
       previewPoints = units * parsedPointsPerUnit;
-      previewExplanation = `${parsedPointsPerUnit} point for every ${parsedUnit.toLocaleString()} DA spent`;
+      previewExplanation = language === 'ar'
+        ? `${parsedPointsPerUnit} نقطة لكل ${parsedUnit.toLocaleString()} د.ج تُنفق`
+        : `${parsedPointsPerUnit} point for every ${parsedUnit.toLocaleString()} DA spent`;
     } else {
       previewPoints = 0;
-      previewExplanation = 'Enter valid rule parameters';
+      previewExplanation = language === 'ar' ? 'أدخل معايير صحيحة' : 'Enter valid rule parameters';
     }
   }
 
@@ -76,7 +81,7 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
       if (isNaN(p) || p <= 0 || !Number.isInteger(p)) {
         setFeedback({
           type: 'error',
-          message: 'Points per purchase must be a positive whole number greater than 0.',
+          message: language === 'ar' ? 'يجب أن تكون النقاط عدداً صحيحاً أكبر من 0.' : 'Points per purchase must be a positive whole number greater than 0.',
         });
         return;
       }
@@ -86,14 +91,14 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
       if (isNaN(u) || u <= 0 || !Number.isInteger(u)) {
         setFeedback({
           type: 'error',
-          message: 'The DA amount spent must be a positive whole number greater than 0 (e.g. 100 DA).',
+          message: language === 'ar' ? 'يجب أن يكون المبلغ بالدينار عدداً صحيحاً موجباً (مثلاً 100 د.ج).' : 'The DA amount spent must be a positive whole number greater than 0 (e.g. 100 DA).',
         });
         return;
       }
       if (isNaN(pts) || pts <= 0 || !Number.isInteger(pts)) {
         setFeedback({
           type: 'error',
-          message: 'Points awarded must be a positive whole number greater than 0 (e.g. 1 point).',
+          message: language === 'ar' ? 'يجب أن تكون النقاط عدداً صحيحاً موجباً (مثلاً 1 نقطة).' : 'Points awarded must be a positive whole number greater than 0 (e.g. 1 point).',
         });
         return;
       }
@@ -113,14 +118,14 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
         } else {
           setFeedback({
             type: 'success',
-            message: 'Your loyalty points rule has been saved successfully in Supabase.',
+            message: language === 'ar' ? 'تم حفظ قواعد برنامج الولاء بنجاح.' : 'Your loyalty points rule has been saved successfully in Supabase.',
           });
           setTimeout(() => setFeedback(null), 4000);
         }
       } catch {
         setFeedback({
           type: 'error',
-          message: 'Failed to save changes. Please try again.',
+          message: t('common.error'),
         });
       }
     });
@@ -129,12 +134,12 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
   return (
     <div className="space-y-8 max-w-5xl">
       {/* Header text */}
-      <div className="space-y-1">
+      <div className="space-y-1 text-start">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-[#191817] tracking-tight">
-          Loyalty Program
+          {t('business.loyaltyTitle')}
         </h1>
         <p className="text-sm text-[#736B63]">
-          Choose how your customers earn points.
+          {t('business.loyaltySubtitle')}
         </p>
       </div>
 
@@ -143,7 +148,7 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
         {/* Left: Configuration Form */}
         <form
           onSubmit={handleSubmit}
-          className="lg:col-span-7 bg-[#FFFFFF] border border-[#E6DDCF] rounded-3xl p-4 sm:p-8 shadow-card space-y-6"
+          className="lg:col-span-7 bg-[#FFFFFF] border border-[#E6DDCF] rounded-3xl p-4 sm:p-8 shadow-card space-y-6 text-start"
         >
           {/* Feedback alerts */}
           {feedback?.type === 'success' && (
@@ -163,10 +168,10 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
           {/* Intro instruction */}
           <div>
             <h2 className="text-base font-bold text-[#191817]">
-              Choose how Hbibna rewards your customers
+              {language === 'ar' ? 'حدد معادلة احتساب نقاط الولاء لعملائك' : 'Choose how Hbibna rewards your customers'}
             </h2>
             <p className="text-xs text-[#736B63] mt-0.5">
-              Select the calculation method that best matches your business model.
+              {language === 'ar' ? 'اختر طريقة الاحتساب التي تناسب طبيعة وهوامش نشاطك التجاري.' : 'Select the calculation method that best matches your business model.'}
             </p>
           </div>
 
@@ -194,13 +199,13 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
                   </div>
                   <div>
                     <h3 className="font-bold text-sm text-[#191817]">
-                      Points per amount spent
+                      {language === 'ar' ? 'نقاط حسب المبلغ المنفق' : 'Points per amount spent'}
                     </h3>
                     <p className="text-xs text-[#736B63] mt-0.5">
-                      Customers earn points proportionally to how much they spend.
+                      {language === 'ar' ? 'يكسب العميل النقاط بالتناسب مع قيمة مشترياته بالدينار.' : 'Customers earn points proportionally to how much they spend.'}
                     </p>
                     <div className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[#B88E3E]">
-                      <span>Example: Every 100 DA spent = 1 point</span>
+                      <span>{language === 'ar' ? 'مثال: كل 100 د.ج مشتريات = 1 نقطة' : 'Example: Every 100 DA spent = 1 point'}</span>
                     </div>
                   </div>
                 </div>
@@ -218,12 +223,12 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
                 </div>
               </div>
 
-              {/* Editable Fields for Rule 2 */}
+              {/* Editable Fields for Rule 1 */}
               {ruleType === 'per_currency' && (
                 <div className="mt-4 pt-4 border-t border-[#DFC99F]/50 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-[#191817] mb-1">
-                      For every amount spent:
+                      {language === 'ar' ? 'لكل مبلغ منفق قدره:' : 'For every amount spent:'}
                     </label>
                     <div className="relative">
                       <input
@@ -233,17 +238,17 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
                         required
                         value={currencyUnit}
                         onChange={(e) => setCurrencyUnit(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] font-semibold focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
+                        className="w-full ltr:px-3.5 rtl:px-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] font-semibold focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#736B63]">
-                        DA
+                      <span className="absolute ltr:right-3 rtl:left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#736B63]">
+                        {t('common.da')}
                       </span>
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-[#191817] mb-1">
-                      Customer earns:
+                      {language === 'ar' ? 'يكسب العميل:' : 'Customer earns:'}
                     </label>
                     <div className="relative">
                       <input
@@ -255,8 +260,8 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
                         onChange={(e) => setPointsPerCurrency(e.target.value)}
                         className="w-full px-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] font-semibold focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#B88E3E]">
-                        point(s)
+                      <span className="absolute ltr:right-3 rtl:left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#B88E3E]">
+                        {t('common.pts')}
                       </span>
                     </div>
                   </div>
@@ -286,13 +291,13 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
                   </div>
                   <div>
                     <h3 className="font-bold text-sm text-[#191817]">
-                      Points per purchase
+                      {language === 'ar' ? 'نقاط ثابتة لكل زيارة/شراء' : 'Points per purchase'}
                     </h3>
                     <p className="text-xs text-[#736B63] mt-0.5">
-                      Award a flat number of points whenever a customer visits and makes any purchase.
+                      {language === 'ar' ? 'منح عدد محدد وثابت من النقاط مع كل عملية شراء بغض النظر عن قيمتها.' : 'Award a flat number of points whenever a customer visits and makes any purchase.'}
                     </p>
                     <div className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[#B88E3E]">
-                      <span>Example: 10 points per purchase</span>
+                      <span>{language === 'ar' ? 'مثال: 10 نقاط لكل عملية شراء' : 'Example: 10 points per purchase'}</span>
                     </div>
                   </div>
                 </div>
@@ -310,11 +315,11 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
                 </div>
               </div>
 
-              {/* Editable Field for Rule 1 */}
+              {/* Editable Field for Rule 2 */}
               {ruleType === 'per_purchase' && (
                 <div className="mt-4 pt-4 border-t border-[#DFC99F]/50">
                   <label className="block text-xs font-bold text-[#191817] mb-1">
-                    Points awarded per visit / purchase:
+                    {language === 'ar' ? 'النقاط الممنوحة لكل زيارة/شراء:' : 'Points awarded per visit / purchase:'}
                   </label>
                   <div className="relative max-w-xs">
                     <input
@@ -326,8 +331,8 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
                       onChange={(e) => setPointsPerPurchase(e.target.value)}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] font-semibold focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#B88E3E]">
-                      points
+                    <span className="absolute ltr:right-3 rtl:left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#B88E3E]">
+                      {t('common.pts')}
                     </span>
                   </div>
                 </div>
@@ -342,28 +347,28 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
               disabled={isPending}
               className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#B88E3E] hover:bg-[#A37B30] text-white font-bold text-sm shadow-soft transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
             >
-              <span>{isPending ? 'Saving Changes...' : 'Save Changes'}</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>{isPending ? t('common.saving') : t('business.saveLoyaltyRules')}</span>
+              <ArrowRight className="w-4 h-4 rtl:rotate-180" />
             </button>
           </div>
         </form>
 
         {/* Right: Live Interactive Preview */}
-        <div className="lg:col-span-5 bg-[#FFFFFF] border border-[#E6DDCF] rounded-3xl p-4 sm:p-8 shadow-card space-y-6">
+        <div className="lg:col-span-5 bg-[#FFFFFF] border border-[#E6DDCF] rounded-3xl p-4 sm:p-8 shadow-card space-y-6 text-start">
           <div className="flex items-center gap-2.5 pb-4 border-b border-[#E6DDCF]">
             <div className="w-9 h-9 rounded-xl bg-[#FBF6EB] text-[#B88E3E] border border-[#DFC99F]/60 flex items-center justify-center">
               <Calculator className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-bold text-base text-[#191817]">Live Preview</h3>
-              <p className="text-xs text-[#736B63]">Updates dynamically as you adjust rules</p>
+              <h3 className="font-bold text-base text-[#191817]">{language === 'ar' ? 'معاينة تجريبية مباشرة' : 'Live Preview'}</h3>
+              <p className="text-xs text-[#736B63]">{language === 'ar' ? 'يتم التحديث تلقائياً أثناء تعديل القواعد' : 'Updates dynamically as you adjust rules'}</p>
             </div>
           </div>
 
           {/* Test Amount Simulator */}
           <div className="space-y-3">
             <label className="block text-xs font-bold text-[#191817]">
-              Sample Customer Purchase:
+              {language === 'ar' ? 'تجربة مبلغ شراء عشوائي:' : 'Sample Customer Purchase:'}
             </label>
             <div className="relative">
               <input
@@ -372,11 +377,11 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
                 step="50"
                 value={testAmount}
                 onChange={(e) => setTestAmount(e.target.value)}
-                placeholder="e.g. 2500"
+                placeholder="2500"
                 className="w-full px-4 py-3 rounded-2xl border border-[#E6DDCF] bg-[#FAF8F5] text-base text-[#191817] font-bold focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
               />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-[#736B63]">
-                DA
+              <span className="absolute ltr:right-4 rtl:left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-[#736B63]">
+                {t('common.da')}
               </span>
             </div>
 
@@ -393,32 +398,32 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
                       : 'bg-[#FAF8F5] text-[#736B63] hover:text-[#191817] border border-[#E6DDCF]'
                   }`}
                 >
-                  {Number(amt).toLocaleString()} DA
+                  {Number(amt).toLocaleString()} {t('common.da')}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Dynamic Result Card matching user's exact format */}
+          {/* Dynamic Result Card */}
           <div className="p-6 rounded-2xl bg-[#FBF6EB] border border-[#DFC99F] space-y-4">
             <div className="space-y-1">
               <span className="text-xs uppercase tracking-wider font-semibold text-[#736B63]">
-                Purchase
+                {t('business.purchase')}
               </span>
-              <p className="text-lg font-bold text-[#191817]">
-                {parsedAmount.toLocaleString()} DA
+              <p className="text-lg font-bold text-[#191817] font-mono">
+                {parsedAmount.toLocaleString()} {t('common.da')}
               </p>
             </div>
 
             <div className="pt-3 border-t border-[#DFC99F]/60 space-y-1">
               <span className="text-xs uppercase tracking-wider font-semibold text-[#736B63]">
-                Points earned
+                {language === 'ar' ? 'النقاط المحتسبة' : 'Points earned'}
               </span>
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-black text-[#B88E3E] tracking-tight">
+                <span className="text-4xl font-black text-[#B88E3E] tracking-tight font-mono">
                   {previewPoints}
                 </span>
-                <span className="text-sm font-bold text-[#B88E3E]">points</span>
+                <span className="text-sm font-bold text-[#B88E3E]">{t('common.points')}</span>
               </div>
             </div>
 
@@ -431,8 +436,10 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
           <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#E6DDCF] flex items-start gap-3 text-xs text-[#736B63]">
             <ShieldCheck className="w-4 h-4 text-[#B88E3E] shrink-0 mt-0.5" />
             <p className="leading-relaxed">
-              <strong>Server-Side Security:</strong> This live preview is informational.
-              All points are calculated and credited securely on Hbibna servers when counter purchases are recorded.
+              <strong>{language === 'ar' ? 'حساب آمن وموثوق:' : 'Server-Side Security:'}</strong>{' '}
+              {language === 'ar'
+                ? 'تتم جميع حسابات النقاط والعمليات المالية عبر خوادم حبيبنا بأمان تام عند تسجيل كل عملية شراء لدى الصندوق.'
+                : 'All points are calculated and credited securely on Hbibna servers when counter purchases are recorded.'}
             </p>
           </div>
         </div>

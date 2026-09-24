@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Lock, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Lock, AlertCircle, ArrowRight } from 'lucide-react';
 import { updatePassword } from '@/actions/auth';
 import { HbibnaLogo } from '@/components/brand/HbibnaLogo';
+import { LanguageSelector } from '@/components/common/LanguageSelector';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -13,19 +15,20 @@ export default function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [, setSuccess] = useState(false);
+  const { t } = useLanguage();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError(t('auth.passwordsDoNotMatch'));
       return;
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+      setError(t('auth.passwordTooShort'));
       return;
     }
 
@@ -46,7 +49,7 @@ export default function ResetPasswordPage() {
         }, 2000);
       }
     } catch {
-      setError('Failed to update password.');
+      setError(t('common.error'));
       setLoading(false);
     }
   };
@@ -58,6 +61,7 @@ export default function ResetPasswordPage() {
         <Link href="/" className="flex items-center group">
           <HbibnaLogo size="md" />
         </Link>
+        <LanguageSelector />
       </header>
 
       {/* Main card */}
@@ -65,10 +69,10 @@ export default function ResetPasswordPage() {
         <div className="w-full max-w-md bg-[#FFFFFF] border border-[#E6DDCF] rounded-3xl p-8 sm:p-10 shadow-card space-y-6">
           <div className="space-y-1.5 text-center">
             <h1 className="text-2xl font-extrabold text-[#191817] tracking-tight">
-              Set new password
+              {t('auth.resetPasswordTitle')}
             </h1>
             <p className="text-xs text-[#736B63]">
-              Choose a secure password for your Hbibna business account.
+              {t('auth.chooseSecurePassword')}
             </p>
           </div>
 
@@ -81,35 +85,39 @@ export default function ResetPasswordPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-[#191817] mb-1.5">
-                New Password
+              <label className="block text-xs font-semibold text-[#191817] mb-1.5 text-start">
+                {t('auth.newPassword')}
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-[#736B63] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Lock className="w-4 h-4 text-[#736B63] absolute ltr:left-3.5 rtl:right-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="password"
                   name="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
-                  placeholder="At least 6 characters"
-                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
+                  placeholder="••••••••"
+                  className="w-full ltr:pl-10 ltr:pr-3.5 rtl:pr-10 rtl:pl-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#191817] mb-1.5">
-                Confirm New Password
+              <label className="block text-xs font-semibold text-[#191817] mb-1.5 text-start">
+                {t('auth.confirmPassword')}
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-[#736B63] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Lock className="w-4 h-4 text-[#736B63] absolute ltr:left-3.5 rtl:right-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="password"
                   name="confirmPassword"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   minLength={6}
-                  placeholder="Repeat new password"
-                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
+                  placeholder="••••••••"
+                  className="w-full ltr:pl-10 ltr:pr-3.5 rtl:pr-10 rtl:pl-3.5 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
                 />
               </div>
             </div>
@@ -119,8 +127,8 @@ export default function ResetPasswordPage() {
               disabled={loading}
               className="w-full py-3 rounded-xl bg-[#B88E3E] hover:bg-[#A37B30] text-white font-semibold text-sm shadow-soft transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
             >
-              <span>{loading ? 'Updating Password...' : 'Save Password & Continue'}</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>{loading ? t('auth.updatingPassword') : t('auth.savePasswordAndContinue')}</span>
+              <ArrowRight className="w-4 h-4 rtl:rotate-180" />
             </button>
           </form>
         </div>
@@ -128,7 +136,7 @@ export default function ResetPasswordPage() {
 
       {/* Footer */}
       <footer className="py-6 text-center text-xs text-[#736B63] border-t border-[#E6DDCF]">
-        <p>© {new Date().getFullYear()} Hbibna. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} {t('common.appName')}. {t('footer.allRightsReserved')}</p>
       </footer>
     </div>
   );

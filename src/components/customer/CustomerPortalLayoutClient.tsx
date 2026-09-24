@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { HbibnaLogo } from '@/components/brand/HbibnaLogo';
 import { CustomerSidebar } from '@/components/customer/CustomerSidebar';
+import { LanguageSelector } from '@/components/common/LanguageSelector';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import type { CustomerBusinessMembership } from '@/types/database';
 import { Menu, LayoutDashboard, Gift, Clock, QrCode, Store } from 'lucide-react';
 
@@ -23,6 +25,7 @@ export function CustomerPortalLayoutClient({
   customerPhone,
   children,
 }: CustomerPortalLayoutClientProps) {
+  const { t, isRtl } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -47,17 +50,17 @@ export function CustomerPortalLayoutClient({
     return qs ? `${targetPath}?${qs}` : targetPath;
   };
 
-  const NAV_ITEMS = [
-    { name: 'Dashboard', path: '/customer', icon: LayoutDashboard },
-    { name: 'Rewards', path: '/customer/rewards', icon: Gift },
-    { name: 'Activity', path: '/customer/activity', icon: Clock },
-    { name: 'My QR', path: '/customer/qr', icon: QrCode },
+  const navItems = [
+    { name: t('customer.dashboard'), path: '/customer', icon: LayoutDashboard },
+    { name: t('customer.rewards'), path: '/customer/rewards', icon: Gift },
+    { name: t('customer.activity'), path: '/customer/activity', icon: Clock },
+    { name: t('customer.myQr'), path: '/customer/qr', icon: QrCode },
   ];
 
   return (
     <div className="min-h-screen bg-[#FAF8F5] text-[#191817] flex selection:bg-[#B88E3E]/20">
       {/* 1. DESKTOP PERSISTENT SIDEBAR */}
-      <aside className="hidden lg:block w-72 shrink-0 h-screen sticky top-0 z-30">
+      <aside className={`hidden lg:block w-72 shrink-0 h-screen sticky top-0 z-30 ${isRtl ? 'border-l' : 'border-r'} border-[#E6DDCF]`}>
         <CustomerSidebar
           memberships={memberships}
           activeBusinessId={activeMembership.business_id}
@@ -76,7 +79,7 @@ export function CustomerPortalLayoutClient({
           />
 
           {/* Drawer content */}
-          <div className="fixed inset-y-0 left-0 w-72 max-w-[85vw] shadow-2xl bg-white z-50 animate-in slide-in-from-left duration-200">
+          <div className={`fixed inset-y-0 ${isRtl ? 'right-0 slide-in-from-right' : 'left-0 slide-in-from-left'} w-72 max-w-[85vw] shadow-2xl bg-white z-50 animate-in duration-200`}>
             <CustomerSidebar
               memberships={memberships}
               activeBusinessId={activeMembership.business_id}
@@ -92,28 +95,32 @@ export function CustomerPortalLayoutClient({
       {/* 3. MAIN CONTENT CONTAINER */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen">
         {/* Mobile Header */}
-        <header className="lg:hidden h-16 px-4 border-b border-[#E6DDCF] bg-[#FFFFFF] sticky top-0 z-30 flex items-center justify-between shadow-xs">
-          <div className="flex items-center gap-2.5">
+        <header className="lg:hidden h-16 px-4 border-b border-[#E6DDCF] bg-[#FFFFFF] sticky top-0 z-30 flex items-center justify-between shadow-xs gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className="p-2 rounded-xl text-[#191817] hover:bg-[#FAF8F5] border border-[#E6DDCF] transition-colors"
-              aria-label="Open navigation menu"
+              className="p-2 rounded-xl text-[#191817] hover:bg-[#FAF8F5] border border-[#E6DDCF] transition-colors shrink-0"
+              aria-label={t('nav.menu')}
             >
               <Menu className="w-5 h-5" />
             </button>
             <HbibnaLogo size="sm" />
           </div>
 
-          {/* Active Business Indicator Pill (tappable to open switcher) */}
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FAF8F5] border border-[#DFC99F]/70 text-xs font-bold text-[#191817] max-w-[170px] truncate"
-          >
-            <Store className="w-3.5 h-3.5 text-[#B88E3E] shrink-0" />
-            <span className="truncate">{activeBusinessName}</span>
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Active Business Indicator Pill (tappable to open switcher) */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FAF8F5] border border-[#DFC99F]/70 text-xs font-bold text-[#191817] max-w-[140px] sm:max-w-[170px] truncate"
+            >
+              <Store className="w-3.5 h-3.5 text-[#B88E3E] shrink-0" />
+              <span className="truncate">{activeBusinessName}</span>
+            </button>
+
+            <LanguageSelector variant="minimal" />
+          </div>
         </header>
 
         {/* Spacious Main Page Content */}
@@ -124,13 +131,13 @@ export function CustomerPortalLayoutClient({
         {/* Mobile Bottom Navigation (Convenient thumb bar) */}
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#FFFFFF]/95 backdrop-blur-md border-t border-[#E6DDCF] shadow-lg">
           <div className="flex items-center justify-around h-16 px-2 max-w-md mx-auto">
-            {NAV_ITEMS.map((item) => {
+            {navItems.map((item) => {
               const isActive = pathname === item.path;
               const Icon = item.icon;
 
               return (
                 <Link
-                  key={item.name}
+                  key={item.path}
                   href={getHref(item.path)}
                   className={`flex flex-col items-center justify-center flex-1 py-1 transition-all ${
                     isActive

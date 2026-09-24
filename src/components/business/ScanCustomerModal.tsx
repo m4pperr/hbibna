@@ -20,6 +20,7 @@ import { resolveCustomerFromQr, type ResolveCustomerResult } from '@/actions/cus
 import { recordPurchase, type RecordPurchaseResult } from '@/actions/transactions';
 import { calculateLoyaltyPoints } from '@/lib/loyalty-engine';
 import type { Customer, LoyaltyProgram } from '@/types/database';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface ScanCustomerModalProps {
   isOpen: boolean;
@@ -34,6 +35,7 @@ export function ScanCustomerModal({
   customers,
   loyaltyRule,
 }: ScanCustomerModalProps) {
+  const { t, isRtl } = useLanguage();
   // Modal stages: 'scan' | 'manual' | 'identified' | 'success'
   const [stage, setStage] = useState<'scan' | 'manual' | 'identified' | 'success'>('scan');
   const [activeTab, setActiveTab] = useState<'qr' | 'manual'>('qr');
@@ -243,17 +245,17 @@ export function ScanCustomerModal({
             </div>
             <div className="min-w-0">
               <h3 className="font-extrabold text-[#191817] text-base leading-tight truncate">
-                Scan Customer
+                {t('modals.scanTitle')}
               </h3>
               <p className="text-[11px] text-[#736B63] truncate">
-                Instant QR identification & loyalty points reward
+                {t('modals.scanDesc')}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
             className="text-[#736B63] hover:text-[#191817] p-1.5 rounded-lg hover:bg-[#FAF8F5] transition-colors cursor-pointer shrink-0"
-            aria-label="Close modal"
+            aria-label={t('common.close')}
           >
             <X className="w-4 h-4" />
           </button>
@@ -286,7 +288,7 @@ export function ScanCustomerModal({
                   }`}
                 >
                   <QrCode className="w-3.5 h-3.5" />
-                  <span>Scan QR Code</span>
+                  <span>{t('modals.cameraScan')}</span>
                 </button>
                 <button
                   type="button"
@@ -301,7 +303,7 @@ export function ScanCustomerModal({
                   }`}
                 >
                   <Search className="w-3.5 h-3.5" />
-                  <span>Manual Search</span>
+                  <span>{t('modals.manualEntry')}</span>
                 </button>
               </div>
 
@@ -319,10 +321,10 @@ export function ScanCustomerModal({
                         </div>
                         <div className="space-y-1">
                           <h4 className="font-bold text-sm text-[#191817]">
-                            Scan Customer Loyalty QR
+                            {t('modals.scanTitle')}
                           </h4>
                           <p className="text-xs text-[#736B63] max-w-xs mx-auto">
-                            Point your device camera at the customer&apos;s digital loyalty card.
+                            {t('modals.cameraInstruction')}
                           </p>
                         </div>
                         <button
@@ -334,7 +336,7 @@ export function ScanCustomerModal({
                           className="px-5 py-2.5 rounded-xl bg-[#191817] text-white text-xs font-bold hover:bg-[#2B2927] transition-all shadow-soft cursor-pointer inline-flex items-center gap-2"
                         >
                           <Camera className="w-3.5 h-3.5" />
-                          <span>Start Camera Scanner</span>
+                          <span>{t('modals.startCamera')}</span>
                         </button>
                         {cameraError && (
                           <p className="text-[11px] text-amber-700">{cameraError}</p>
@@ -347,7 +349,7 @@ export function ScanCustomerModal({
                           onClick={() => setCameraActive(false)}
                           className="px-4 py-1.5 rounded-xl bg-[#FFFFFF] border border-[#E6DDCF] text-xs font-bold text-[#736B63] hover:text-[#191817]"
                         >
-                          Stop Camera
+                          {t('modals.stopCamera')}
                         </button>
                       </div>
                     )}
@@ -358,9 +360,9 @@ export function ScanCustomerModal({
                     <div className="flex items-center justify-between text-xs">
                       <label htmlFor="token-input" className="font-bold text-[#191817] flex items-center gap-1.5">
                         <Keyboard className="w-3.5 h-3.5 text-[#B88E3E]" />
-                        <span>Barcode Gun / Quick Token Paste</span>
+                        <span>{t('modals.quickTokenTitle')}</span>
                       </label>
-                      <span className="text-[11px] text-[#736B63]">Press Enter to scan</span>
+                      <span className="text-[11px] text-[#736B63]">{t('modals.pressEnterToScan')}</span>
                     </div>
 
                     <form
@@ -373,7 +375,7 @@ export function ScanCustomerModal({
                       <input
                         id="token-input"
                         type="text"
-                        placeholder="e.g. hbibna:c:c1-sarah or scan with USB gun"
+                        placeholder={t('modals.enterCodePlaceholder')}
                         value={scannerTokenInput}
                         onChange={(e) => setScannerTokenInput(e.target.value)}
                         className="flex-1 px-3.5 py-2 text-xs rounded-xl border border-[#E6DDCF] bg-[#FAF8F5] focus:bg-[#FFFFFF] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
@@ -383,7 +385,7 @@ export function ScanCustomerModal({
                         disabled={resolving || !scannerTokenInput.trim()}
                         className="px-4 py-2 rounded-xl bg-[#B88E3E] text-white text-xs font-bold hover:bg-[#A37B30] disabled:opacity-50 transition-colors shadow-soft cursor-pointer"
                       >
-                        {resolving ? 'Scanning...' : 'Identify'}
+                        {resolving ? t('business.loading') : t('modals.identify')}
                       </button>
                     </form>
                   </div>
@@ -391,7 +393,7 @@ export function ScanCustomerModal({
                   {/* Instant Demo Customers Quick-Tap (for effortless testing without physical phone) */}
                   <div className="space-y-1.5">
                     <span className="text-[11px] font-bold text-[#736B63] uppercase tracking-wider block">
-                      Quick Test (Click to simulate instant scan):
+                      {t('modals.quickTest')}:
                     </span>
                     <div className="flex flex-wrap gap-2">
                       {customers.slice(0, 3).map((c) => (
@@ -403,7 +405,7 @@ export function ScanCustomerModal({
                         >
                           <QrCode className="w-3 h-3 text-[#B88E3E]" />
                           <span>{c.name}</span>
-                          <span className="text-[10px] text-[#736B63]">({c.points_balance} pts)</span>
+                          <span className="text-[10px] text-[#736B63]">({c.points_balance} {t('common.pts')})</span>
                         </button>
                       ))}
                     </div>
@@ -415,13 +417,15 @@ export function ScanCustomerModal({
               {activeTab === 'manual' && (
                 <div className="space-y-3">
                   <div className="relative">
-                    <Search className="w-4 h-4 text-[#736B63] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Search className={`w-4 h-4 text-[#736B63] absolute top-1/2 -translate-y-1/2 ${isRtl ? 'right-3.5' : 'left-3.5'}`} />
                     <input
                       type="text"
-                      placeholder="Search customer by name or phone..."
+                      placeholder={t('modals.searchCustomerPlaceholder')}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-xs text-[#191817] font-medium focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
+                      className={`w-full py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-xs text-[#191817] font-medium focus:outline-none focus:ring-2 focus:ring-[#B88E3E] ${
+                        isRtl ? 'pr-10 pl-4' : 'pl-10 pr-4'
+                      }`}
                       autoFocus
                     />
                   </div>
@@ -429,7 +433,7 @@ export function ScanCustomerModal({
                   <div className="max-h-56 overflow-y-auto rounded-2xl border border-[#E6DDCF] divide-y divide-[#E6DDCF] bg-[#FFFFFF]">
                     {filteredCustomers.length === 0 ? (
                       <div className="p-6 text-center text-xs text-[#736B63]">
-                        No customers found matching &quot;{searchQuery}&quot;
+                        {t('business.noCustomersFound')}
                       </div>
                     ) : (
                       filteredCustomers.map((cust) => (
@@ -440,13 +444,15 @@ export function ScanCustomerModal({
                         >
                           <div>
                             <p className="text-xs font-bold text-[#191817]">{cust.name}</p>
-                            <p className="text-[11px] text-[#736B63]">{cust.phone}</p>
+                            <p className="text-[11px] text-[#736B63]" dir="ltr">{cust.phone}</p>
                           </div>
-                          <div className="text-right">
+                          <div className={isRtl ? 'text-left' : 'text-right'}>
                             <span className="text-xs font-black text-[#B88E3E]">
-                              {cust.points_balance.toLocaleString()} pts
+                              {cust.points_balance.toLocaleString()} {t('common.pts')}
                             </span>
-                            <span className="text-[10px] text-[#736B63] block">Select &rarr;</span>
+                            <span className="text-[10px] text-[#736B63] block">
+                              {isRtl ? '← اختيار' : 'Select →'}
+                            </span>
                           </div>
                         </div>
                       ))
@@ -467,7 +473,7 @@ export function ScanCustomerModal({
                 <div className="flex items-center justify-between relative z-10">
                   <span className="inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-[#B88E3E]/20 text-[#DFC99F] border border-[#DFC99F]/30">
                     <ShieldCheck className="w-3 h-3 text-[#DFC99F]" />
-                    <span>Customer Identified</span>
+                    <span>{t('modals.customerIdentified')}</span>
                   </span>
 
                   <button
@@ -476,7 +482,7 @@ export function ScanCustomerModal({
                     className="text-[11px] font-semibold text-[#FAF8F5]/70 hover:text-white flex items-center gap-1 cursor-pointer"
                   >
                     <RotateCcw className="w-3 h-3" />
-                    <span>Change</span>
+                    <span>{t('modals.changeCustomer')}</span>
                   </button>
                 </div>
 
@@ -484,16 +490,16 @@ export function ScanCustomerModal({
                 <div className="flex items-end justify-between relative z-10 pt-1">
                   <div>
                     <span className="text-[11px] text-[#FAF8F5]/70 block font-medium">
-                      Customer Name
+                      {t('modals.fullName')}
                     </span>
                     <h4 className="text-xl font-extrabold text-white tracking-tight">
                       {identifiedCustomer.name}
                     </h4>
                   </div>
 
-                  <div className="text-right">
+                  <div className={isRtl ? 'text-left' : 'text-right'}>
                     <span className="text-[11px] text-[#FAF8F5]/70 block font-medium">
-                      Current Points
+                      {t('modals.currentPoints')}
                     </span>
                     <span className="text-2xl font-black text-[#DFC99F]">
                       {identifiedCustomer.points_balance.toLocaleString()}
@@ -505,7 +511,7 @@ export function ScanCustomerModal({
               {/* Enter Purchase Amount */}
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-[#191817]">
-                  Purchase Amount (DA) <span className="text-[#B88E3E]">*</span>
+                  {t('modals.purchaseAmountDa')} <span className="text-[#B88E3E]">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -515,12 +521,16 @@ export function ScanCustomerModal({
                     placeholder="e.g. 2500"
                     value={purchaseAmount}
                     onChange={(e) => setPurchaseAmount(e.target.value)}
-                    className="w-full px-4 py-3 rounded-2xl border border-[#E6DDCF] bg-[#FFFFFF] text-base font-bold text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
+                    className={`w-full py-3 rounded-2xl border border-[#E6DDCF] bg-[#FFFFFF] text-base font-bold text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E] ${
+                      isRtl ? 'pr-4 pl-12' : 'pl-4 pr-12'
+                    }`}
                     autoFocus
                     required
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-[#736B63]">
-                    DA
+                  <span className={`absolute top-1/2 -translate-y-1/2 text-xs font-bold text-[#736B63] ${
+                    isRtl ? 'left-4' : 'right-4'
+                  }`}>
+                    {t('common.da')}
                   </span>
                 </div>
               </div>
@@ -529,19 +539,19 @@ export function ScanCustomerModal({
               <div className="p-4 rounded-2xl bg-[#FBF6EB] border border-[#DFC99F] flex items-center justify-between">
                 <div>
                   <span className="text-xs text-[#736B63] block font-medium">
-                    Points Earned:
+                    {t('modals.pointsToAward')}:
                   </span>
                   <div className="flex items-center gap-1.5 font-black text-sm text-[#B88E3E]">
                     <Sparkles className="w-4 h-4" />
-                    <span>+{previewPoints} points</span>
+                    <span>+{previewPoints} {t('business.points')}</span>
                   </div>
                 </div>
-                <div className="text-right">
+                <div className={isRtl ? 'text-left' : 'text-right'}>
                   <span className="text-xs text-[#736B63] block font-medium">
-                    New Projected Balance:
+                    {t('modals.newBalance')}:
                   </span>
                   <span className="font-extrabold text-sm text-[#191817]">
-                    {(identifiedCustomer.points_balance + previewPoints).toLocaleString()} pts
+                    {(identifiedCustomer.points_balance + previewPoints).toLocaleString()} {t('common.pts')}
                   </span>
                 </div>
               </div>
@@ -549,11 +559,11 @@ export function ScanCustomerModal({
               {/* Optional Note */}
               <div>
                 <label className="block text-xs font-medium text-[#736B63] mb-1">
-                  Receipt Note (optional)
+                  {t('modals.receiptNoteOptional')}
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Counter order, Table 5, or Receipt #104"
+                  placeholder={t('modals.receiptNotePlaceholder')}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   className="w-full px-3.5 py-2 text-xs rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
@@ -567,15 +577,15 @@ export function ScanCustomerModal({
                   onClick={handleScanNext}
                   className="px-4 py-2.5 text-xs font-semibold text-[#736B63] hover:text-[#191817] hover:bg-[#FAF8F5] rounded-xl transition-colors cursor-pointer min-h-[44px] flex items-center justify-center border border-[#E6DDCF] sm:border-transparent"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={confirming || !purchaseAmount || parsedAmount <= 0}
                   className="px-6 py-2.5 text-xs font-bold text-white bg-[#B88E3E] hover:bg-[#A37B30] rounded-xl shadow-soft disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
                 >
-                  <span>{confirming ? 'Recording...' : 'Confirm'}</span>
-                  <ArrowRight className="w-4 h-4 shrink-0" />
+                  <span>{confirming ? t('modals.recording') : t('common.confirm')}</span>
+                  <ArrowRight className="w-4 h-4 shrink-0 rtl:rotate-180" />
                 </button>
               </div>
             </form>
@@ -590,27 +600,26 @@ export function ScanCustomerModal({
 
               <div className="space-y-1">
                 <h4 className="font-black text-[#191817] text-xl sm:text-2xl tracking-tight">
-                  Purchase Confirmed!
+                  {t('modals.purchaseConfirmed')}
                 </h4>
                 <p className="text-xs text-[#736B63]">
-                  Loyalty points awarded to{' '}
-                  <span className="font-bold text-[#191817]">{successResult.customerName}</span>.
+                  {successResult.customerName}
                 </p>
               </div>
 
               {/* Points Card */}
               <div className="p-4 sm:p-5 rounded-3xl bg-[#FBF6EB] border border-[#DFC99F] space-y-2 max-w-xs mx-auto">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#736B63] block">
-                  Points Credited
+                  {t('modals.pointsCredited')}
                 </span>
                 <p className="text-3xl sm:text-4xl font-black text-[#B88E3E]">
                   +{successResult.pointsAwarded}{' '}
-                  <span className="text-base font-bold text-[#191817]">PTS</span>
+                  <span className="text-base font-bold text-[#191817]">{t('common.pts')}</span>
                 </p>
                 <div className="pt-2 border-t border-[#DFC99F]/50 flex items-center justify-between text-xs">
-                  <span className="text-[#736B63]">New Balance:</span>
+                  <span className="text-[#736B63]">{t('modals.newBalance')}:</span>
                   <span className="font-black text-[#191817]">
-                    {successResult.newBalance.toLocaleString()} points
+                    {successResult.newBalance.toLocaleString()} {t('business.points')}
                   </span>
                 </div>
               </div>
@@ -622,14 +631,14 @@ export function ScanCustomerModal({
                   className="flex-1 py-3 rounded-xl bg-[#191817] hover:bg-[#2B2927] text-white text-xs font-bold transition-colors shadow-soft cursor-pointer flex items-center justify-center gap-1.5 min-h-[44px]"
                 >
                   <QrCode className="w-3.5 h-3.5" />
-                  <span>Scan Next Customer</span>
+                  <span>{t('modals.scanNextCustomer')}</span>
                 </button>
                 <button
                   type="button"
                   onClick={onClose}
                   className="px-5 py-3 rounded-xl bg-[#FAF8F5] hover:bg-[#E6DDCF] border border-[#E6DDCF] text-[#191817] text-xs font-bold transition-colors cursor-pointer min-h-[44px]"
                 >
-                  Done
+                  {t('common.done')}
                 </button>
               </div>
             </div>

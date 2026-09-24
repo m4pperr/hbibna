@@ -5,6 +5,7 @@ import { UserPlus, Receipt, QrCode } from 'lucide-react';
 import { AddCustomerModal } from './AddCustomerModal';
 import { RecordPurchaseModal } from './RecordPurchaseModal';
 import { ScanCustomerModal } from './ScanCustomerModal';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import type { Customer } from '@/types/database';
 
 interface DashboardQuickActionsProps {
@@ -15,6 +16,7 @@ export function DashboardQuickActions({ customers }: DashboardQuickActionsProps)
   const [showScanModal, setShowScanModal] = useState(false);
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const { t } = useLanguage();
 
   return (
     <>
@@ -25,7 +27,7 @@ export function DashboardQuickActions({ customers }: DashboardQuickActionsProps)
           className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#191817] hover:bg-[#2B2927] shadow-soft transition-all cursor-pointer active:scale-[0.98] min-h-[44px] w-full sm:w-auto"
         >
           <QrCode className="w-4 h-4 text-[#DFC99F]" />
-          <span>Scan Customer</span>
+          <span>{t('business.scanCustomer')}</span>
         </button>
 
         {/* Quick Action: Add Customer */}
@@ -34,7 +36,7 @@ export function DashboardQuickActions({ customers }: DashboardQuickActionsProps)
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-[#191817] bg-[#FFFFFF] border border-[#E6DDCF] hover:bg-[#FAF8F5] shadow-xs transition-all cursor-pointer active:scale-[0.98] min-h-[44px] w-full sm:w-auto"
         >
           <UserPlus className="w-4 h-4 text-[#B88E3E]" />
-          <span>Add Customer</span>
+          <span>{t('business.addCustomer')}</span>
         </button>
 
         {/* Quick Action: Add Purchase */}
@@ -43,7 +45,7 @@ export function DashboardQuickActions({ customers }: DashboardQuickActionsProps)
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-[#191817] bg-[#FFFFFF] border border-[#E6DDCF] hover:bg-[#FAF8F5] shadow-xs transition-all cursor-pointer active:scale-[0.98] min-h-[44px] w-full sm:w-auto"
         >
           <Receipt className="w-4 h-4 text-[#B88E3E]" />
-          <span>Add Purchase</span>
+          <span>{t('business.addPurchase')}</span>
         </button>
       </div>
 

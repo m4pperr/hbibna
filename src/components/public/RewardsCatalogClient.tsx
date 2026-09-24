@@ -4,12 +4,14 @@ import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Search, Gift, Store, Tag, Sparkles, ArrowRight, CheckCircle2 } from 'lucide-react';
 import type { PublicBusinessCatalogItem } from '@/lib/data-service';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface RewardsCatalogClientProps {
   initialItems: PublicBusinessCatalogItem[];
 }
 
 export function RewardsCatalogClient({ initialItems }: RewardsCatalogClientProps) {
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
@@ -57,21 +59,21 @@ export function RewardsCatalogClient({ initialItems }: RewardsCatalogClientProps
         <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
           {/* Search Input */}
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8C827A]" />
+            <Search className="absolute ltr:left-3.5 rtl:right-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8C827A]" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by business, category, or reward (e.g. coffee, burger)..."
-              className="w-full pl-11 pr-4 py-3 bg-[#FAF8F5] border border-[#E5E0D8] rounded-xl text-sm text-[#191817] placeholder-[#8C827A] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]/30 focus:border-[#B88E3E] transition-all"
+              placeholder={t('catalog.searchPlaceholder')}
+              className="w-full ltr:pl-11 ltr:pr-4 rtl:pr-11 rtl:pl-4 py-3 bg-[#FAF8F5] border border-[#E5E0D8] rounded-xl text-sm text-[#191817] placeholder-[#8C827A] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]/30 focus:border-[#B88E3E] transition-all"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-[#8C827A] hover:text-[#191817] font-medium"
+                className="absolute ltr:right-3.5 rtl:left-3.5 top-1/2 -translate-y-1/2 text-xs text-[#8C827A] hover:text-[#191817] font-medium"
               >
-                Clear
+                {t('common.close')}
               </button>
             )}
           </div>
@@ -79,10 +81,12 @@ export function RewardsCatalogClient({ initialItems }: RewardsCatalogClientProps
           {/* Result summary indicator */}
           <div className="text-xs sm:text-sm text-[#8C827A] font-medium shrink-0 flex items-center gap-2">
             <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-[#FAF8F5] text-[#191817] font-bold border border-[#EBE6DE]">
-              {filteredBusinesses.length} {filteredBusinesses.length === 1 ? 'business' : 'businesses'}
+              {filteredBusinesses.length === 1
+                ? t('catalog.businessCount', { count: filteredBusinesses.length })
+                : t('catalog.businessesCount', { count: filteredBusinesses.length })}
             </span>
             <span>•</span>
-            <span>{totalRewardsCount} perks</span>
+            <span>{t('catalog.perksCount', { count: totalRewardsCount })}</span>
           </div>
         </div>
 
@@ -97,7 +101,7 @@ export function RewardsCatalogClient({ initialItems }: RewardsCatalogClientProps
                 : 'bg-[#FAF8F5] text-[#5C554E] hover:bg-[#F2ECE1] border border-[#EBE6DE]'
             }`}
           >
-            All Businesses ({initialItems.length})
+            {t('catalog.allBusinesses')} ({initialItems.length})
           </button>
           {categories.map((cat) => (
             <button
@@ -122,9 +126,9 @@ export function RewardsCatalogClient({ initialItems }: RewardsCatalogClientProps
           <div className="w-14 h-14 rounded-full bg-[#FAF8F5] text-[#8C827A] flex items-center justify-center mx-auto mb-4 border border-[#EBE6DE]">
             <Search className="w-6 h-6" />
           </div>
-          <h3 className="text-lg font-bold text-[#191817] mb-1">No rewards found</h3>
+          <h3 className="text-lg font-bold text-[#191817] mb-1">{t('catalog.noRewardsFound')}</h3>
           <p className="text-sm text-[#5C554E] mb-6">
-            We couldn't find any businesses or rewards matching "{searchQuery}".
+            {t('catalog.noRewardsFoundDesc', { query: searchQuery })}
           </p>
           <button
             type="button"
@@ -134,7 +138,7 @@ export function RewardsCatalogClient({ initialItems }: RewardsCatalogClientProps
             }}
             className="px-4 py-2 bg-[#FAF8F5] hover:bg-[#F2ECE1] text-[#191817] border border-[#EBE6DE] rounded-xl text-xs font-semibold transition-colors"
           >
-            Reset filters
+            {t('catalog.resetFilters')}
           </button>
         </div>
       ) : (
@@ -167,7 +171,7 @@ export function RewardsCatalogClient({ initialItems }: RewardsCatalogClientProps
                         <span>{initials}</span>
                       )}
                     </div>
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0 flex-1 text-start">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#8C827A] uppercase tracking-wider">
                           <Tag className="w-3 h-3 text-[#B88E3E]" />
@@ -189,7 +193,7 @@ export function RewardsCatalogClient({ initialItems }: RewardsCatalogClientProps
                   <div className="space-y-3 mb-4">
                     <p className="text-[11px] font-bold uppercase tracking-wider text-[#8C827A] flex items-center gap-1.5">
                       <Gift className="w-3.5 h-3.5 text-[#B88E3E]" />
-                      Available Perks ({biz.rewards.length})
+                      <span>{t('catalog.availablePerks', { count: biz.rewards.length })}</span>
                     </p>
                     <div className="space-y-2">
                       {biz.rewards.map((reward) => (
@@ -197,7 +201,7 @@ export function RewardsCatalogClient({ initialItems }: RewardsCatalogClientProps
                           key={reward.id}
                           className="bg-[#FAF8F5] rounded-xl p-3 border border-[#EBE6DE] flex items-start justify-between gap-3 group/perk hover:border-[#D5C9B3] transition-colors"
                         >
-                          <div className="min-w-0 flex-1">
+                          <div className="min-w-0 flex-1 text-start">
                             <h4 className="text-xs font-bold text-[#191817] leading-snug">
                               {reward.name}
                             </h4>
@@ -208,7 +212,7 @@ export function RewardsCatalogClient({ initialItems }: RewardsCatalogClientProps
                             )}
                           </div>
                           <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full bg-[#B88E3E]/10 border border-[#B88E3E]/30 text-[#8C6B28] font-bold text-[11px]">
-                            {reward.points_required.toLocaleString()} pts
+                            {reward.points_required.toLocaleString()} {t('common.pts')}
                           </span>
                         </div>
                       ))}
@@ -219,14 +223,14 @@ export function RewardsCatalogClient({ initialItems }: RewardsCatalogClientProps
                   <div className="pt-3 border-t border-[#F4EFEA] flex items-center justify-between text-xs">
                     <span className="text-[#8C827A] inline-flex items-center gap-1 text-[11px]">
                       <CheckCircle2 className="w-3.5 h-3.5 text-[#B88E3E]" />
-                      Active Rewards
+                      <span>{t('common.active')}</span>
                     </span>
                     <Link
                       href="/signup"
                       className="font-semibold text-[#B88E3E] hover:text-[#9A742E] inline-flex items-center gap-1 transition-colors"
                     >
-                      Join Hbibna
-                      <ArrowRight className="w-3 h-3" />
+                      <span>{t('catalog.joinHbibna')}</span>
+                      <ArrowRight className="w-3 h-3 rtl:rotate-180" />
                     </Link>
                   </div>
                 </div>

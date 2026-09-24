@@ -11,20 +11,12 @@ import {
   Settings,
   User,
   LogOut,
-  Sparkles,
   X,
 } from 'lucide-react';
 import { signOutBusiness } from '@/actions/auth';
 import { HbibnaLogo } from '@/components/brand/HbibnaLogo';
-
-const NAV_ITEMS = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Customers', href: '/customers', icon: Users },
-  { name: 'Transactions', href: '/transactions', icon: Receipt },
-  { name: 'Rewards', href: '/rewards', icon: Gift },
-  { name: 'Loyalty Program', href: '/loyalty', icon: Sliders },
-  { name: 'Settings', href: '/settings', icon: Settings },
-];
+import { LanguageSelector } from '@/components/common/LanguageSelector';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface BusinessSidebarProps {
   businessName?: string;
@@ -38,6 +30,16 @@ export function BusinessSidebar({
   onClose,
 }: BusinessSidebarProps) {
   const pathname = usePathname();
+  const { t } = useLanguage();
+
+  const NAV_ITEMS = [
+    { name: t('nav.dashboard'), href: '/dashboard', icon: LayoutDashboard },
+    { name: t('nav.customers'), href: '/customers', icon: Users },
+    { name: t('nav.transactions'), href: '/transactions', icon: Receipt },
+    { name: t('nav.rewards'), href: '/rewards', icon: Gift },
+    { name: t('nav.loyaltyProgram'), href: '/loyalty', icon: Sliders },
+    { name: t('nav.settings'), href: '/settings', icon: Settings },
+  ];
 
   const sidebarContent = (
     <div className="flex flex-col justify-between h-full bg-[#FFFFFF]">
@@ -95,30 +97,37 @@ export function BusinessSidebar({
         </nav>
       </div>
 
-      {/* Bottom section: Account & Log out */}
-      <div className="p-4 border-t border-[#E6DDCF] space-y-1.5">
-        <Link
-          href="/settings"
-          onClick={onClose}
-          className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-            pathname === '/settings'
-              ? 'bg-[#FBF6EB] text-[#B88E3E] font-bold border border-[#DFC99F]/60'
-              : 'text-[#736B63] hover:text-[#191817] hover:bg-[#FAF8F5]'
-          }`}
-        >
-          <User className="w-4 h-4 text-[#736B63]" />
-          <span>Account</span>
-        </Link>
+      {/* Bottom section: Language, Account & Log out */}
+      <div className="p-4 border-t border-[#E6DDCF] space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <span className="text-xs text-[#736B63] font-medium">{t('common.language')}</span>
+          <LanguageSelector variant="pill" />
+        </div>
 
-        <form action={signOutBusiness}>
-          <button
-            type="submit"
-            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+        <div className="space-y-1 pt-1 border-t border-[#F3ECE2]">
+          <Link
+            href="/settings"
+            onClick={onClose}
+            className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              pathname === '/settings'
+                ? 'bg-[#FBF6EB] text-[#B88E3E] font-bold border border-[#DFC99F]/60'
+                : 'text-[#736B63] hover:text-[#191817] hover:bg-[#FAF8F5]'
+            }`}
           >
-            <LogOut className="w-4 h-4" />
-            <span>Log out</span>
-          </button>
-        </form>
+            <User className="w-4 h-4 text-[#736B63]" />
+            <span>{t('nav.account')}</span>
+          </Link>
+
+          <form action={signOutBusiness}>
+            <button
+              type="submit"
+              className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+            >
+              <LogOut className="w-4 h-4 rtl:rotate-180" />
+              <span>{t('nav.logout')}</span>
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
@@ -126,7 +135,7 @@ export function BusinessSidebar({
   return (
     <>
       {/* Desktop Persistent Sidebar */}
-      <aside className="hidden lg:flex w-64 border-r border-[#E6DDCF] flex-col shrink-0 min-h-screen sticky top-0 h-screen">
+      <aside className="hidden lg:flex w-64 border-r rtl:border-r-0 rtl:border-l border-[#E6DDCF] flex-col shrink-0 min-h-screen sticky top-0 h-screen">
         {sidebarContent}
       </aside>
 
