@@ -11,10 +11,10 @@ export function TransactionsView({ transactions }: { transactions: Transaction[]
   return (
     <div className="space-y-6">
       <div className="space-y-1 text-start">
-        <h1 className="text-2xl font-bold text-[#191817] tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-black text-black tracking-tight">
           {t('business.transactionsTitle')}
         </h1>
-        <p className="text-xs text-[#736B63]">
+        <p className="text-sm text-black/70 font-bold">
           {t('business.transactionsSubtitle')}
         </p>
       </div>

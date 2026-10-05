@@ -15,22 +15,22 @@ export default function BusinessError({
   }, [error]);
 
   return (
-    <div className="min-h-[50vh] flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-[#FFFFFF] border border-[#E6DDCF] rounded-3xl p-8 text-center shadow-card space-y-5">
-        <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200/60 flex items-center justify-center mx-auto shadow-xs">
-          <AlertCircle className="w-7 h-7" />
+    <div className="min-h-[50vh] flex items-center justify-center p-4 font-rounded">
+      <div className="max-w-md w-full bg-white border-2 border-black rounded-[2.5rem] p-8 text-center shadow-[0_12px_0_#000] space-y-5">
+        <div className="w-16 h-16 rounded-3xl bg-rose-200 text-black border-2 border-black flex items-center justify-center mx-auto shadow-[0_4px_0_#000]">
+          <AlertCircle className="w-8 h-8 stroke-[2.5]" />
         </div>
 
         <div className="space-y-2">
-          <h2 className="text-xl font-extrabold text-[#191817] tracking-tight">
+          <h2 className="text-2xl font-black text-black tracking-tight">
             Unable to load data
           </h2>
-          <p className="text-xs text-[#736B63] leading-relaxed">
+          <p className="text-xs text-black/70 font-bold leading-relaxed">
             We encountered a temporary problem retrieving your business records. Please try reloading or check your connection.
           </p>
           {process.env.NODE_ENV === 'development' && error?.message && (
-            <div className="mt-3 p-3 rounded-xl bg-zinc-50 border border-zinc-200 text-left">
-              <p className="text-[11px] font-mono text-zinc-700 break-all">
+            <div className="mt-3 p-3.5 rounded-2xl bg-[#FFF9D2] border-2 border-black text-left shadow-[0_2px_0_#000]">
+              <p className="text-[11px] font-mono font-bold text-black break-all">
                 {error.message}
               </p>
             </div>
@@ -40,9 +40,9 @@ export default function BusinessError({
         <div className="pt-2 flex items-center justify-center gap-3">
           <button
             onClick={() => reset()}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#191817] hover:bg-[#2B2927] text-white text-xs font-bold transition-all shadow-soft active:scale-[0.98] cursor-pointer"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-black hover:bg-neutral-800 text-[#FFE600] text-xs font-black transition-all border-2 border-black shadow-[0_4px_0_#000] active:translate-y-0.5 active:shadow-[0_2px_0_#000] cursor-pointer"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="w-4 h-4 stroke-[2.5]" />
             <span>Try Again</span>
           </button>
         </div>

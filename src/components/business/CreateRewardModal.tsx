@@ -48,54 +48,55 @@ export function CreateRewardModal({ isOpen, onClose }: CreateRewardModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/40 backdrop-blur-xs">
-      <div className="bg-[#FFFFFF] border border-[#E6DDCF] rounded-2xl w-full max-w-md max-h-[92vh] flex flex-col overflow-hidden shadow-card">
-        <div className="px-4 sm:px-6 py-4 border-b border-[#E6DDCF] flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150 font-rounded">
+      <div className="bg-white border-2 border-black rounded-[2.5rem] w-full max-w-md max-h-[92vh] flex flex-col overflow-hidden shadow-[0_12px_0_#000]">
+        {/* Header */}
+        <div className="px-4 sm:px-6 py-4 border-b-2 border-black flex items-center justify-between bg-[#FFE600]">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-[#FBF6EB] text-[#B88E3E] flex items-center justify-center shrink-0">
-              <Gift className="w-4 h-4" />
+            <div className="w-10 h-10 rounded-2xl bg-black text-[#FFE600] border-2 border-black flex items-center justify-center shrink-0 shadow-[0_2px_0_#000]">
+              <Gift className="w-5 h-5 stroke-[2.5]" />
             </div>
             <div className="min-w-0 text-start">
-              <h3 className="font-semibold text-[#191817] text-base truncate">
+              <h3 className="font-black text-black text-base truncate">
                 {t('modals.createRewardTitle')}
               </h3>
-              <p className="text-[11px] text-[#736B63] truncate">
+              <p className="text-[11px] text-black/70 font-bold truncate">
                 {t('modals.createRewardDesc')}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-[#736B63] hover:text-[#191817] p-1.5 rounded-lg hover:bg-[#FAF8F5] transition-colors shrink-0"
+            className="text-black bg-white hover:bg-[#FFF9D2] border-2 border-black p-1.5 rounded-xl shadow-[0_2px_0_#000] transition-colors cursor-pointer shrink-0"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4 stroke-[2.5]" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto text-start">
           {error && (
-            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="p-3.5 rounded-2xl bg-rose-100 border-2 border-black text-rose-950 text-xs font-bold flex items-center gap-2.5 shadow-[0_2px_0_#000]">
+              <AlertCircle className="w-4 h-4 shrink-0 stroke-[2.5]" />
               <span>{error}</span>
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-[#191817] mb-1.5">
-              {t('modals.rewardName')} <span className="text-[#B88E3E]">*</span>
+            <label className="block text-xs font-black text-black uppercase tracking-wider mb-1.5">
+              {t('modals.rewardName')} <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
               placeholder={t('modals.rewardNamePlaceholder')}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
+              className="w-full px-3.5 py-3 rounded-2xl border-2 border-black bg-[#FFF9D2] text-sm font-bold text-black focus:outline-none focus:bg-white shadow-[0_2px_0_#000]"
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#191817] mb-1.5">
+            <label className="block text-xs font-black text-black uppercase tracking-wider mb-1.5">
               {t('modals.rewardDescription')}
             </label>
             <textarea
@@ -103,13 +104,13 @@ export function CreateRewardModal({ isOpen, onClose }: CreateRewardModalProps) {
               placeholder={t('modals.rewardDescriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E] resize-none"
+              className="w-full px-3.5 py-3 rounded-2xl border-2 border-black bg-[#FFF9D2] text-sm font-bold text-black focus:outline-none focus:bg-white shadow-[0_2px_0_#000] resize-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#191817] mb-1.5">
-              {t('modals.pointsCost')} <span className="text-[#B88E3E]">*</span>
+            <label className="block text-xs font-black text-black uppercase tracking-wider mb-1.5">
+              {t('modals.pointsCost')} <span className="text-rose-500">*</span>
             </label>
             <input
               type="number"
@@ -117,7 +118,7 @@ export function CreateRewardModal({ isOpen, onClose }: CreateRewardModalProps) {
               placeholder={t('modals.pointsCostPlaceholder')}
               value={pointsRequired}
               onChange={(e) => setPointsRequired(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-sm text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
+              className="w-full px-3.5 py-3 rounded-2xl border-2 border-black bg-[#FFF9D2] text-sm font-black text-black focus:outline-none focus:bg-white shadow-[0_2px_0_#000]"
               required
             />
           </div>
@@ -126,14 +127,14 @@ export function CreateRewardModal({ isOpen, onClose }: CreateRewardModalProps) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-[#736B63] hover:text-[#191817] hover:bg-[#FAF8F5] rounded-xl transition-colors cursor-pointer min-h-[44px] flex items-center justify-center border border-[#E6DDCF] sm:border-transparent"
+              className="px-4 py-2.5 text-xs font-black text-black bg-white hover:bg-neutral-100 border-2 border-black rounded-2xl shadow-[0_2px_0_#000] transition-colors cursor-pointer min-h-[44px] flex items-center justify-center"
             >
               {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2.5 text-xs font-semibold text-white bg-[#B88E3E] hover:bg-[#A37B30] rounded-xl shadow-soft disabled:opacity-50 transition-colors cursor-pointer min-h-[44px] flex items-center justify-center"
+              className="px-6 py-2.5 text-xs font-black text-[#FFE600] bg-black hover:bg-neutral-800 border-2 border-black rounded-2xl shadow-[0_4px_0_#000] active:translate-y-0.5 active:shadow-[0_2px_0_#000] disabled:opacity-50 transition-all cursor-pointer min-h-[44px] flex items-center justify-center"
             >
               {loading ? t('common.saving') : t('common.save')}
             </button>

@@ -20,11 +20,18 @@ export default async function BusinessLayout({
     redirect('/login');
   }
 
+  // Enforce plan selection & payment before gaining access to business dashboard
+  if (authBusiness?.business?.subscription_status === 'pending_payment') {
+    redirect('/choose-plan');
+  }
+
   const businessName = authBusiness?.business.name || data.business.name || 'Hbibna Business';
   const userName = authBusiness?.user.name || 'Owner';
+  const businessId = authBusiness?.business.id || data.business.id;
 
   return (
     <DashboardShell
+      businessId={businessId}
       businessName={businessName}
       userName={userName}
       customers={data.customers}

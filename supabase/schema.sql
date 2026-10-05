@@ -12,7 +12,7 @@ create table if not exists public.businesses (
     logo_url text,
     email text,
     phone text,
-    subscription_status text not null default 'active' check (subscription_status in ('trial', 'active', 'past_due', 'cancelled')),
+    subscription_status text not null default 'pending_payment' check (subscription_status in ('trial', 'active', 'past_due', 'cancelled', 'pending_payment')),
     plan_name text not null default 'Hbibna Pro',
     plan_price_da integer not null default 9800,
     currency text not null default 'DA',
@@ -330,7 +330,7 @@ begin
         p_business_name,
         p_email,
         p_phone,
-        'active',
+        'pending_payment',
         'Hbibna Business',
         9800,
         'DA'

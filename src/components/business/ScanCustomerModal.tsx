@@ -15,17 +15,26 @@ import {
   RotateCcw,
   Receipt,
   Keyboard,
+  CloudOff,
+  Wifi,
 } from 'lucide-react';
 import { resolveCustomerFromQr, type ResolveCustomerResult } from '@/actions/customers';
 import { recordPurchase, type RecordPurchaseResult } from '@/actions/transactions';
 import { calculateLoyaltyPoints } from '@/lib/loyalty-engine';
 import type { Customer, LoyaltyProgram } from '@/types/database';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import {
+  findCachedCustomerByQr,
+  enqueueOfflineTransaction,
+  updateLocalCustomerBalance,
+  generateClientTransactionId,
+} from '@/lib/offline/db';
 
 interface ScanCustomerModalProps {
   isOpen: boolean;
   onClose: () => void;
   customers: Customer[];
+  businessId?: string;
   loyaltyRule?: LoyaltyProgram | null;
 }
 
@@ -33,9 +42,10 @@ export function ScanCustomerModal({
   isOpen,
   onClose,
   customers,
+  businessId = 'biz-default-1',
   loyaltyRule,
 }: ScanCustomerModalProps) {
-  const { t, isRtl } = useLanguage();
+  const { t, isRtl, language } = useLanguage();
   // Modal stages: 'scan' | 'manual' | 'identified' | 'success'
   const [stage, setStage] = useState<'scan' | 'manual' | 'identified' | 'success'>('scan');
   const [activeTab, setActiveTab] = useState<'qr' | 'manual'>('qr');
@@ -67,6 +77,7 @@ export function ScanCustomerModal({
     pointsAwarded: number;
     newBalance: number;
     customerName: string;
+    isOffline?: boolean;
   } | null>(null);
 
   // Manual search query
@@ -148,11 +159,84 @@ export function ScanCustomerModal({
     setError(null);
     setResolving(true);
 
+    const bizId = businessId || 'biz-default-1';
+
+    // 1. Check if offline
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      try {
+        const cached = await findCachedCustomerByQr(bizId, rawToken);
+        if (cached) {
+          setIdentifiedCustomer({
+            id: cached.id,
+            name: cached.name,
+            points_balance: cached.points_balance,
+            phone: cached.phone,
+          });
+          setStage('identified');
+          setResolving(false);
+          return;
+        }
+
+        // Also check in-memory customers list
+        let rawId = rawToken.trim();
+        if (rawId.startsWith('hbibna:c:')) {
+          rawId = rawId.slice('hbibna:c:'.length).trim();
+        }
+        const memMatch = customers.find(
+          (c) => c.id === rawId || c.phone === rawId || `hbibna:c:${c.id}` === rawToken.trim()
+        );
+        if (memMatch) {
+          setIdentifiedCustomer({
+            id: memMatch.id,
+            name: memMatch.name,
+            points_balance: memMatch.points_balance,
+            phone: memMatch.phone,
+          });
+          setStage('identified');
+          setResolving(false);
+          return;
+        }
+
+        setError(
+          language === 'ar'
+            ? 'العميل غير موجود في الذاكرة المحلية بدون إنترنت.'
+            : language === 'fr'
+            ? 'Client non trouvé dans le cache hors ligne. Reconnectez-vous pour le premier scan.'
+            : 'Customer not found in offline cache. Connect to internet for first scan.'
+        );
+        setResolving(false);
+        return;
+      } catch {
+        setError(
+          language === 'ar'
+            ? 'خطأ أثناء قراءة الذاكرة المؤقتة بدون إنترنت.'
+            : language === 'fr'
+            ? 'Erreur lors de la lecture du cache hors ligne.'
+            : 'Error reading offline cache.'
+        );
+        setResolving(false);
+        return;
+      }
+    }
+
+    // 2. Online: server action verifies token, tenant isolation, and lack of raw PII
     try {
-      // Server action verifies token, tenant isolation, and lack of raw PII
       const result: ResolveCustomerResult = await resolveCustomerFromQr(rawToken);
 
       if (result.error) {
+        // Fallback to offline cache
+        const cached = await findCachedCustomerByQr(bizId, rawToken);
+        if (cached) {
+          setIdentifiedCustomer({
+            id: cached.id,
+            name: cached.name,
+            points_balance: cached.points_balance,
+            phone: cached.phone,
+          });
+          setStage('identified');
+          setResolving(false);
+          return;
+        }
         setError(result.error);
         setResolving(false);
       } else if (result.success && result.customer) {
@@ -161,7 +245,28 @@ export function ScanCustomerModal({
         setResolving(false);
       }
     } catch {
-      setError('An unexpected error occurred while identifying customer.');
+      // Network drop: fallback to offline cache
+      try {
+        const cached = await findCachedCustomerByQr(bizId, rawToken);
+        if (cached) {
+          setIdentifiedCustomer({
+            id: cached.id,
+            name: cached.name,
+            points_balance: cached.points_balance,
+            phone: cached.phone,
+          });
+          setStage('identified');
+          setResolving(false);
+          return;
+        }
+      } catch {}
+      setError(
+        language === 'ar'
+          ? 'تعذر الاتصال بالخادم. العميل غير محفوظ محلياً.'
+          : language === 'fr'
+          ? 'Impossible de joindre le serveur. Client non trouvé en cache.'
+          : 'Could not reach server. Customer not found in cache.'
+      );
       setResolving(false);
     }
   };
@@ -188,37 +293,139 @@ export function ScanCustomerModal({
 
     const numAmount = parseFloat(purchaseAmount);
     if (isNaN(numAmount) || numAmount <= 0) {
-      setError('Please enter a valid purchase amount in DA greater than 0.');
+      setError(
+        language === 'ar'
+          ? 'يرجى إدخال مبلغ صحيح أكبر من 0 د.ج.'
+          : language === 'fr'
+          ? 'Veuillez saisir un montant d\'achat valide supérieur à 0 DA.'
+          : 'Please enter a valid purchase amount in DA greater than 0.'
+      );
       setConfirming(false);
       return;
     }
 
+    const bizId = businessId || 'biz-default-1';
+    const clientTxId = generateClientTransactionId();
+    const calculated = calculateLoyaltyPoints(rule, numAmount);
+    const pointsToAward = calculated.points;
+
+    // Check if offline
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      try {
+        // Save transaction to local IndexedDB queue
+        await enqueueOfflineTransaction({
+          clientTxId,
+          businessId: bizId,
+          customerId: identifiedCustomer.id,
+          customerName: identifiedCustomer.name,
+          customerPhone: identifiedCustomer.phone,
+          amount: numAmount,
+          points: pointsToAward,
+          transactionType: 'earn',
+          description:
+            description.trim() ||
+            (language === 'ar'
+              ? 'شراء دون اتصال (مسح QR)'
+              : language === 'fr'
+              ? 'Achat hors ligne (scan QR)'
+              : 'Offline Purchase (QR Scan)'),
+          createdAt: new Date().toISOString(),
+        });
+
+        const newBalance = identifiedCustomer.points_balance + pointsToAward;
+        await updateLocalCustomerBalance(bizId, identifiedCustomer.id, newBalance);
+
+        setSuccessResult({
+          pointsAwarded: pointsToAward,
+          newBalance,
+          customerName: identifiedCustomer.name,
+          isOffline: true,
+        });
+        setStage('success');
+        setConfirming(false);
+        return;
+      } catch (err) {
+        console.error('Failed to save offline transaction:', err);
+        setError(
+          language === 'ar'
+            ? 'خطأ أثناء الحفظ في التخزين المحلي بدون إنترنت.'
+            : language === 'fr'
+            ? 'Erreur lors de la sauvegarde hors ligne dans IndexedDB.'
+            : 'Error saving offline transaction to local storage.'
+        );
+        setConfirming(false);
+        return;
+      }
+    }
+
+    // Online submission with duplicate protection clientTxId
     try {
-      // 1. Verify customer belongs to business
-      // 2. Calculate points using business loyalty rules server-side
-      // 3. Record transaction
-      // 4. Update balance
       const res: RecordPurchaseResult = await recordPurchase({
         customerId: identifiedCustomer.id,
         amount: numAmount,
-        description: description.trim() || 'Counter Purchase (QR Scan)',
+        clientTxId,
+        description:
+          description.trim() ||
+          (language === 'ar'
+            ? 'شراء عند الصندوق (مسح QR)'
+            : language === 'fr'
+            ? 'Achat comptoir (scan QR)'
+            : 'Counter Purchase (QR Scan)'),
       });
 
       if (res.error) {
         setError(res.error);
         setConfirming(false);
       } else if (res.success && res.pointsAwarded !== undefined) {
+        const finalBalance = res.newBalance ?? (identifiedCustomer.points_balance + res.pointsAwarded);
+        // Sync local cache
+        await updateLocalCustomerBalance(bizId, identifiedCustomer.id, finalBalance).catch(() => {});
+
         setSuccessResult({
           pointsAwarded: res.pointsAwarded,
-          newBalance: res.newBalance ?? (identifiedCustomer.points_balance + res.pointsAwarded),
+          newBalance: finalBalance,
           customerName: res.customerName || identifiedCustomer.name,
+          isOffline: false,
         });
         setStage('success');
         setConfirming(false);
       }
     } catch {
-      setError('Failed to record transaction. Please try again.');
-      setConfirming(false);
+      // Network interrupted mid-flight: fallback to offline queue!
+      try {
+        await enqueueOfflineTransaction({
+          clientTxId,
+          businessId: bizId,
+          customerId: identifiedCustomer.id,
+          customerName: identifiedCustomer.name,
+          customerPhone: identifiedCustomer.phone,
+          amount: numAmount,
+          points: pointsToAward,
+          transactionType: 'earn',
+          description:
+            description.trim() ||
+            (language === 'ar'
+              ? 'عملية شراء في وضع عدم الاتصال (انقطاع الشبكة)'
+              : language === 'fr'
+              ? 'Achat hors ligne (réseau interrompu)'
+              : 'Offline purchase (interrupted network)'),
+          createdAt: new Date().toISOString(),
+        });
+        const newBalance = identifiedCustomer.points_balance + pointsToAward;
+        await updateLocalCustomerBalance(bizId, identifiedCustomer.id, newBalance);
+
+        setSuccessResult({
+          pointsAwarded: pointsToAward,
+          newBalance,
+          customerName: identifiedCustomer.name,
+          isOffline: true,
+        });
+        setStage('success');
+        setConfirming(false);
+      } catch {
+        setError(t('common.error'));
+        setConfirming(false);
+      }
     }
   };
 
@@ -235,38 +442,38 @@ export function ScanCustomerModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-[#FFFFFF] border border-[#E6DDCF] rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150 font-rounded">
+      <div className="bg-white border-2 border-black rounded-[2.5rem] w-full max-w-lg overflow-hidden shadow-[0_12px_0_#000] flex flex-col max-h-[92vh]">
         {/* Modal Header */}
-        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#E6DDCF] flex items-center justify-between bg-[#FFFFFF] sticky top-0 z-10">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b-2 border-black flex items-center justify-between bg-[#FFE600] sticky top-0 z-10">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-[#191817] text-[#DFC99F] flex items-center justify-center shadow-xs shrink-0">
-              <QrCode className="w-4 h-4" />
+            <div className="w-10 h-10 rounded-2xl bg-black text-[#FFE600] border-2 border-black flex items-center justify-center shadow-[0_2px_0_#000] shrink-0">
+              <QrCode className="w-5 h-5 stroke-[2.5]" />
             </div>
             <div className="min-w-0">
-              <h3 className="font-extrabold text-[#191817] text-base leading-tight truncate">
+              <h3 className="font-black text-black text-base leading-tight truncate">
                 {t('modals.scanTitle')}
               </h3>
-              <p className="text-[11px] text-[#736B63] truncate">
+              <p className="text-[11px] text-black/70 font-bold truncate">
                 {t('modals.scanDesc')}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-[#736B63] hover:text-[#191817] p-1.5 rounded-lg hover:bg-[#FAF8F5] transition-colors cursor-pointer shrink-0"
+            className="text-black bg-white hover:bg-[#FFF9D2] border-2 border-black p-1.5 rounded-xl shadow-[0_2px_0_#000] transition-colors cursor-pointer shrink-0"
             aria-label={t('common.close')}
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4 stroke-[2.5]" />
           </button>
         </div>
 
         {/* Modal Content */}
         <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4 sm:space-y-5">
           {error && (
-            <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2.5 animate-in fade-in">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span className="font-medium">{error}</span>
+            <div className="p-3.5 rounded-2xl bg-rose-300 border-2 border-black text-black text-xs font-black flex items-center gap-2.5 shadow-[0_3px_0_#000] animate-in fade-in">
+              <AlertCircle className="w-4 h-4 shrink-0 stroke-[2.5]" />
+              <span>{error}</span>
             </div>
           )}
 
@@ -274,20 +481,20 @@ export function ScanCustomerModal({
           {(stage === 'scan' || stage === 'manual') && (
             <div className="space-y-4">
               {/* Mode Switcher Tabs */}
-              <div className="grid grid-cols-2 p-1 rounded-2xl bg-[#FAF8F5] border border-[#E6DDCF]">
+              <div className="grid grid-cols-2 p-1.5 rounded-2xl bg-white border-2 border-black shadow-[0_3px_0_#000]">
                 <button
                   type="button"
                   onClick={() => {
                     setActiveTab('qr');
                     setStage('scan');
                   }}
-                  className={`py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                  className={`py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
                     activeTab === 'qr'
-                      ? 'bg-[#FFFFFF] text-[#191817] shadow-xs border border-[#E6DDCF]'
-                      : 'text-[#736B63] hover:text-[#191817]'
+                      ? 'bg-black text-[#FFE600] shadow-[0_2px_0_#000]'
+                      : 'text-black/70 hover:text-black hover:bg-black/5'
                   }`}
                 >
-                  <QrCode className="w-3.5 h-3.5" />
+                  <QrCode className="w-3.5 h-3.5 stroke-[2.5]" />
                   <span>{t('modals.cameraScan')}</span>
                 </button>
                 <button
@@ -296,13 +503,13 @@ export function ScanCustomerModal({
                     setActiveTab('manual');
                     setStage('manual');
                   }}
-                  className={`py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                  className={`py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
                     activeTab === 'manual'
-                      ? 'bg-[#FFFFFF] text-[#191817] shadow-xs border border-[#E6DDCF]'
-                      : 'text-[#736B63] hover:text-[#191817]'
+                      ? 'bg-black text-[#FFE600] shadow-[0_2px_0_#000]'
+                      : 'text-black/70 hover:text-black hover:bg-black/5'
                   }`}
                 >
-                  <Search className="w-3.5 h-3.5" />
+                  <Search className="w-3.5 h-3.5 stroke-[2.5]" />
                   <span>{t('modals.manualEntry')}</span>
                 </button>
               </div>
@@ -311,19 +518,19 @@ export function ScanCustomerModal({
               {activeTab === 'qr' && (
                 <div className="space-y-4">
                   {/* Camera Scanner Viewport or Activation */}
-                  <div className="rounded-3xl border border-[#E6DDCF] bg-[#FAF8F5] p-5 text-center space-y-4 relative overflow-hidden">
-                    <div id="hbibna-qr-reader" className="w-full max-w-[280px] mx-auto rounded-2xl overflow-hidden" />
+                  <div className="rounded-3xl border-2 border-black bg-[#FFF9D2] p-5 text-center space-y-4 relative overflow-hidden shadow-[0_4px_0_#000]">
+                    <div id="hbibna-qr-reader" className="w-full max-w-[280px] mx-auto rounded-2xl overflow-hidden border-2 border-black" />
 
                     {!cameraActive ? (
                       <div className="py-6 space-y-3">
-                        <div className="w-14 h-14 rounded-2xl bg-[#FFFFFF] border border-[#E6DDCF] text-[#B88E3E] shadow-soft flex items-center justify-center mx-auto">
-                          <Camera className="w-7 h-7" />
+                        <div className="w-14 h-14 rounded-2xl bg-white border-2 border-black text-black shadow-[0_3px_0_#000] flex items-center justify-center mx-auto">
+                          <Camera className="w-7 h-7 stroke-[2.5]" />
                         </div>
                         <div className="space-y-1">
-                          <h4 className="font-bold text-sm text-[#191817]">
+                          <h4 className="font-black text-base text-black">
                             {t('modals.scanTitle')}
                           </h4>
-                          <p className="text-xs text-[#736B63] max-w-xs mx-auto">
+                          <p className="text-xs text-black/70 font-bold max-w-xs mx-auto">
                             {t('modals.cameraInstruction')}
                           </p>
                         </div>
@@ -333,13 +540,13 @@ export function ScanCustomerModal({
                             setCameraError(null);
                             setCameraActive(true);
                           }}
-                          className="px-5 py-2.5 rounded-xl bg-[#191817] text-white text-xs font-bold hover:bg-[#2B2927] transition-all shadow-soft cursor-pointer inline-flex items-center gap-2"
+                          className="px-6 py-3 rounded-2xl bg-black text-[#FFE600] text-xs font-black hover:bg-neutral-900 transition-all border-2 border-black shadow-[0_4px_0_#000] cursor-pointer inline-flex items-center gap-2 active:translate-y-0.5 active:shadow-[0_2px_0_#000]"
                         >
-                          <Camera className="w-3.5 h-3.5" />
+                          <Camera className="w-4 h-4 stroke-[2.5]" />
                           <span>{t('modals.startCamera')}</span>
                         </button>
                         {cameraError && (
-                          <p className="text-[11px] text-amber-700">{cameraError}</p>
+                          <p className="text-xs text-rose-700 font-bold">{cameraError}</p>
                         )}
                       </div>
                     ) : (
@@ -347,7 +554,7 @@ export function ScanCustomerModal({
                         <button
                           type="button"
                           onClick={() => setCameraActive(false)}
-                          className="px-4 py-1.5 rounded-xl bg-[#FFFFFF] border border-[#E6DDCF] text-xs font-bold text-[#736B63] hover:text-[#191817]"
+                          className="px-4 py-2 rounded-xl bg-white border-2 border-black text-xs font-black text-black shadow-[0_2px_0_#000]"
                         >
                           {t('modals.stopCamera')}
                         </button>
@@ -356,13 +563,13 @@ export function ScanCustomerModal({
                   </div>
 
                   {/* Fast Barcode / Token Scanner Gun Input */}
-                  <div className="p-4 rounded-2xl bg-[#FFFFFF] border border-[#E6DDCF] shadow-xs space-y-2">
+                  <div className="p-4 rounded-2xl bg-white border-2 border-black shadow-[0_4px_0_#000] space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <label htmlFor="token-input" className="font-bold text-[#191817] flex items-center gap-1.5">
-                        <Keyboard className="w-3.5 h-3.5 text-[#B88E3E]" />
+                      <label htmlFor="token-input" className="font-black text-black flex items-center gap-1.5 uppercase tracking-wide">
+                        <Keyboard className="w-3.5 h-3.5 stroke-[2.5]" />
                         <span>{t('modals.quickTokenTitle')}</span>
                       </label>
-                      <span className="text-[11px] text-[#736B63]">{t('modals.pressEnterToScan')}</span>
+                      <span className="text-[11px] text-black/60 font-bold">{t('modals.pressEnterToScan')}</span>
                     </div>
 
                     <form
@@ -378,21 +585,21 @@ export function ScanCustomerModal({
                         placeholder={t('modals.enterCodePlaceholder')}
                         value={scannerTokenInput}
                         onChange={(e) => setScannerTokenInput(e.target.value)}
-                        className="flex-1 px-3.5 py-2 text-xs rounded-xl border border-[#E6DDCF] bg-[#FAF8F5] focus:bg-[#FFFFFF] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
+                        className="flex-1 px-3.5 py-2.5 text-xs rounded-xl border-2 border-black bg-[#FFF9D2] font-bold text-black focus:bg-white focus:outline-none"
                       />
                       <button
                         type="submit"
                         disabled={resolving || !scannerTokenInput.trim()}
-                        className="px-4 py-2 rounded-xl bg-[#B88E3E] text-white text-xs font-bold hover:bg-[#A37B30] disabled:opacity-50 transition-colors shadow-soft cursor-pointer"
+                        className="px-4 py-2 rounded-xl bg-black text-[#FFE600] text-xs font-black border-2 border-black shadow-[0_2px_0_#000] disabled:opacity-50 cursor-pointer"
                       >
                         {resolving ? t('business.loading') : t('modals.identify')}
                       </button>
                     </form>
                   </div>
 
-                  {/* Instant Demo Customers Quick-Tap (for effortless testing without physical phone) */}
+                  {/* Instant Demo Customers Quick-Tap */}
                   <div className="space-y-1.5">
-                    <span className="text-[11px] font-bold text-[#736B63] uppercase tracking-wider block">
+                    <span className="text-[11px] font-black text-black/70 uppercase tracking-wider block">
                       {t('modals.quickTest')}:
                     </span>
                     <div className="flex flex-wrap gap-2">
@@ -401,11 +608,11 @@ export function ScanCustomerModal({
                           key={c.id}
                           type="button"
                           onClick={() => handleTokenScanned(`hbibna:c:${c.id}`)}
-                          className="px-3 py-1.5 rounded-xl bg-[#FAF8F5] hover:bg-[#FBF6EB] border border-[#E6DDCF] hover:border-[#DFC99F] text-xs font-semibold text-[#191817] transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                          className="px-3 py-1.5 rounded-xl bg-white hover:bg-[#FFF9D2] border-2 border-black text-xs font-black text-black transition-all flex items-center gap-1.5 shadow-[0_2px_0_#000] cursor-pointer"
                         >
-                          <QrCode className="w-3 h-3 text-[#B88E3E]" />
+                          <QrCode className="w-3 h-3 stroke-[2.5]" />
                           <span>{c.name}</span>
-                          <span className="text-[10px] text-[#736B63]">({c.points_balance} {t('common.pts')})</span>
+                          <span className="text-[10px] text-black/60 font-mono">({c.points_balance} {t('common.pts')})</span>
                         </button>
                       ))}
                     </div>
@@ -417,22 +624,22 @@ export function ScanCustomerModal({
               {activeTab === 'manual' && (
                 <div className="space-y-3">
                   <div className="relative">
-                    <Search className={`w-4 h-4 text-[#736B63] absolute top-1/2 -translate-y-1/2 ${isRtl ? 'right-3.5' : 'left-3.5'}`} />
+                    <Search className={`w-4 h-4 text-black/60 absolute top-1/2 -translate-y-1/2 ${isRtl ? 'right-3.5' : 'left-3.5'}`} />
                     <input
                       type="text"
                       placeholder={t('modals.searchCustomerPlaceholder')}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className={`w-full py-2.5 rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-xs text-[#191817] font-medium focus:outline-none focus:ring-2 focus:ring-[#B88E3E] ${
+                      className={`w-full py-2.5 rounded-2xl border-2 border-black bg-[#FFF9D2] text-xs text-black font-bold focus:bg-white focus:outline-none shadow-[0_3px_0_#000] ${
                         isRtl ? 'pr-10 pl-4' : 'pl-10 pr-4'
                       }`}
                       autoFocus
                     />
                   </div>
 
-                  <div className="max-h-56 overflow-y-auto rounded-2xl border border-[#E6DDCF] divide-y divide-[#E6DDCF] bg-[#FFFFFF]">
+                  <div className="max-h-56 overflow-y-auto rounded-2xl border-2 border-black divide-y-2 divide-black/10 bg-white shadow-[0_4px_0_#000]">
                     {filteredCustomers.length === 0 ? (
-                      <div className="p-6 text-center text-xs text-[#736B63]">
+                      <div className="p-6 text-center text-xs text-black/60 font-bold">
                         {t('business.noCustomersFound')}
                       </div>
                     ) : (
@@ -440,18 +647,18 @@ export function ScanCustomerModal({
                         <div
                           key={cust.id}
                           onClick={() => handleSelectCustomer(cust)}
-                          className="p-3.5 flex items-center justify-between hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                          className="p-3.5 flex items-center justify-between hover:bg-[#FFF9D2]/40 transition-colors cursor-pointer"
                         >
                           <div>
-                            <p className="text-xs font-bold text-[#191817]">{cust.name}</p>
-                            <p className="text-[11px] text-[#736B63]" dir="ltr">{cust.phone}</p>
+                            <p className="text-xs font-black text-black">{cust.name}</p>
+                            <p className="text-[11px] text-black/60 font-mono font-semibold" dir="ltr">{cust.phone}</p>
                           </div>
                           <div className={isRtl ? 'text-left' : 'text-right'}>
-                            <span className="text-xs font-black text-[#B88E3E]">
+                            <span className="text-xs font-black font-mono text-black bg-[#FFE600] px-2 py-0.5 rounded-lg border border-black">
                               {cust.points_balance.toLocaleString()} {t('common.pts')}
                             </span>
-                            <span className="text-[10px] text-[#736B63] block">
-                              {isRtl ? '← اختيار' : 'Select →'}
+                            <span className="text-[10px] text-black/70 font-black block mt-0.5">
+                              {isRtl ? '← اختيار' : language === 'fr' ? 'Choisir →' : 'Select →'}
                             </span>
                           </div>
                         </div>
@@ -467,19 +674,17 @@ export function ScanCustomerModal({
           {stage === 'identified' && identifiedCustomer && (
             <form onSubmit={handleConfirmPurchase} className="space-y-5 animate-in fade-in">
               {/* Verified Customer Card */}
-              <div className="p-5 rounded-3xl bg-gradient-to-br from-[#191817] to-[#2B2927] text-white shadow-card space-y-3 relative overflow-hidden border border-[#DFC99F]/40">
-                <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full bg-[#B88E3E]/20 blur-2xl pointer-events-none" />
-
+              <div className="p-5 rounded-3xl bg-black text-white shadow-[0_6px_0_#000] space-y-3 relative overflow-hidden border-2 border-black">
                 <div className="flex items-center justify-between relative z-10">
-                  <span className="inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-[#B88E3E]/20 text-[#DFC99F] border border-[#DFC99F]/30">
-                    <ShieldCheck className="w-3 h-3 text-[#DFC99F]" />
+                  <span className="inline-flex items-center gap-1 text-[10px] uppercase font-black tracking-wider px-2.5 py-0.5 rounded-full bg-[#FFE600] text-black border-2 border-black shadow-[0_2px_0_#000]">
+                    <ShieldCheck className="w-3 h-3 stroke-[2.5]" />
                     <span>{t('modals.customerIdentified')}</span>
                   </span>
 
                   <button
                     type="button"
                     onClick={handleScanNext}
-                    className="text-[11px] font-semibold text-[#FAF8F5]/70 hover:text-white flex items-center gap-1 cursor-pointer"
+                    className="text-[11px] font-bold text-white/80 hover:text-white flex items-center gap-1 cursor-pointer underline"
                   >
                     <RotateCcw className="w-3 h-3" />
                     <span>{t('modals.changeCustomer')}</span>
@@ -489,19 +694,19 @@ export function ScanCustomerModal({
                 {/* Display Customer name and Current points */}
                 <div className="flex items-end justify-between relative z-10 pt-1">
                   <div>
-                    <span className="text-[11px] text-[#FAF8F5]/70 block font-medium">
+                    <span className="text-xs text-white/70 block font-bold">
                       {t('modals.fullName')}
                     </span>
-                    <h4 className="text-xl font-extrabold text-white tracking-tight">
+                    <h4 className="text-xl font-black text-white tracking-tight">
                       {identifiedCustomer.name}
                     </h4>
                   </div>
 
                   <div className={isRtl ? 'text-left' : 'text-right'}>
-                    <span className="text-[11px] text-[#FAF8F5]/70 block font-medium">
+                    <span className="text-xs text-white/70 block font-bold">
                       {t('modals.currentPoints')}
                     </span>
-                    <span className="text-2xl font-black text-[#DFC99F]">
+                    <span className="text-3xl font-black text-[#FFE600] font-mono">
                       {identifiedCustomer.points_balance.toLocaleString()}
                     </span>
                   </div>
@@ -510,8 +715,8 @@ export function ScanCustomerModal({
 
               {/* Enter Purchase Amount */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-[#191817]">
-                  {t('modals.purchaseAmountDa')} <span className="text-[#B88E3E]">*</span>
+                <label className="block text-xs font-black text-black uppercase tracking-wide">
+                  {t('modals.purchaseAmountDa')} <span className="text-red-600">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -521,13 +726,13 @@ export function ScanCustomerModal({
                     placeholder="e.g. 2500"
                     value={purchaseAmount}
                     onChange={(e) => setPurchaseAmount(e.target.value)}
-                    className={`w-full py-3 rounded-2xl border border-[#E6DDCF] bg-[#FFFFFF] text-base font-bold text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E] ${
+                    className={`w-full py-3 rounded-2xl border-2 border-black bg-[#FFF9D2] text-base font-black text-black focus:bg-white focus:outline-none shadow-[0_3px_0_#000] ${
                       isRtl ? 'pr-4 pl-12' : 'pl-4 pr-12'
                     }`}
                     autoFocus
                     required
                   />
-                  <span className={`absolute top-1/2 -translate-y-1/2 text-xs font-bold text-[#736B63] ${
+                  <span className={`absolute top-1/2 -translate-y-1/2 text-xs font-black text-black ${
                     isRtl ? 'left-4' : 'right-4'
                   }`}>
                     {t('common.da')}
@@ -536,21 +741,21 @@ export function ScanCustomerModal({
               </div>
 
               {/* Show Points Earned Preview */}
-              <div className="p-4 rounded-2xl bg-[#FBF6EB] border border-[#DFC99F] flex items-center justify-between">
+              <div className="p-4 rounded-2xl bg-[#FFE600] border-2 border-black shadow-[0_3px_0_#000] flex items-center justify-between">
                 <div>
-                  <span className="text-xs text-[#736B63] block font-medium">
+                  <span className="text-xs text-black/70 block font-bold">
                     {t('modals.pointsToAward')}:
                   </span>
-                  <div className="flex items-center gap-1.5 font-black text-sm text-[#B88E3E]">
-                    <Sparkles className="w-4 h-4" />
+                  <div className="flex items-center gap-1.5 font-black text-base text-black">
+                    <Sparkles className="w-4 h-4 stroke-[2.5]" />
                     <span>+{previewPoints} {t('business.points')}</span>
                   </div>
                 </div>
                 <div className={isRtl ? 'text-left' : 'text-right'}>
-                  <span className="text-xs text-[#736B63] block font-medium">
+                  <span className="text-xs text-black/70 block font-bold">
                     {t('modals.newBalance')}:
                   </span>
-                  <span className="font-extrabold text-sm text-[#191817]">
+                  <span className="font-black text-base text-black font-mono">
                     {(identifiedCustomer.points_balance + previewPoints).toLocaleString()} {t('common.pts')}
                   </span>
                 </div>
@@ -558,7 +763,7 @@ export function ScanCustomerModal({
 
               {/* Optional Note */}
               <div>
-                <label className="block text-xs font-medium text-[#736B63] mb-1">
+                <label className="block text-xs font-black text-black/70 mb-1">
                   {t('modals.receiptNoteOptional')}
                 </label>
                 <input
@@ -566,7 +771,7 @@ export function ScanCustomerModal({
                   placeholder={t('modals.receiptNotePlaceholder')}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-[#E6DDCF] bg-[#FFFFFF] text-[#191817] focus:outline-none focus:ring-2 focus:ring-[#B88E3E]"
+                  className="w-full px-3.5 py-2.5 text-xs rounded-xl border-2 border-black bg-white text-black font-bold focus:outline-none"
                 />
               </div>
 
@@ -575,17 +780,17 @@ export function ScanCustomerModal({
                 <button
                   type="button"
                   onClick={handleScanNext}
-                  className="px-4 py-2.5 text-xs font-semibold text-[#736B63] hover:text-[#191817] hover:bg-[#FAF8F5] rounded-xl transition-colors cursor-pointer min-h-[44px] flex items-center justify-center border border-[#E6DDCF] sm:border-transparent"
+                  className="px-4 py-2.5 text-xs font-black text-black bg-white hover:bg-[#FFF9D2] rounded-2xl border-2 border-black shadow-[0_2px_0_#000] transition-colors cursor-pointer min-h-[44px] flex items-center justify-center"
                 >
                   {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={confirming || !purchaseAmount || parsedAmount <= 0}
-                  className="px-6 py-2.5 text-xs font-bold text-white bg-[#B88E3E] hover:bg-[#A37B30] rounded-xl shadow-soft disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
+                  className="px-6 py-2.5 text-xs font-black text-[#FFE600] bg-black hover:bg-neutral-900 border-2 border-black rounded-2xl shadow-[0_4px_0_#000] disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[44px] active:translate-y-0.5 active:shadow-[0_2px_0_#000]"
                 >
                   <span>{confirming ? t('modals.recording') : t('common.confirm')}</span>
-                  <ArrowRight className="w-4 h-4 shrink-0 rtl:rotate-180" />
+                  <ArrowRight className="w-4 h-4 shrink-0 rtl:rotate-180 stroke-[2.5]" />
                 </button>
               </div>
             </form>
@@ -594,49 +799,63 @@ export function ScanCustomerModal({
           {/* STAGE 3: SUCCESS CONFIRMATION */}
           {stage === 'success' && successResult && (
             <div className="p-4 sm:p-6 text-center space-y-5 sm:space-y-6 animate-in zoom-in-95 duration-150">
-              <div className="w-14 sm:w-16 h-14 sm:h-16 rounded-3xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto shadow-xs">
-                <CheckCircle2 className="w-7 sm:w-8 h-7 sm:h-8" />
+              <div className="w-16 h-16 rounded-3xl bg-emerald-300 text-black border-2 border-black flex items-center justify-center mx-auto shadow-[0_4px_0_#000]">
+                <CheckCircle2 className="w-8 h-8 stroke-[2.5]" />
               </div>
 
               <div className="space-y-1">
-                <h4 className="font-black text-[#191817] text-xl sm:text-2xl tracking-tight">
+                <h4 className="font-black text-black text-xl sm:text-2xl tracking-tight">
                   {t('modals.purchaseConfirmed')}
                 </h4>
-                <p className="text-xs text-[#736B63]">
+                <p className="text-xs text-black/70 font-bold">
                   {successResult.customerName}
                 </p>
               </div>
 
               {/* Points Card */}
-              <div className="p-4 sm:p-5 rounded-3xl bg-[#FBF6EB] border border-[#DFC99F] space-y-2 max-w-xs mx-auto">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#736B63] block">
+              <div className="p-5 rounded-3xl bg-[#FFE600] border-2 border-black shadow-[0_6px_0_#000] space-y-2 max-w-xs mx-auto">
+                <span className="text-xs font-black uppercase tracking-wider text-black/70 block">
                   {t('modals.pointsCredited')}
                 </span>
-                <p className="text-3xl sm:text-4xl font-black text-[#B88E3E]">
+                <p className="text-4xl font-black text-black font-mono">
                   +{successResult.pointsAwarded}{' '}
-                  <span className="text-base font-bold text-[#191817]">{t('common.pts')}</span>
+                  <span className="text-base font-black text-black">{t('common.pts')}</span>
                 </p>
-                <div className="pt-2 border-t border-[#DFC99F]/50 flex items-center justify-between text-xs">
-                  <span className="text-[#736B63]">{t('modals.newBalance')}:</span>
-                  <span className="font-black text-[#191817]">
+                <div className="pt-2 border-t-2 border-black/15 flex items-center justify-between text-xs font-bold">
+                  <span className="text-black/70">{t('modals.newBalance')}:</span>
+                  <span className="font-black text-black font-mono">
                     {successResult.newBalance.toLocaleString()} {t('business.points')}
                   </span>
                 </div>
               </div>
 
+              {/* Offline notice if saved locally */}
+              {successResult.isOffline && (
+                <div className="p-3 rounded-2xl bg-[#FC851D]/15 border-2 border-black text-black text-xs font-black flex items-center justify-center gap-2 shadow-[0_2px_0_#000] animate-in fade-in max-w-sm mx-auto">
+                  <CloudOff className="w-4 h-4 stroke-[2.5] text-[#FC851D] shrink-0" />
+                  <span className="leading-tight">
+                    {language === 'ar'
+                      ? 'تم الحفظ محلياً — ستتم المزامنة تلقائياً عند عودة الإنترنت'
+                      : language === 'fr'
+                      ? 'Enregistré hors ligne — synchronisation automatique dès le retour d\'internet'
+                      : 'Saved offline — will sync automatically when back online'}
+                  </span>
+                </div>
+              )}
+
               <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 pt-2">
                 <button
                   type="button"
                   onClick={handleScanNext}
-                  className="flex-1 py-3 rounded-xl bg-[#191817] hover:bg-[#2B2927] text-white text-xs font-bold transition-colors shadow-soft cursor-pointer flex items-center justify-center gap-1.5 min-h-[44px]"
+                  className="flex-1 py-3 rounded-2xl bg-black hover:bg-neutral-900 text-[#FFE600] text-xs font-black transition-colors border-2 border-black shadow-[0_4px_0_#000] cursor-pointer flex items-center justify-center gap-1.5 min-h-[44px] active:translate-y-0.5 active:shadow-[0_2px_0_#000]"
                 >
-                  <QrCode className="w-3.5 h-3.5" />
+                  <QrCode className="w-4 h-4 stroke-[2.5]" />
                   <span>{t('modals.scanNextCustomer')}</span>
                 </button>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-5 py-3 rounded-xl bg-[#FAF8F5] hover:bg-[#E6DDCF] border border-[#E6DDCF] text-[#191817] text-xs font-bold transition-colors cursor-pointer min-h-[44px]"
+                  className="px-5 py-3 rounded-2xl bg-white hover:bg-[#FFF9D2] border-2 border-black text-black text-xs font-black transition-colors shadow-[0_4px_0_#000] cursor-pointer min-h-[44px] active:translate-y-0.5 active:shadow-[0_2px_0_#000]"
                 >
                   {t('common.done')}
                 </button>

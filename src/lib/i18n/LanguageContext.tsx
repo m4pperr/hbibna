@@ -4,8 +4,9 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { useRouter } from 'next/navigation';
 import { en } from './translations/en';
 import { ar } from './translations/ar';
+import { fr } from './translations/fr';
 
-export type Language = 'en' | 'ar';
+export type Language = 'en' | 'ar' | 'fr';
 export type Direction = 'ltr' | 'rtl';
 
 interface LanguageContextType {
@@ -17,7 +18,7 @@ interface LanguageContextType {
   t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-const translations = { en, ar };
+const translations: Record<Language, typeof en> = { en, ar, fr };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
@@ -74,14 +75,19 @@ export function LanguageProvider({
   );
 
   const toggleLanguage = useCallback(() => {
-    setLanguage(language === 'en' ? 'ar' : 'en');
+    const nextLang: Record<Language, Language> = {
+      en: 'fr',
+      fr: 'ar',
+      ar: 'en',
+    };
+    setLanguage(nextLang[language]);
   }, [language, setLanguage]);
 
   // Sync on mount if localStorage has preference different from initial
   useEffect(() => {
     try {
       const stored = localStorage.getItem('hbibna_lang') as Language | null;
-      if (stored && (stored === 'en' || stored === 'ar') && stored !== language) {
+      if (stored && (stored === 'en' || stored === 'ar' || stored === 'fr') && stored !== language) {
         setLanguageState(stored);
         applyHtmlAttributes(stored);
       } else {

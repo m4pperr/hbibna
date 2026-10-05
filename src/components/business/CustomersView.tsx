@@ -15,12 +15,12 @@ export function CustomersView({
   const { t } = useLanguage();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-rounded">
       <div className="space-y-1 text-start">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#191817] tracking-tight">
+        <h1 className="text-3xl sm:text-4xl font-black text-black tracking-tight">
           {t('business.customersTitle')}
         </h1>
-        <p className="text-xs sm:text-sm text-[#736B63]">
+        <p className="text-xs sm:text-sm text-black/75 font-semibold">
           {t('business.customersSubtitle')}
         </p>
       </div>

@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { UserPlus, Receipt, QrCode } from 'lucide-react';
-import { AddCustomerModal } from './AddCustomerModal';
+import { Receipt, QrCode } from 'lucide-react';
 import { RecordPurchaseModal } from './RecordPurchaseModal';
 import { ScanCustomerModal } from './ScanCustomerModal';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
@@ -14,7 +13,6 @@ interface DashboardQuickActionsProps {
 
 export function DashboardQuickActions({ customers }: DashboardQuickActionsProps) {
   const [showScanModal, setShowScanModal] = useState(false);
-  const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const { t } = useLanguage();
 
@@ -24,27 +22,18 @@ export function DashboardQuickActions({ customers }: DashboardQuickActionsProps)
         {/* Primary Action: Scan Customer */}
         <button
           onClick={() => setShowScanModal(true)}
-          className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#191817] hover:bg-[#2B2927] shadow-soft transition-all cursor-pointer active:scale-[0.98] min-h-[44px] w-full sm:w-auto"
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black text-white bg-black hover:bg-zinc-800 border-2 border-black shadow-[0_4px_0_#000] hover:translate-x-0.5 active:translate-y-1 active:shadow-none transition-all cursor-pointer min-h-[44px] w-full sm:w-auto"
         >
-          <QrCode className="w-4 h-4 text-[#DFC99F]" />
+          <QrCode className="w-4 h-4 text-[#FFE600]" />
           <span>{t('business.scanCustomer')}</span>
-        </button>
-
-        {/* Quick Action: Add Customer */}
-        <button
-          onClick={() => setShowCustomerModal(true)}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-[#191817] bg-[#FFFFFF] border border-[#E6DDCF] hover:bg-[#FAF8F5] shadow-xs transition-all cursor-pointer active:scale-[0.98] min-h-[44px] w-full sm:w-auto"
-        >
-          <UserPlus className="w-4 h-4 text-[#B88E3E]" />
-          <span>{t('business.addCustomer')}</span>
         </button>
 
         {/* Quick Action: Add Purchase */}
         <button
           onClick={() => setShowPurchaseModal(true)}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-[#191817] bg-[#FFFFFF] border border-[#E6DDCF] hover:bg-[#FAF8F5] shadow-xs transition-all cursor-pointer active:scale-[0.98] min-h-[44px] w-full sm:w-auto"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black text-black bg-[#FFE600] border-2 border-black shadow-[0_4px_0_#000] hover:bg-yellow-400 hover:translate-x-0.5 active:translate-y-1 active:shadow-none transition-all cursor-pointer min-h-[44px] w-full sm:w-auto"
         >
-          <Receipt className="w-4 h-4 text-[#B88E3E]" />
+          <Receipt className="w-4 h-4 text-black" />
           <span>{t('business.addPurchase')}</span>
         </button>
       </div>
@@ -54,13 +43,6 @@ export function DashboardQuickActions({ customers }: DashboardQuickActionsProps)
           isOpen={showScanModal}
           onClose={() => setShowScanModal(false)}
           customers={customers}
-        />
-      )}
-
-      {showCustomerModal && (
-        <AddCustomerModal
-          isOpen={showCustomerModal}
-          onClose={() => setShowCustomerModal(false)}
         />
       )}
 

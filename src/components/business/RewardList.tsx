@@ -25,14 +25,14 @@ export function RewardList({ initialRewards, customers }: RewardListProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-rounded">
       {/* Header with Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1 text-start">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#191817] tracking-tight">
+          <h1 className="text-3xl sm:text-4xl font-black text-black tracking-tight">
             {t('business.rewardsTitle')}
           </h1>
-          <p className="text-xs sm:text-sm text-[#736B63]">
+          <p className="text-xs sm:text-sm text-black/75 font-semibold">
             {t('business.rewardsSubtitle')}
           </p>
         </div>
@@ -41,17 +41,17 @@ export function RewardList({ initialRewards, customers }: RewardListProps) {
           <button
             onClick={() => setRedeemingReward(initialRewards[0] || null)}
             disabled={initialRewards.length === 0 || customers.length === 0}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FFFFFF] hover:bg-[#FAF8F5] text-[#191817] text-xs font-semibold border border-[#E6DDCF] shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white hover:bg-[#FFF9D2] text-black text-xs font-black border-2 border-black shadow-[0_3px_0_#000] hover:translate-x-0.5 active:translate-y-1 active:shadow-none transition-all disabled:opacity-50 cursor-pointer"
           >
-            <Gift className="w-4 h-4 text-[#B88E3E]" />
+            <Gift className="w-4 h-4 text-black" />
             <span>{t('business.quickRedeem')}</span>
           </button>
 
           <button
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#B88E3E] hover:bg-[#A37B30] text-white text-xs font-bold shadow-soft transition-all cursor-pointer active:scale-[0.98]"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-black hover:bg-zinc-800 text-white text-xs font-black border-2 border-black shadow-[0_4px_0_#000] hover:translate-x-0.5 active:translate-y-1 active:shadow-none transition-all cursor-pointer"
           >
-            <Plus className="w-4 h-4 text-white" />
+            <Plus className="w-4 h-4 text-[#FFE600]" />
             <span>{t('business.createReward')}</span>
           </button>
         </div>
@@ -59,23 +59,25 @@ export function RewardList({ initialRewards, customers }: RewardListProps) {
 
       {/* Rewards Grid */}
       {initialRewards.length === 0 ? (
-        <div className="bg-[#FFFFFF] border border-[#E6DDCF] rounded-3xl p-12 text-center space-y-4 shadow-soft">
-          <div className="w-14 h-14 rounded-2xl bg-[#FBF6EB] text-[#B88E3E] border border-[#DFC99F]/50 flex items-center justify-center mx-auto">
-            <Gift className="w-7 h-7" />
+        <div className="bg-white border-2 border-black rounded-3xl p-12 text-center space-y-4 shadow-[0_8px_0_#000]">
+          <div className="w-16 h-16 rounded-2xl bg-[#FFDE59] text-black border-2 border-black flex items-center justify-center mx-auto shadow-[0_4px_0_#000]">
+            <Gift className="w-8 h-8" />
           </div>
           <div className="space-y-1">
-            <h3 className="font-extrabold text-[#191817] text-lg">{t('customer.noRewards')}</h3>
-            <p className="text-xs text-[#736B63] max-w-sm mx-auto">
+            <h3 className="font-black text-black text-xl">{t('customer.noRewards')}</h3>
+            <p className="text-xs text-black/70 font-semibold max-w-sm mx-auto">
               {language === 'ar'
                 ? 'أضف أول مكافأة لمتجرك لتحفيز عملائك على تكرار الزيارة وكسب النقاط.'
+                : language === 'fr'
+                ? 'Ajoutez votre première récompense, comme une boisson offerte ou une réduction, pour fidéliser vos clients réguliers.'
                 : 'Add your first reward, like a free beverage or order discount, to start delighting your regulars.'}
             </p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#B88E3E] text-white text-xs font-bold hover:bg-[#A37B30] shadow-soft transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-black hover:bg-zinc-800 text-white text-xs font-black border-2 border-black shadow-[0_4px_0_#000] hover:translate-x-0.5 active:translate-y-1 active:shadow-none transition-all cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 text-[#FFE600]" />
             <span>{t('business.createReward')}</span>
           </button>
         </div>
@@ -84,29 +86,29 @@ export function RewardList({ initialRewards, customers }: RewardListProps) {
           {initialRewards.map((reward) => (
             <div
               key={reward.id}
-              className={`p-6 sm:p-7 rounded-3xl bg-[#FFFFFF] border shadow-card flex flex-col justify-between space-y-5 transition-all hover:border-[#DFC99F] ${
-                reward.is_active ? 'border-[#E6DDCF]' : 'border-zinc-200 opacity-60'
+              className={`p-6 sm:p-7 rounded-3xl bg-white border-2 border-black shadow-[0_8px_0_#000] flex flex-col justify-between space-y-5 transition-all hover:translate-y-[-2px] hover:shadow-[0_12px_0_#000] ${
+                reward.is_active ? '' : 'opacity-60 bg-zinc-50'
               }`}
             >
               {/* Top info */}
               <div className="space-y-3.5 text-start">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-[#FBF6EB] text-[#B88E3E] border border-[#DFC99F]/50 flex items-center justify-center shrink-0 shadow-xs">
-                    <Gift className="w-5 h-5" />
+                  <div className="w-12 h-12 rounded-2xl bg-[#FFDE59] text-black border-2 border-black flex items-center justify-center shrink-0 shadow-[0_2px_0_#000]">
+                    <Gift className="w-6 h-6" />
                   </div>
 
-                  {/* Points requirement badge in gold */}
-                  <span className="px-3.5 py-1.5 rounded-full text-xs font-black bg-[#FBF6EB] text-[#B88E3E] border border-[#DFC99F]/70 shadow-xs font-mono">
+                  {/* Points requirement badge */}
+                  <span className="px-3.5 py-1.5 rounded-full text-xs font-black bg-black text-[#FFE600] border border-black shadow-[0_2px_0_#000] font-mono">
                     {reward.points_required.toLocaleString()} {t('common.pts')}
                   </span>
                 </div>
 
                 <div>
-                  <h3 className="font-extrabold text-[#191817] text-lg leading-snug">
+                  <h3 className="font-black text-black text-xl leading-snug">
                     {reward.name}
                   </h3>
                   {reward.description && (
-                    <p className="text-xs text-[#736B63] mt-1 leading-relaxed">
+                    <p className="text-xs text-black/70 font-semibold mt-1.5 leading-relaxed">
                       {reward.description}
                     </p>
                   )}
@@ -114,11 +116,11 @@ export function RewardList({ initialRewards, customers }: RewardListProps) {
               </div>
 
               {/* Card Footer Actions */}
-              <div className="pt-4 border-t border-[#E6DDCF] flex items-center justify-between gap-2">
+              <div className="pt-4 border-t-2 border-black/10 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setEditingReward(reward)}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#736B63] hover:text-[#191817] hover:bg-[#FAF8F5] px-2.5 py-1.5 rounded-lg border border-[#E6DDCF] transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 text-xs font-black text-black hover:bg-[#FFF9D2] px-3 py-1.5 rounded-xl border-2 border-black shadow-[0_2px_0_#000] transition-colors cursor-pointer"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                     <span>{t('common.edit')}</span>
@@ -126,15 +128,25 @@ export function RewardList({ initialRewards, customers }: RewardListProps) {
 
                   <button
                     onClick={() => handleToggle(reward.id, reward.is_active)}
-                    className="text-xs font-medium text-[#736B63] hover:text-[#191817] hover:underline px-1.5 py-1 transition-colors cursor-pointer"
+                    className="text-xs font-black text-black/70 hover:text-black hover:underline px-1.5 py-1 transition-colors cursor-pointer"
                   >
-                    {reward.is_active ? (language === 'ar' ? 'إيقاف' : 'Pause') : (language === 'ar' ? 'تفعيل' : 'Activate')}
+                    {reward.is_active
+                      ? language === 'ar'
+                        ? 'إيقاف'
+                        : language === 'fr'
+                        ? 'Suspendre'
+                        : 'Pause'
+                      : language === 'ar'
+                      ? 'تفعيل'
+                      : language === 'fr'
+                      ? 'Activer'
+                      : 'Activate'}
                   </button>
                 </div>
 
                 <button
                   onClick={() => setRedeemingReward(reward)}
-                  className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-[#B88E3E] hover:bg-[#A37B30] text-white text-xs font-bold shadow-soft transition-all cursor-pointer active:scale-[0.98]"
+                  className="inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-[#FFE600] hover:bg-yellow-400 text-black text-xs font-black border-2 border-black shadow-[0_2px_0_#000] transition-all cursor-pointer active:translate-y-0.5 active:shadow-none"
                 >
                   <span>{t('business.redeem')}</span>
                 </button>

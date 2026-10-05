@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { QRCodeSVG } from 'qrcode.react';
 import {
   Sparkles,
   Gift,
@@ -15,6 +14,7 @@ import {
   Store,
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { CustomerLoyaltyCard } from '@/components/customer/CustomerLoyaltyCard';
 import type {
   Customer,
   CustomerBusinessMembership,
@@ -40,16 +40,11 @@ export function CustomerHomeView({
   business,
   activeQueryStr,
 }: CustomerHomeViewProps) {
-  const { t, isRtl } = useLanguage();
+  const { t, isRtl, language } = useLanguage();
 
   const customerName = customer?.name || 'Sarah Benali';
   const activeBusinessName = business?.name || activeMembership.business?.name || 'Café El Bahia';
   const pointsBalance = activeMembership.points_balance;
-
-  // Secure token identifier for QR code (no sensitive personal info)
-  const secureQrValue = customer?.id
-    ? `hbibna:c:${customer.id}`
-    : 'hbibna:c:guest_demo';
 
   // Customer transactions for the active business
   const displayActivity =
@@ -62,120 +57,72 @@ export function CustomerHomeView({
         ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 font-rounded">
       {/* 1. PORTAL HEADER: Focused on Currently Selected Business */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#E6DDCF]/60">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b-2 border-black/15">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#B88E3E]">
+            <span className="text-[11px] font-black uppercase tracking-wider text-black/70">
               {t('customer.myPass')}
             </span>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FBF6EB] text-[#B88E3E] border border-[#DFC99F]/60 flex items-center gap-1">
-              <Store className="w-3 h-3" />
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-[#FFE600] text-black border-2 border-black shadow-[0_2px_0_#000] flex items-center gap-1">
+              <Store className="w-3 h-3 stroke-[2.5]" />
               <span>{activeBusinessName}</span>
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-[#191817] tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-black text-black tracking-tight">
             {activeBusinessName}
           </h1>
-          <p className="text-xs text-[#736B63]">
-            {isRtl ? (
-              <>مرحباً بك، <span className="font-semibold text-[#191817]">{customerName}</span>. بطاقة مكافآتك نشطة وجاهزة للاستخدام عند الكاونتر.</>
+          <p className="text-sm text-black/70 font-bold">
+            {language === 'ar' ? (
+              <>مرحباً بك، <span className="font-black text-black">{customerName}</span>. بطاقة مكافآتك نشطة وجاهزة للاستخدام عند الكاونتر.</>
+            ) : language === 'fr' ? (
+              <>Bienvenue, <span className="font-black text-black">{customerName}</span>. Votre pass fidélité est actif et prêt à l&apos;emploi en caisse.</>
             ) : (
-              <>Welcome back, <span className="font-semibold text-[#191817]">{customerName}</span>. Your rewards pass is active and ready to use at checkout.</>
+              <>Welcome back, <span className="font-black text-black">{customerName}</span>. Your rewards pass is active and ready to use at checkout.</>
             )}
           </p>
         </div>
 
         <Link
           href={`/customer/qr${activeQueryStr}`}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-[#191817] hover:bg-[#2B2927] text-white text-xs font-bold transition-all shadow-soft shrink-0 self-start sm:self-auto"
+          className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-black hover:bg-neutral-900 text-[#FFE600] text-xs font-black transition-all border-2 border-black shadow-[0_4px_0_#000] active:translate-y-0.5 active:shadow-[0_2px_0_#000] shrink-0 self-start sm:self-auto"
         >
-          <QrCode className="w-4 h-4 text-[#DFC99F]" />
+          <QrCode className="w-4 h-4 text-[#FFE600] stroke-[2.5]" />
           <span>{t('customer.myQr')}</span>
         </Link>
       </div>
 
-      {/* 2. ACTIVE DIGITAL LOYALTY CARD */}
-      <div className="relative rounded-3xl bg-gradient-to-br from-[#191817] via-[#24211D] to-[#191817] text-[#FAF8F5] p-4 sm:p-8 shadow-xl border border-[#DFC99F]/30 overflow-hidden">
-        {/* Subtle decorative warm gold glow */}
-        <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-[#B88E3E]/20 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-16 -left-16 w-56 h-56 rounded-full bg-[#DFC99F]/10 blur-3xl pointer-events-none" />
-
-        {/* Brand & Business Header */}
-        <div className="flex items-center justify-between relative z-10 gap-2">
-          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#B88E3E] to-[#DFC99F] flex items-center justify-center text-white shadow-soft shrink-0">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <div className="min-w-0">
-              <span className="text-[10px] uppercase font-bold tracking-widest text-[#DFC99F] block truncate">
-                {t('customer.myPass')}
-              </span>
-              <h2 className="font-extrabold text-sm sm:text-base text-white tracking-tight leading-none mt-0.5 truncate">
-                {activeBusinessName}
-              </h2>
-            </div>
-          </div>
-
-          <span className="px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-bold bg-[#B88E3E]/20 text-[#DFC99F] border border-[#DFC99F]/30 shrink-0">
-            {t('home.cardVipStatus')}
-          </span>
-        </div>
-
-        {/* Customer Name Greeting */}
-        <div className="mt-5 sm:mt-6 relative z-10">
-          <p className="text-[11px] sm:text-xs text-[#FAF8F5]/70 font-medium">{t('business.customer')}</p>
-          <p className="text-lg sm:text-xl font-bold text-white tracking-tight truncate">{customerName}</p>
-        </div>
-
-        {/* Large Points Balance */}
-        <div className="my-6 sm:my-8 relative z-10 text-center py-2">
-          <div className="text-4xl sm:text-6xl md:text-7xl font-black text-[#DFC99F] tracking-tight leading-none drop-shadow-xs truncate px-2">
-            {pointsBalance.toLocaleString()}
-          </div>
-          <span className="inline-block mt-2 sm:mt-3 text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#FAF8F5]/80 max-w-full break-words">
-            {t('customer.pointsBalance')} • {activeBusinessName}
-          </span>
-        </div>
-
-        {/* Card Footer: Quick QR link */}
-        <div className="pt-4 sm:pt-5 border-t border-white/10 flex flex-col xs:flex-row xs:items-center justify-between gap-3 relative z-10 text-xs">
-          <div className="flex items-center gap-1.5 text-[#FAF8F5]/70 text-[10px] sm:text-[11px]">
-            <ShieldCheck className="w-3.5 h-3.5 text-[#DFC99F] shrink-0" />
-            <span className="truncate">{activeBusinessName}</span>
-          </div>
-          <Link
-            href={`/customer/qr${activeQueryStr}`}
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-[#DFC99F] font-semibold text-xs backdrop-blur-xs transition-colors min-h-[38px] self-start xs:self-auto"
-          >
-            <QrCode className="w-3.5 h-3.5" />
-            <span>{t('customer.showQr')}</span>
-          </Link>
-        </div>
-      </div>
+      {/* 2. ACTIVE DIGITAL LOYALTY CARD (3D CUTOUT PASS) */}
+      <CustomerLoyaltyCard
+        customer={customer}
+        business={business}
+        membership={activeMembership}
+        activeQueryStr={activeQueryStr}
+        showQrStub={true}
+      />
 
       {/* 3. YOUR REWARDS FOR THIS BUSINESS */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-extrabold text-lg text-[#191817] tracking-tight">
+            <h3 className="font-black text-xl text-black tracking-tight">
               {t('customer.availableRewards')}
             </h3>
-            <p className="text-xs text-[#736B63]">
+            <p className="text-xs text-black/70 font-bold">
               {t('customer.exclusivePerks')}
             </p>
           </div>
           <Link
             href={`/customer/rewards${activeQueryStr}`}
-            className="text-xs font-semibold text-[#B88E3E] hover:underline inline-flex items-center gap-0.5"
+            className="text-xs font-black text-black hover:underline inline-flex items-center gap-1 bg-white px-3 py-1.5 rounded-xl border-2 border-black shadow-[0_2px_0_#000]"
           >
             <span>{t('customer.viewAll')}</span>
-            <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
+            <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180 stroke-[2.5]" />
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {rewards.map((reward) => {
             const canAfford = pointsBalance >= reward.points_required;
             const pointsNeeded = reward.points_required - pointsBalance;
@@ -183,30 +130,30 @@ export function CustomerHomeView({
             return (
               <div
                 key={reward.id}
-                className={`p-5 rounded-3xl border bg-[#FFFFFF] shadow-card flex flex-col justify-between gap-4 transition-all ${
+                className={`p-5 rounded-3xl border-2 border-black bg-white shadow-[0_6px_0_#000] flex flex-col justify-between gap-4 transition-all hover:-translate-y-0.5 ${
                   canAfford
-                    ? 'border-[#B88E3E] ring-1 ring-[#B88E3E]/30 bg-gradient-to-br from-[#FFFFFF] to-[#FBF6EB]/40'
-                    : 'border-[#E6DDCF] opacity-85'
+                    ? 'bg-[#FFF9D2]'
+                    : 'opacity-90'
                 }`}
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div
-                      className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${
+                      className={`w-11 h-11 rounded-2xl border-2 border-black flex items-center justify-center shrink-0 shadow-[0_2px_0_#000] ${
                         canAfford
-                          ? 'bg-[#B88E3E] text-white shadow-soft'
-                          : 'bg-[#FAF8F5] text-[#736B63] border border-[#E6DDCF]'
+                          ? 'bg-[#FFE600] text-black'
+                          : 'bg-white text-black'
                       }`}
                     >
-                      <Gift className="w-5 h-5" />
+                      <Gift className="w-5 h-5 stroke-[2.5]" />
                     </div>
                     {canAfford ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        <CheckCircle2 className="w-3 h-3" />
+                      <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full bg-emerald-300 text-black border-2 border-black shadow-[0_2px_0_#000]">
+                        <CheckCircle2 className="w-3 h-3 stroke-[2.5]" />
                         <span>{t('customer.ready')}</span>
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#FAF8F5] text-[#736B63] border border-[#E6DDCF]">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-white text-black border border-black">
                         <Lock className="w-3 h-3" />
                         <span>{pointsNeeded.toLocaleString()} {t('customer.ptsToGo')}</span>
                       </span>
@@ -214,14 +161,14 @@ export function CustomerHomeView({
                   </div>
 
                   <div>
-                    <h4 className="font-bold text-sm text-[#191817] tracking-tight">
+                    <h4 className="font-black text-base text-black tracking-tight">
                       {reward.name}
                     </h4>
-                    <p className="text-xs font-black text-[#B88E3E] mt-0.5">
+                    <p className="text-xs font-black text-black/80 mt-0.5">
                       {reward.points_required.toLocaleString()} {t('business.points')}
                     </p>
                     {reward.description && (
-                      <p className="text-[11px] text-[#736B63] mt-1 line-clamp-2">
+                      <p className="text-xs text-black/70 mt-1 line-clamp-2 font-medium">
                         {reward.description}
                       </p>
                     )}
@@ -237,23 +184,23 @@ export function CustomerHomeView({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-extrabold text-lg text-[#191817] tracking-tight">
+            <h3 className="font-black text-xl text-black tracking-tight">
               {t('customer.recentActivity')}
             </h3>
-            <p className="text-xs text-[#736B63]">
+            <p className="text-xs text-black/70 font-bold">
               {t('customer.allTransactions')}
             </p>
           </div>
           <Link
             href={`/customer/activity${activeQueryStr}`}
-            className="text-xs font-semibold text-[#B88E3E] hover:underline inline-flex items-center gap-0.5"
+            className="text-xs font-black text-black hover:underline inline-flex items-center gap-1 bg-white px-3 py-1.5 rounded-xl border-2 border-black shadow-[0_2px_0_#000]"
           >
             <span>{t('customer.history')}</span>
-            <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
+            <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180 stroke-[2.5]" />
           </Link>
         </div>
 
-        <div className="bg-[#FFFFFF] border border-[#E6DDCF] rounded-3xl shadow-card divide-y divide-[#E6DDCF] overflow-hidden">
+        <div className="bg-white border-2 border-black rounded-3xl shadow-[0_8px_0_#000] divide-y-2 divide-black/10 overflow-hidden font-bold">
           {displayActivity.map((act) => {
             const isEarn = act.points > 0;
             const title =
@@ -264,14 +211,14 @@ export function CustomerHomeView({
             return (
               <div
                 key={act.id}
-                className="p-4 sm:p-5 flex items-center justify-between hover:bg-[#FAF8F5]/60 transition-colors"
+                className="p-4 sm:p-5 flex items-center justify-between hover:bg-[#FFF9D2]/40 transition-colors"
               >
                 <div className="flex items-center gap-3.5">
                   <div
-                    className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
+                    className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border-2 border-black shadow-[0_2px_0_#000] ${
                       isEarn
-                        ? 'bg-[#FBF6EB] text-[#B88E3E] border border-[#DFC99F]/50'
-                        : 'bg-zinc-100 text-zinc-700 border border-zinc-200'
+                        ? 'bg-emerald-300 text-black'
+                        : 'bg-rose-300 text-black'
                     }`}
                   >
                     {isEarn ? (
@@ -281,10 +228,10 @@ export function CustomerHomeView({
                     )}
                   </div>
                   <div>
-                    <span className="font-bold text-sm text-[#191817] block">
+                    <span className="font-black text-sm text-black block">
                       {title}
                     </span>
-                    <span className="text-[11px] text-[#736B63]">
+                    <span className="text-[11px] text-black/60 font-semibold">
                       {isEarn ? t('customer.earnedPts') : t('customer.spentPts')}
                     </span>
                   </div>
@@ -292,58 +239,19 @@ export function CustomerHomeView({
 
                 <div className={isRtl ? 'text-left' : 'text-right'}>
                   <span
-                    className={`text-sm font-black ${
-                      isEarn ? 'text-[#B88E3E]' : 'text-zinc-800'
+                    className={`text-sm font-black font-mono px-2.5 py-1 rounded-xl border border-black/20 ${
+                      isEarn ? 'bg-amber-100 text-black' : 'bg-rose-100 text-rose-900'
                     }`}
                   >
                     {isEarn ? `+${act.points}` : act.points}
                   </span>
-                  <span className="text-[10px] uppercase font-bold text-[#736B63] block">
+                  <span className="text-[10px] uppercase font-black text-black/60 block mt-0.5">
                     {t('business.points')}
                   </span>
                 </div>
               </div>
             );
           })}
-        </div>
-      </div>
-
-      {/* 5. CONTACTLESS QR PASS */}
-      <div className="bg-[#FFFFFF] border border-[#E6DDCF] rounded-3xl p-6 sm:p-8 text-center shadow-card space-y-4 max-w-md mx-auto">
-        <div>
-          <span className="text-[10px] uppercase font-bold tracking-wider text-[#B88E3E]">
-            {t('customer.counterPass')}
-          </span>
-          <h3 className="font-extrabold text-lg text-[#191817] mt-0.5">{t('customer.myQr')}</h3>
-          <p className="text-xs text-[#736B63] mt-1 max-w-xs mx-auto">
-            {t('customer.scanAtCounter')}
-          </p>
-        </div>
-
-        <div className="p-4 bg-[#FAF8F5] border border-[#E6DDCF] rounded-2xl inline-block shadow-inner mx-auto">
-          <QRCodeSVG
-            value={secureQrValue}
-            size={160}
-            level="M"
-            bgColor="#FAF8F5"
-            fgColor="#191817"
-            aria-label={t('customer.myQr')}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <div className="text-[11px] text-[#736B63] font-medium flex items-center justify-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-[#B88E3E]" />
-            <span>{t('customer.privacyNote')}</span>
-          </div>
-
-          <Link
-            href={`/customer/qr${activeQueryStr}`}
-            className="inline-flex items-center justify-center w-full py-2.5 rounded-xl bg-[#191817] hover:bg-[#2B2927] text-xs font-bold text-white transition-colors shadow-soft gap-1.5"
-          >
-            <span>{t('customer.openFullscreenQr')}</span>
-            <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
-          </Link>
         </div>
       </div>
     </div>

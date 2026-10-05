@@ -13,24 +13,30 @@ export interface RecordPurchaseResult {
   newBalance?: number;
   transactionId?: string;
   customerName?: string;
+  alreadyProcessed?: boolean;
 }
+
+// Global server memory cache for idempotency keys to instantly reject duplicate retries
+const IDEMPOTENT_TRANSACTION_CACHE = new Map<string, RecordPurchaseResult>();
 
 /**
  * Records a customer purchase and awards points.
  * 
  * Strict Server Execution Pipeline:
- * 1. Verify customer belongs to the business.
- * 2. Retrieve the business loyalty rules from Supabase.
- * 3. Calculate points server-side (frontend points value is never accepted).
- * 4. Create transaction record.
- * 5. Update customer balance atomically.
+ * 1. Check idempotency key: if transaction with this clientTxId was already processed, return existing result without re-awarding.
+ * 2. Verify customer belongs to the business.
+ * 3. Retrieve the business loyalty rules from Supabase.
+ * 4. Calculate points server-side (frontend points value is never accepted).
+ * 5. Create transaction record with idempotency metadata.
+ * 6. Update customer balance atomically.
  */
 export async function recordPurchase(params: {
   customerId: string;
   amount: number;
   description?: string;
+  clientTxId?: string;
 }): Promise<RecordPurchaseResult> {
-  const { customerId, amount, description } = params;
+  const { customerId, amount, description, clientTxId } = params;
 
   // Validate amount
   if (!customerId) {
@@ -39,6 +45,11 @@ export async function recordPurchase(params: {
 
   if (isNaN(amount) || amount <= 0) {
     return { error: 'Purchase amount must be a positive number in DA.' };
+  }
+
+  // Idempotency check 1: In-memory cache
+  if (clientTxId && IDEMPOTENT_TRANSACTION_CACHE.has(clientTxId)) {
+    return IDEMPOTENT_TRANSACTION_CACHE.get(clientTxId)!;
   }
 
   const supabase = await createClient();
@@ -80,6 +91,35 @@ export async function recordPurchase(params: {
     return { error: 'Customer not found or does not belong to your business.' };
   }
 
+  // Idempotency check 2: Database check via idempotency tag
+  if (clientTxId) {
+    try {
+      const idempotencyTag = `[idempotency:${clientTxId}]`;
+      const { data: existingTx } = await supabase
+        .from('transactions')
+        .select('id, points, description')
+        .eq('business_id', businessId)
+        .eq('customer_id', customerId)
+        .ilike('description', `%${idempotencyTag}%`)
+        .maybeSingle();
+
+      if (existingTx) {
+        const result: RecordPurchaseResult = {
+          success: true,
+          pointsAwarded: existingTx.points,
+          newBalance: customer.points_balance,
+          transactionId: existingTx.id,
+          customerName: customer.name,
+          alreadyProcessed: true,
+        };
+        IDEMPOTENT_TRANSACTION_CACHE.set(clientTxId, result);
+        return result;
+      }
+    } catch (checkErr) {
+      console.warn('DB idempotency check handled:', checkErr);
+    }
+  }
+
   // Step 2: Retrieve the business loyalty rules
   const { data: loyaltyRule } = await supabase
     .from('loyalty_programs')
@@ -96,11 +136,12 @@ export async function recordPurchase(params: {
     };
 
   // Step 3: Calculate points server-side
-  const { points, explanation } = calculateLoyaltyPoints(rule, amount);
-  const txDesc = description && description.trim().length > 0 ? description.trim() : 'Purchase';
+  const { points } = calculateLoyaltyPoints(rule, amount);
+  const baseDesc = description && description.trim().length > 0 ? description.trim() : 'Purchase';
+  const txDesc = clientTxId ? `${baseDesc} [idempotency:${clientTxId}]` : baseDesc;
 
   // Step 4: Create transaction
-  let txId = 'tx_' + Date.now();
+  let txId = clientTxId || ('tx_' + Date.now());
   try {
     const { data: newTx } = await supabase
       .from('transactions')
@@ -149,13 +190,20 @@ export async function recordPurchase(params: {
   revalidatePath(`/customers/${customerId}`);
   revalidatePath('/transactions');
 
-  return {
+  const result: RecordPurchaseResult = {
     success: true,
     pointsAwarded: points,
     newBalance,
     transactionId: txId,
     customerName: customer.name,
+    alreadyProcessed: false,
   };
+
+  if (clientTxId) {
+    IDEMPOTENT_TRANSACTION_CACHE.set(clientTxId, result);
+  }
+
+  return result;
 }
 
 /**

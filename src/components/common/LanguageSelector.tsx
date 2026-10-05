@@ -1,31 +1,55 @@
 'use client';
 
 import React from 'react';
-import { useLanguage } from '@/lib/i18n/LanguageContext';
-import { Languages } from 'lucide-react';
+import { useLanguage, type Language } from '@/lib/i18n/LanguageContext';
 
 interface LanguageSelectorProps {
   className?: string;
-  variant?: 'pill' | 'minimal' | 'full' | 'compact';
+  variant?: 'pill' | 'minimal' | 'full' | 'compact' | 'dark';
+  theme?: 'light' | 'dark';
 }
+
+const LANGUAGES: { code: Language; label: string; ariaLabel: string }[] = [
+  { code: 'en', label: 'EN', ariaLabel: 'English' },
+  { code: 'fr', label: 'FR', ariaLabel: 'Français' },
+  { code: 'ar', label: 'AR', ariaLabel: 'العربية (Arabic)' },
+];
 
 export function LanguageSelector({
   className = '',
   variant = 'pill',
+  theme = 'light',
 }: LanguageSelectorProps) {
   const { language, setLanguage } = useLanguage();
+  const isDark = theme === 'dark' || variant === 'dark';
 
-  if (variant === 'minimal') {
+  if (isDark) {
     return (
-      <button
-        type="button"
-        onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#736B63] hover:text-[#191817] hover:bg-[#FAF8F5] border border-[#E6DDCF] transition-all cursor-pointer ${className}`}
-        aria-label="Change language"
+      <div
+        role="group"
+        aria-label="Select language"
+        className={`inline-flex items-center p-1 rounded-full bg-white/5 border border-white/15 select-none text-xs font-bold gap-1 shadow-inner backdrop-blur-xs ${className}`}
       >
-        <Languages className="w-3.5 h-3.5 text-[#B88E3E]" />
-        <span>{language === 'en' ? 'العربية' : 'English'}</span>
-      </button>
+        {LANGUAGES.map(({ code, label, ariaLabel }) => {
+          const isActive = language === code;
+          return (
+            <button
+              key={code}
+              type="button"
+              onClick={() => setLanguage(code)}
+              className={`px-3 py-1 rounded-full transition-all cursor-pointer text-xs font-bold ${
+                isActive
+                  ? 'bg-[#111111] text-[#FFE600] border border-[#FFE600]/40 shadow-xs font-black ring-1 ring-[#FFE600]/25'
+                  : 'text-zinc-300 hover:text-white hover:bg-white/10 active:scale-95'
+              }`}
+              aria-pressed={isActive}
+              aria-label={ariaLabel}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
     );
   }
 
@@ -33,35 +57,27 @@ export function LanguageSelector({
     <div
       role="group"
       aria-label="Select language"
-      className={`inline-flex items-center p-0.5 rounded-xl bg-[#F3ECE2] border border-[#E6DDCF] select-none text-xs font-bold ${className}`}
+      className={`inline-flex items-center p-0.5 rounded-full bg-black/5 border border-black/10 select-none text-[11px] font-bold text-[#111111]/70 ${className}`}
     >
-      <button
-        type="button"
-        onClick={() => setLanguage('en')}
-        className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-          language === 'en'
-            ? 'bg-[#FFFFFF] text-[#191817] shadow-xs font-black'
-            : 'text-[#736B63] hover:text-[#191817]'
-        }`}
-        aria-pressed={language === 'en'}
-      >
-        EN
-      </button>
-
-      <span className="text-[#DFC99F] text-[10px] px-0.5">|</span>
-
-      <button
-        type="button"
-        onClick={() => setLanguage('ar')}
-        className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer font-sans ${
-          language === 'ar'
-            ? 'bg-[#FFFFFF] text-[#191817] shadow-xs font-black'
-            : 'text-[#736B63] hover:text-[#191817]'
-        }`}
-        aria-pressed={language === 'ar'}
-      >
-        العربية
-      </button>
+      {LANGUAGES.map(({ code, label, ariaLabel }) => {
+        const isActive = language === code;
+        return (
+          <button
+            key={code}
+            type="button"
+            onClick={() => setLanguage(code)}
+            className={`px-2 py-0.5 rounded-full transition-all cursor-pointer ${
+              isActive
+                ? 'bg-[#111111] text-[#FFE600] shadow-xs font-black'
+                : 'text-[#111111]/70 hover:text-[#111111] hover:bg-black/5'
+            }`}
+            aria-pressed={isActive}
+            aria-label={ariaLabel}
+          >
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 }

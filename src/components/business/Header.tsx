@@ -1,15 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { Menu, UserPlus, Receipt, Sparkles, QrCode } from 'lucide-react';
+import { Menu, Receipt, Sparkles, QrCode } from 'lucide-react';
 import { RecordPurchaseModal } from './RecordPurchaseModal';
-import { AddCustomerModal } from './AddCustomerModal';
 import { ScanCustomerModal } from './ScanCustomerModal';
 import { LanguageSelector } from '@/components/common/LanguageSelector';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import type { Customer } from '@/types/database';
+import { OfflineStatusBar } from './OfflineStatusBar';
 
 interface BusinessHeaderProps {
+  businessId?: string;
   businessName?: string;
   userName?: string;
   customers?: Customer[];
@@ -17,6 +18,7 @@ interface BusinessHeaderProps {
 }
 
 export function BusinessHeader({
+  businessId = 'biz-default-1',
   businessName = 'Hbibna Business',
   userName = 'Owner',
   customers = [],
@@ -24,7 +26,6 @@ export function BusinessHeader({
 }: BusinessHeaderProps) {
   const [showScanModal, setShowScanModal] = useState(false);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
-  const [showCustomerModal, setShowCustomerModal] = useState(false);
   const { t } = useLanguage();
 
   // User initials
@@ -39,13 +40,13 @@ export function BusinessHeader({
 
   return (
     <>
-      <header className="h-18 px-4 sm:px-6 lg:px-8 border-b border-[#E6DDCF] bg-[#FFFFFF] flex items-center justify-between sticky top-0 z-30">
+      <header className="h-20 px-4 sm:px-6 lg:px-8 border-b-2 border-black bg-white flex items-center justify-between sticky top-0 z-30 font-rounded">
         {/* Left: Mobile hamburger & Business Name */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           {onToggleMobileMenu && (
             <button
               onClick={onToggleMobileMenu}
-              className="lg:hidden p-2 rounded-xl text-[#736B63] hover:text-[#191817] hover:bg-[#FAF8F5] transition-colors shrink-0"
+              className="lg:hidden p-2 rounded-2xl text-black hover:bg-black/5 transition-colors shrink-0 border-2 border-black"
               aria-label="Toggle Navigation"
             >
               <Menu className="w-5 h-5" />
@@ -53,14 +54,14 @@ export function BusinessHeader({
           )}
 
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-[#FBF6EB] text-[#B88E3E] border border-[#DFC99F]/50 flex items-center justify-center font-bold text-xs shrink-0">
+            <div className="w-9 h-9 rounded-2xl bg-[#FFDE59] text-black border-2 border-black flex items-center justify-center font-black text-xs shrink-0 shadow-[0_2px_0_#000]">
               <Sparkles className="w-4 h-4" />
             </div>
             <div className="min-w-0 text-start">
-              <h2 className="text-sm sm:text-lg font-bold text-[#191817] tracking-tight truncate max-w-[120px] sm:max-w-xs">
+              <h2 className="text-sm sm:text-base font-black text-black tracking-tight truncate max-w-[120px] sm:max-w-xs">
                 {businessName}
               </h2>
-              <span className="hidden sm:inline-block text-[11px] font-medium text-[#736B63]">
+              <span className="hidden sm:inline-block text-[11px] font-bold text-black/60">
                 {t('business.systemName')}
               </span>
             </div>
@@ -68,34 +69,28 @@ export function BusinessHeader({
         </div>
 
         {/* Right: Quick Actions, Language & User Profile */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {/* Quick Action: Scan Customer (QR Identification) */}
           <button
             onClick={() => setShowScanModal(true)}
-            className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-[#191817] hover:bg-[#2B2927] shadow-soft transition-all active:scale-[0.98] cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2.5 rounded-2xl text-xs font-black text-white bg-black hover:bg-zinc-800 border-2 border-black shadow-[0_3px_0_#000] hover:translate-x-0.5 active:translate-y-1 active:shadow-none transition-all cursor-pointer"
           >
-            <QrCode className="w-3.5 h-3.5 text-[#DFC99F]" />
+            <QrCode className="w-4 h-4 text-[#FFE600]" />
             <span className="hidden sm:inline">{t('business.scanCustomer')}</span>
             <span className="sm:hidden">{t('business.scanCustomerShort')}</span>
-          </button>
-
-          {/* Quick Action: Add Customer */}
-          <button
-            onClick={() => setShowCustomerModal(true)}
-            className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-[#191817] bg-[#FAF8F5] border border-[#E6DDCF] hover:bg-[#F3ECE2] transition-colors cursor-pointer"
-          >
-            <UserPlus className="w-3.5 h-3.5 text-[#B88E3E]" />
-            <span>{t('business.addCustomer')}</span>
           </button>
 
           {/* Quick Action: Add Purchase */}
           <button
             onClick={() => setShowPurchaseModal(true)}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-[#191817] bg-[#FAF8F5] border border-[#E6DDCF] hover:bg-[#F3ECE2] transition-all active:scale-[0.98] cursor-pointer"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2.5 rounded-2xl text-xs font-black text-black bg-[#FFE600] border-2 border-black shadow-[0_3px_0_#000] hover:bg-yellow-400 hover:translate-x-0.5 active:translate-y-1 active:shadow-none transition-all cursor-pointer"
           >
-            <Receipt className="w-3.5 h-3.5 text-[#B88E3E]" />
+            <Receipt className="w-4 h-4 text-black" />
             <span>{t('business.addPurchase')}</span>
           </button>
+
+          {/* Offline / Online Connectivity & Sync Status Bar */}
+          <OfflineStatusBar businessId={businessId} />
 
           {/* Language Selector */}
           <div className="hidden sm:block">
@@ -103,16 +98,16 @@ export function BusinessHeader({
           </div>
 
           {/* Divider */}
-          <div className="h-6 w-px bg-[#E6DDCF] mx-0.5 sm:mx-1 hidden sm:block" />
+          <div className="h-6 w-0.5 bg-black/10 mx-0.5 hidden sm:block" />
 
           {/* User Profile */}
           <div className="flex items-center gap-2 pl-0.5 sm:pl-1 shrink-0">
-            <div className="w-8 h-8 rounded-full bg-[#191817] text-[#FAF8F5] flex items-center justify-center font-bold text-xs tracking-wider border border-[#DFC99F]/40 shadow-xs shrink-0 font-mono">
+            <div className="w-9 h-9 rounded-2xl bg-black text-[#FFE600] flex items-center justify-center font-black text-xs tracking-wider border-2 border-black shadow-[0_2px_0_#000] shrink-0 font-mono">
               {initials}
             </div>
             <div className="hidden md:block text-start">
-              <p className="text-xs font-bold text-[#191817] leading-tight">{userName}</p>
-              <p className="text-[10px] text-[#B88E3E] font-medium">{t('common.owner')}</p>
+              <p className="text-xs font-black text-black leading-tight">{userName}</p>
+              <p className="text-[10px] text-black/60 font-bold">{t('common.owner')}</p>
             </div>
           </div>
         </div>
@@ -124,6 +119,7 @@ export function BusinessHeader({
           isOpen={showScanModal}
           onClose={() => setShowScanModal(false)}
           customers={customers}
+          businessId={businessId}
         />
       )}
 
@@ -132,13 +128,7 @@ export function BusinessHeader({
           isOpen={showPurchaseModal}
           onClose={() => setShowPurchaseModal(false)}
           customers={customers}
-        />
-      )}
-
-      {showCustomerModal && (
-        <AddCustomerModal
-          isOpen={showCustomerModal}
-          onClose={() => setShowCustomerModal(false)}
+          businessId={businessId}
         />
       )}
     </>

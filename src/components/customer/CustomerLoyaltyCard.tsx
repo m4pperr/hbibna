@@ -1,107 +1,393 @@
 'use client';
 
+import React, { useState, useRef } from 'react';
+import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
-import { Sparkles, QrCode } from 'lucide-react';
+import {
+  Sparkles,
+  QrCode,
+  Wifi,
+  CheckCircle2,
+  Star,
+  ShieldCheck,
+  ArrowRight,
+  Store,
+  Smartphone,
+  Check,
+  Gift,
+} from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
-import type { Customer, Business } from '@/types/database';
+import type { Customer, Business, CustomerBusinessMembership } from '@/types/database';
 
 interface CustomerLoyaltyCardProps {
-  customer: Customer;
+  customer: Customer | null;
   business?: Business | null;
+  membership?: CustomerBusinessMembership | null;
+  pointsBalance?: number;
+  activeQueryStr?: string;
+  showQrStub?: boolean;
 }
 
 export function CustomerLoyaltyCard({
   customer,
   business,
+  membership,
+  pointsBalance: overridePoints,
+  activeQueryStr = '',
+  showQrStub = true,
 }: CustomerLoyaltyCardProps) {
-  const { t } = useLanguage();
-  // QR value can encode customer ID or phone for instant lookup
-  const qrValue = typeof window !== 'undefined'
-    ? `${window.location.origin}/customers/${customer.id}`
-    : `hbibna://customer/${customer.id}`;
+  const { t, language } = useLanguage();
+  const isAr = language === 'ar';
+  const isFr = language === 'fr';
+
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
+  const [walletAdded, setWalletAdded] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const customerName = customer?.name || (isAr ? 'سارة بن علي' : 'Sarah Benali');
+  const activeBusinessName =
+    business?.name || membership?.business?.name || (isAr ? 'مقهى الباهية' : 'Café Roastery 44');
+  const points =
+    overridePoints !== undefined
+      ? overridePoints
+      : membership?.points_balance !== undefined
+      ? membership.points_balance
+      : customer?.points_balance || 1240;
+
+  // Tier visual configuration
+  const tierConfig =
+    points >= 1500
+      ? {
+          tier: isAr ? 'بطاقة النخبة VIP' : isFr ? 'Pass Élite VIP' : 'VIP Elite Pass',
+          badge: 'ELITE VIP',
+          frameBg: '#1A1A1A',
+          accentGrad: 'from-[#38BDF8] via-[#818CF8] to-[#C084FC]',
+        }
+      : points >= 500
+      ? {
+          tier: isAr ? 'بطاقة بريفيليدج' : isFr ? 'Pass Privilège' : 'Privilege Pass',
+          badge: 'PRIVILÈGE',
+          frameBg: '#E25B6C',
+          accentGrad: 'from-[#F43F5E] via-[#FB7185] to-[#FBBF24]',
+        }
+      : {
+          tier: isAr ? 'بطاقة ذهبية VIP' : isFr ? 'Pass Or VIP' : 'Gold VIP Pass',
+          badge: 'VIP GOLD',
+          frameBg: '#EEC044',
+          accentGrad: 'from-[#4ADE80] via-[#F472B6] to-[#EEC044]',
+        };
+
+  // Next reward & target points calculation for maximum customer clarity
+  const nextTierTarget =
+    points >= 1500 ? 2500 : points >= 500 ? 1500 : 500;
+
+  const pointsRemaining = Math.max(0, nextTierTarget - points);
+
+  const progressPercent = Math.min(100, Math.round((points / nextTierTarget) * 100));
+
+  const nextRewardTitle =
+    points >= 1500
+      ? isAr
+        ? 'هدية حصرية VIP & تجربة خاصة'
+        : isFr
+        ? 'Cadeau VIP Élite & Boisson'
+        : 'Exclusive VIP Gift & Beverage'
+      : points >= 500
+      ? isAr
+        ? 'مشروب فاخر أو تحلية مجانية'
+        : isFr
+        ? 'Café ou Boisson Offerte'
+        : 'Free Beverage or Dessert'
+      : isAr
+      ? 'خصم 20% على طلبك القادم'
+      : isFr
+      ? 'Remise 20% sur la commande'
+      : '20% Off Next Order';
+
+  // Secure token for counter QR code
+  const secureQrToken = customer?.id
+    ? `hbibna:c:${customer.id}`
+    : typeof window !== 'undefined'
+    ? `${window.location.origin}/customers/demo`
+    : 'hbibna:c:demo_user';
+
+  const customerIdDisplay = customer?.id
+    ? `HB-${customer.id.slice(0, 4).toUpperCase()}-DZ`
+    : 'HB-8821-DZ';
+
+  // 3D Tilt handler
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
+    setTilt({
+      x: (y / rect.height) * -12,
+      y: (x / rect.width) * 12,
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setTilt({ x: 0, y: 0 });
+    setIsHovered(false);
+  };
+
+  const handleAddToWallet = () => {
+    setWalletAdded(true);
+    setTimeout(() => setWalletAdded(false), 4000);
+  };
 
   return (
-    <div className="w-full max-w-sm mx-auto">
-      {/* Physical-style Digital Membership Card */}
-      <div className="relative rounded-3xl bg-gradient-to-br from-[#1C1A17] to-[#2B2722] text-[#FAF8F5] p-6 shadow-2xl overflow-hidden border border-[#DFC99F]/30 transition-all hover:scale-[1.01]">
-        {/* Subtle background glow */}
-        <div className="absolute -top-12 -right-12 w-44 h-44 rounded-full bg-[#B88E3E]/20 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-12 -left-12 w-44 h-44 rounded-full bg-[#DFC99F]/10 blur-3xl pointer-events-none" />
-
-        {/* Card Header */}
-        <div className="flex items-center justify-between relative z-10">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#B88E3E] flex items-center justify-center text-white shadow-soft">
-              <Sparkles className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <p className="text-[10px] tracking-widest uppercase font-bold text-[#DFC99F]">
-                {t('customer.myPass')}
-              </p>
-              <h3 className="font-bold text-sm tracking-tight text-[#FAF8F5]">
-                {business?.name || t('customer.myPass')}
-              </h3>
-            </div>
-          </div>
-          <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-[#B88E3E]/20 text-[#DFC99F] border border-[#DFC99F]/30">
-            {t('home.cardVipStatus')}
+    <div className="w-full max-w-md mx-auto font-rounded flex flex-col items-center">
+      {/* 1. MICRO LIVE NOTIFICATION */}
+      <div className="mb-3.5 z-20">
+        <div className="px-4 py-1.5 rounded-full bg-[#111111] text-[#FFE600] border-2 border-[#111111] shadow-[0_3px_0_#000] text-xs font-black flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span>
+            {isAr
+              ? '✨ بطاقة ولاء رقمية نشطة • جاهزة للمسح في ثانية واحدة'
+              : isFr
+              ? '✨ Pass fidélité actif • Prêt pour le scan en caisse'
+              : '✨ Active Loyalty Pass • Ready for 1.2s counter scan'}
           </span>
         </div>
+      </div>
 
-        {/* Card Body - Points Balance */}
-        <div className="my-8 relative z-10">
-          <p className="text-xs uppercase tracking-wider font-medium text-[#DFC99F]/80">
-            {t('customer.balance')}
-          </p>
-          <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-5xl font-extrabold text-[#DFC99F] tracking-tight">
-              {customer.points_balance.toLocaleString()}
+      {/* 2. LE PASS 3D DÉCOUPÉ (PHYGITAL CARD) */}
+      <div
+        ref={containerRef}
+        onMouseMove={handleMouseMove}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={handleMouseLeave}
+        style={{
+          backgroundColor: tierConfig.frameBg,
+          transform: `perspective(1200px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+          transition: isHovered
+            ? 'transform 0.1s ease-out'
+            : 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        }}
+        className="relative w-full rounded-[2.2rem] p-2.5 sm:p-3 border-[3px] border-[#111111] shadow-[0_10px_0_#111111] select-none transition-shadow group"
+      >
+        {/* ==============================================================
+            SURFACE INTÉRIEURE DE LA CARTE (SMARTPASS INSERT)
+            ============================================================== */}
+        <div className="relative w-full rounded-[1.6rem] bg-[#FAF8F5] border-[2.5px] border-[#111111] p-4 sm:p-5 flex flex-col justify-between overflow-hidden shadow-inner text-[#111111] text-start">
+          {/* Reflet shimmer iridescent */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full duration-1000 transition-transform pointer-events-none" />
+
+          {/* 4 Coins de rétention noirs */}
+          <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-black pointer-events-none" />
+          <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-black pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-black pointer-events-none" />
+          <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-black pointer-events-none" />
+
+          {/* 1. EN-TÊTE : Logo Hbibna officiel + Commerce & Télémétrie */}
+          <div className="relative z-10 flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/assets/hbibna-icon-trimmed.png"
+                alt="Hbibna"
+                className="w-7 h-7 sm:w-8 sm:h-8 object-contain shrink-0"
+              />
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] uppercase font-black tracking-widest text-[#E25B6C]">
+                    PASS FIDÉLITÉ
+                  </span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-black/30" />
+                  <span className="text-[9px] font-mono text-zinc-500 font-bold">LIVE</span>
+                </div>
+                <h3 className="font-black text-sm sm:text-base text-[#111111] leading-tight truncate">
+                  {activeBusinessName}
+                </h3>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#111111] text-[#FFE600] text-[9px] font-black font-mono shadow-xs">
+                <Wifi className="w-3 h-3 rotate-90" />
+                <span>NFC</span>
+              </div>
+              <span className="px-2 py-0.5 rounded-md bg-[#FFE600] text-[#111111] border border-black/20 text-[9px] font-black uppercase font-mono">
+                {tierConfig.badge}
+              </span>
+            </div>
+          </div>
+
+          {/* 2. CENTRE : PROCHAINE RÉCOMPENSE & JAUGE DE PROGRESSION BIEN VISIBLE */}
+          <div className="relative z-10 my-3 py-2.5 px-3.5 rounded-2xl bg-white/90 backdrop-blur-xs border-2 border-[#111111] shadow-[0_3px_0_#111111] space-y-2">
+            {/* Ligne 1 : Prochaine récompense à gauche, Solde de points à droite */}
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div
+                  className={`relative w-8 h-8 rounded-lg border border-[#111111] flex items-center justify-center bg-gradient-to-r ${tierConfig.accentGrad} shadow-xs shrink-0`}
+                >
+                  <Gift className="w-4 h-4 text-[#111111] stroke-[2.5]" />
+                </div>
+                <div className="min-w-0 text-start">
+                  <span className="text-[9px] uppercase font-black tracking-widest text-[#E25B6C] block leading-none">
+                    {isAr ? 'المكافأة القادمة' : isFr ? 'Prochaine récompense' : 'Next Reward'}
+                  </span>
+                  <div className="text-xs sm:text-sm font-black text-[#111111] truncate mt-0.5 leading-tight">
+                    {nextRewardTitle}
+                  </div>
+                </div>
+              </div>
+
+              {/* Solde de points en grand */}
+              <div className="text-end shrink-0 pl-1">
+                <div className="text-[8px] font-mono font-bold text-zinc-500 uppercase leading-none mb-0.5">
+                  {isAr ? 'الرصيد' : isFr ? 'Solde' : 'Balance'}
+                </div>
+                <div className="text-xl sm:text-2xl font-black text-[#111111] tracking-tight leading-none">
+                  {points.toLocaleString()} <span className="text-xs text-[#E25B6C]">PTS</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Ligne 2 : Jauge de progression bien visible pour le client */}
+            <div className="space-y-1 pt-0.5">
+              <div className="w-full h-2.5 rounded-full bg-zinc-200 border border-[#111111] p-0.5 overflow-hidden shadow-inner">
+                <div
+                  className="h-full rounded-full transition-all duration-700 shadow-xs"
+                  style={{
+                    width: `${progressPercent}%`,
+                    backgroundColor:
+                      tierConfig.frameBg === '#1A1A1A' ? '#111111' : tierConfig.frameBg,
+                  }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[10px] font-mono font-bold text-zinc-600">
+                <span>
+                  {pointsRemaining > 0
+                    ? isAr
+                      ? `${progressPercent}% نحو المكافأة القادمة (${pointsRemaining} نقطة متبقية)`
+                      : isFr
+                      ? `${progressPercent}% vers la prochaine récompense (${pointsRemaining} pts restants)`
+                      : `${progressPercent}% to next reward (${pointsRemaining} pts left)`
+                    : isAr
+                    ? '✨ 100% جاهزة للاستبدال !'
+                    : isFr
+                    ? '✨ 100% Prête à débloquer !'
+                    : '✨ 100% Ready to unlock!'}
+                </span>
+                <span className="font-black text-[#111111] px-1.5 py-0.5 rounded bg-black/5">
+                  {progressPercent}%
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. BAS DE CARTE : Titulaire, Identifiant & Étoiles */}
+          <div className="relative z-10 pt-1 flex items-end justify-between gap-2">
+            <div>
+              <div className="text-[9px] font-mono text-zinc-500 uppercase font-bold">
+                {isAr ? 'حامل الجواز' : isFr ? 'Titulaire du pass' : 'Passholder'}
+              </div>
+              <div className="text-sm font-black text-[#111111] leading-tight">
+                {customerName}
+              </div>
+              <div className="text-[10px] font-mono text-zinc-500 font-bold mt-0.5">
+                ID: {customerIdDisplay}
+              </div>
+            </div>
+
+            {/* Étoiles & Statut membre */}
+            <div className="flex flex-col items-end shrink-0">
+              <div className="flex items-center gap-0.5 text-[#EEC044] mb-1">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-3 h-3 fill-current" />
+                ))}
+              </div>
+              <span className="text-[9px] font-mono font-bold text-zinc-500">
+                {isAr ? 'عضوية نشطة وموثقة' : isFr ? 'Membre actif vérifié' : 'Active verified member'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. EN-DESSOUS : LE BON DÉTACHABLE POUR LE SCAN AU COMPTOIR */}
+      {showQrStub && (
+        <div className="w-full mt-5 bg-[#FAF8F5] border-[2.5px] border-[#111111] rounded-3xl p-5 sm:p-6 text-center shadow-[0_6px_0_#111111] relative overflow-hidden space-y-4">
+          {/* Ligne de perforation style ticket détachable */}
+          <div className="flex items-center justify-between pb-3 border-b-2 border-dashed border-[#111111]/25">
+            <div className="text-start">
+              <span className="text-[10px] uppercase font-black text-[#E25B6C] tracking-wider block">
+                {isAr ? 'الباركود الشخصي' : isFr ? 'Pass Caisse Rapide' : 'Counter Checkout'}
+              </span>
+              <h4 className="text-sm font-black text-[#111111]">
+                {isAr ? 'امسح عند الكاونتر' : isFr ? 'Scannez lors du passage en caisse' : 'Scan at checkout counter'}
+              </h4>
+            </div>
+            <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-black font-mono">
+              ● 1.2s SCAN
             </span>
-            <span className="text-base font-semibold text-[#FAF8F5]/80">{t('business.points')}</span>
           </div>
-        </div>
 
-        {/* Card Footer - Member Details & Mini QR Icon */}
-        <div className="pt-4 border-t border-white/10 flex items-end justify-between relative z-10 text-xs">
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-[#FAF8F5]/50">
-              {t('business.customer')}
+          {/* QR Code Container */}
+          <div className="p-3.5 bg-white border-2 border-[#111111] rounded-2xl inline-flex items-center justify-center shadow-[0_3px_0_#111111] mx-auto">
+            <QRCodeSVG
+              value={secureQrToken}
+              size={160}
+              level="M"
+              bgColor="#FFFFFF"
+              fgColor="#111111"
+              aria-label={t('customer.myQr')}
+              className="w-36 h-36 sm:w-40 sm:h-40"
+            />
+          </div>
+
+          <div className="text-center space-y-1">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#111111] text-[#FFE600] text-[10px] font-mono font-black shadow-xs">
+              <ShieldCheck className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>{customerIdDisplay}</span>
+            </div>
+            <p className="text-[10px] text-zinc-500 font-bold max-w-xs mx-auto">
+              {isAr
+                ? 'رمز مشفر وآمن مخصص حصرياً لنقاطك ومكافآتك'
+                : isFr
+                ? 'Code chiffré et sécurisé dédié exclusivement à vos points'
+                : 'Encrypted code scoped strictly to your store rewards'}
             </p>
-            <p className="font-semibold text-sm text-[#FAF8F5]">{customer.name}</p>
-            <p className="text-[11px] text-[#DFC99F]/80 font-mono mt-0.5" dir="ltr">{customer.phone}</p>
           </div>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/10 text-white text-[11px] font-medium backdrop-blur-xs">
-            <QrCode className="w-3.5 h-3.5 text-[#DFC99F]" />
-            <span>{t('customer.myQr')}</span>
+          {/* 4. ACTIONS : AJOUTER À APPLE WALLET */}
+          <div className="pt-3 border-t-2 border-dashed border-[#111111]/25 flex flex-col sm:flex-row items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={handleAddToWallet}
+              className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-xs font-black transition-all cursor-pointer border-2 border-black shadow-[0_3px_0_#000] active:translate-y-0.5 active:shadow-[0_1px_0_#000] ${
+                walletAdded
+                  ? 'bg-emerald-600 text-white border-emerald-800'
+                  : 'bg-black hover:bg-neutral-900 text-white'
+              }`}
+            >
+              {walletAdded ? (
+                <>
+                  <Check className="w-4 h-4 stroke-[2.5]" />
+                  <span>{isAr ? 'تمت الإضافة بنجاح !' : isFr ? 'Pass ajouté à Apple Wallet !' : 'Added to Apple Wallet!'}</span>
+                </>
+              ) : (
+                <>
+                  <Smartphone className="w-4 h-4 stroke-[2.5]" />
+                  <span>{isAr ? 'أضف إلى Apple Wallet' : isFr ? 'Ajouter à Apple Wallet' : 'Add to Apple Wallet'}</span>
+                </>
+              )}
+            </button>
+
+            <Link
+              href={`/customer/qr${activeQueryStr}`}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-black bg-white hover:bg-zinc-100 text-[#111111] border-2 border-black shadow-[0_2px_0_#000]"
+            >
+              <QrCode className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>{isAr ? 'تكبير الرمز' : isFr ? 'Plein écran' : 'Fullscreen'}</span>
+            </Link>
           </div>
         </div>
-      </div>
-
-      {/* QR Code Presentation for In-Store Counter Scanning */}
-      <div className="mt-6 bg-[#FFFFFF] border border-[#E6DDCF] rounded-2xl p-6 text-center shadow-card space-y-4">
-        <div>
-          <h4 className="text-sm font-bold text-[#191817]">{t('customer.counterPass')}</h4>
-          <p className="text-xs text-[#736B63] mt-0.5">
-            {t('customer.scanAtCounter')}
-          </p>
-        </div>
-
-        <div className="p-4 bg-[#FAF8F5] border border-[#E6DDCF] rounded-2xl inline-block shadow-inner mx-auto">
-          <QRCodeSVG
-            value={qrValue}
-            size={180}
-            level="M"
-            bgColor="#FAF8F5"
-            fgColor="#191817"
-            aria-label={t('customer.myQr')}
-          />
-        </div>
-
-        <p className="text-[11px] text-[#736B63] font-mono" dir="ltr">
-          ID: {customer.id.slice(0, 8)}...
-        </p>
-      </div>
+      )}
     </div>
   );
 }

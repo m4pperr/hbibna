@@ -15,7 +15,7 @@ export default async function RewardsCatalogPage() {
   const catalogItems = await getPublicRewardsCatalog();
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] text-[#191817] flex flex-col font-sans selection:bg-[#B88E3E]/20 selection:text-[#191817]">
+    <div className="min-h-screen bg-[#FFDE59] text-black flex flex-col font-rounded selection:bg-black selection:text-[#FFDE59]">
       <PublicNavbar />
       <RewardsCatalogView catalogItems={catalogItems} />
       <PublicFooter />

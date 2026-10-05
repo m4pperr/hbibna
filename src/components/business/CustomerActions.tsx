@@ -29,17 +29,17 @@ export function CustomerActions({
       <div className="flex items-center gap-2.5">
         <button
           onClick={() => setShowRedeemModal(true)}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold text-[#191817] bg-[#FAF8F5] border border-[#E6DDCF] hover:bg-[#F3ECE2] transition-colors cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-black text-black bg-white border-2 border-black shadow-[0_4px_0_#000] hover:bg-[#FFF9D2] active:translate-y-0.5 active:shadow-[0_2px_0_#000] transition-all cursor-pointer"
         >
-          <Gift className="w-3.5 h-3.5 text-[#B88E3E]" />
+          <Gift className="w-4 h-4 text-black stroke-[2.5]" />
           <span>{t('business.redeem')}</span>
         </button>
 
         <button
           onClick={() => setShowPurchaseModal(true)}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-[#B88E3E] hover:bg-[#A37B30] shadow-soft transition-all cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-black text-[#FFE600] bg-black border-2 border-black shadow-[0_4px_0_#000] hover:bg-neutral-900 active:translate-y-0.5 active:shadow-[0_2px_0_#000] transition-all cursor-pointer"
         >
-          <Receipt className="w-3.5 h-3.5 text-white" />
+          <Receipt className="w-4 h-4 text-[#FFE600] stroke-[2.5]" />
           <span>{t('business.addPurchase')}</span>
         </button>
       </div>

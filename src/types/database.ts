@@ -1,4 +1,4 @@
-export type SubscriptionStatus = 'trial' | 'active' | 'past_due' | 'cancelled';
+export type SubscriptionStatus = 'trial' | 'active' | 'past_due' | 'cancelled' | 'pending_payment';
 export type UserRole = 'owner' | 'manager' | 'cashier';
 export type LoyaltyRuleType = 'per_purchase' | 'per_currency';
 export type TransactionType = 'earn' | 'adjustment' | 'redeem';

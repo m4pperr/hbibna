@@ -1,20 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #FAF8F5;
-  --foreground: #191817;
-  --card: #FFFFFF;
-  --card-foreground: #191817;
-  --surface: #F3ECE2;
-  --surface-border: #E6DDCF;
-  --muted: #736B63;
-  --gold: #B88E3E;
-  --gold-hover: #A37B30;
-  --gold-light: #FBF6EB;
-  --gold-border: #DFC99F;
+  /* Hbibna Yellow & Bold Friendly Brand Tokens */
+  --color-brand-primary: #000000;
+  --color-brand-primary-hover: #262626;
+  --color-brand-yellow: #EEC044;
+  --color-brand-yellow-alt: #FFE600;
+  --color-text-dark-primary: #000000;
+  --color-text-dark-secondary: #52525b;
+  --color-text-inverse: #ffffff;
+  --color-bg-body: #EEC044;
+  --color-bg-surface: #FAF8F5;
+  --color-bg-surface-light: #ffffff;
+  --color-border-subtle: #000000;
+  --color-success: #16a34a;
+  --color-error: #dc2626;
+  --color-focus-ring: #000000;
+
+  /* Hbibna Global Mapping */
+  --background: #EEC044;
+  --foreground: #111111;
+  --card: #FAF8F5;
+  --card-foreground: #111111;
+  --surface: #FFE600;
+  --surface-border: #111111;
+  --muted: #52525b;
+  --gold: #EEC044;
+  --gold-hover: #F5C542;
+  --gold-light: #FEF08A;
+  --gold-border: #111111;
+
+  /* Ticket & Coupon Identity Tokens */
+  --color-ticket-yellow: #EEC044;
+  --color-ticket-rose: #E25B6C;
+  --color-ticket-rose-dark: #D94B5E;
+  --color-ticket-black: #111111;
+  --color-ticket-cream: #FAF8F5;
 }
 
 @theme inline {
+  --color-brand-primary: var(--color-brand-primary);
+  --color-brand-primary-hover: var(--color-brand-primary-hover);
+  --color-brand-yellow: var(--color-brand-yellow);
+  --color-brand-yellow-alt: var(--color-brand-yellow-alt);
+  --color-text-dark: var(--color-text-dark-primary);
+  --color-text-muted: var(--color-text-dark-secondary);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -37,6 +68,7 @@ body {
 body {
   background-color: var(--background);
   color: var(--foreground);
+  font-family: 'Outfit', var(--font-sans), 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
@@ -48,27 +80,117 @@ html[lang="ar"] body {
 }
 
 /* Custom scrollbars and subtle transitions */
-* {
-  border-color: var(--surface-border);
+
+/* Glassmorphism & Elevation */
+.glass-pill {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 8px 32px -4px rgba(26, 5, 7, 0.06), 0 2px 8px -2px rgba(26, 5, 7, 0.03);
 }
 
-/* Glass & warm elevation shadows */
-.shadow-soft {
-  box-shadow: 0 4px 20px -2px rgba(25, 24, 23, 0.04), 0 2px 6px -1px rgba(25, 24, 23, 0.02);
+.glass-pill-dark {
+  background: rgba(26, 5, 7, 0.85);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.2);
+}
+
+.font-rounded,
+.font-friendly {
+  font-family: 'Outfit', var(--font-sans), 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
+.shadow-friendly {
+  box-shadow: 0 14px 34px -4px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+}
+
+.shadow-friendly-dark {
+  box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.35);
+}
+
+.shadow-chunky {
+  box-shadow: 0 6px 0px #000000;
+}
+
+.shadow-chunky-sm {
+  box-shadow: 0 3px 0px #000000;
 }
 
 .shadow-card {
-  box-shadow: 0 8px 30px -4px rgba(25, 24, 23, 0.06), 0 2px 8px -2px rgba(25, 24, 23, 0.03);
+  box-shadow: 0 10px 30px -4px rgba(26, 5, 7, 0.06), 0 2px 8px -2px rgba(26, 5, 7, 0.03);
 }
 
-.shadow-gold {
-  box-shadow: 0 6px 20px -2px rgba(184, 142, 62, 0.25);
+.shadow-driveberry-glow {
+  box-shadow: 0 12px 35px -6px rgba(254, 49, 68, 0.3);
+}
+
+.shadow-button-inner {
+  box-shadow: var(--shadow-button-inner);
+}
+
+/* Hover Roll Animation for Buttons & Badges */
+.btn-roll-text {
+  display: inline-flex;
+  overflow: hidden;
+  line-height: 1.25;
+}
+
+.btn-roll-text span {
+  display: inline-block;
+  position: relative;
+  text-shadow: 0 1.3em currentColor;
+  transform: translateY(0) rotate(0.001deg);
+  transition: transform 0.4s cubic-bezier(0.625, 0.05, 0, 1);
+}
+
+.group:hover .btn-roll-text span,
+.btn-roll:hover .btn-roll-text span {
+  transform: translateY(-1.3em) rotate(0.001deg);
+}
+
+/* Continuous Infinite Marquee Ticker */
+@keyframes marqueeScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marqueeScrollReverse {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marqueeScroll 32s linear infinite;
+}
+
+.animate-marquee-reverse {
+  display: flex;
+  width: max-content;
+  animation: marqueeScrollReverse 34s linear infinite;
+}
+
+.animate-marquee:hover,
+.animate-marquee-reverse:hover {
+  animation-play-state: paused;
 }
 
 /* Feature Carousel slide animations */
 @keyframes slideInRight {
   from {
-    transform: translateX(45px);
+    transform: translateX(35px);
     opacity: 0;
   }
   to {
@@ -79,7 +201,7 @@ html[lang="ar"] body {
 
 @keyframes slideInLeft {
   from {
-    transform: translateX(-45px);
+    transform: translateX(-35px);
     opacity: 0;
   }
   to {
@@ -96,20 +218,160 @@ html[lang="ar"] body {
   animation: slideInLeft 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Fast subtle fade-in transition for pricing card content */
-@keyframes fadeInContent {
-  from {
-    opacity: 0;
-    transform: translateY(3px);
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
   }
-  to {
+  50% {
     opacity: 1;
-    transform: translateY(0);
+    transform: scale(1.05);
   }
 }
 
-.animate-fade-in {
-  animation: fadeInContent 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.animate-pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
 }
 
+/* =========================================================================
+   TICKET & COUPON DESIGN SYSTEM SPEC UTILITIES
+   ========================================================================= */
 
+/* Découpe d'encoches de coupon (Ticket Notches) en pur CSS */
+.coupon-shape {
+  position: relative;
+  mask-image: radial-gradient(circle at 0% 50%, transparent 12px, black 13px),
+              radial-gradient(circle at 100% 50%, transparent 12px, black 13px);
+  -webkit-mask-image: radial-gradient(circle at 0% 50%, transparent 12px, black 13px),
+                      radial-gradient(circle at 100% 50%, transparent 12px, black 13px);
+}
+
+.coupon-shape-sm {
+  position: relative;
+  mask-image: radial-gradient(circle at 0% 50%, transparent 8px, black 9px),
+              radial-gradient(circle at 100% 50%, transparent 8px, black 9px);
+  -webkit-mask-image: radial-gradient(circle at 0% 50%, transparent 8px, black 9px),
+                      radial-gradient(circle at 100% 50%, transparent 8px, black 9px);
+}
+
+.coupon-shape-lg {
+  position: relative;
+  mask-image: radial-gradient(circle at 0% 50%, transparent 16px, black 17px),
+              radial-gradient(circle at 100% 50%, transparent 16px, black 17px);
+  -webkit-mask-image: radial-gradient(circle at 0% 50%, transparent 16px, black 17px),
+                      radial-gradient(circle at 100% 50%, transparent 16px, black 17px);
+}
+
+/* Ligne pointillée de découpe détachable */
+.coupon-divider {
+  border-right: 2px dashed #D1D5DB;
+}
+
+.coupon-divider-dark {
+  border-right: 2px dashed rgba(255, 255, 255, 0.25);
+}
+
+.coupon-divider-strong {
+  border-right: 2.5px dashed #111111;
+}
+
+/* Style de bordure et ombre néo-brutaliste */
+.neo-border {
+  border: 2.5px solid #111111;
+  box-shadow: 4px 5px 0px #111111;
+}
+
+.neo-border-sm {
+  border: 2px solid #111111;
+  box-shadow: 2px 3px 0px #111111;
+}
+
+.neo-border-lg {
+  border: 3px solid #111111;
+  box-shadow: 6px 8px 0px #111111;
+}
+
+.neo-border-rose {
+  border: 2.5px solid #111111;
+  box-shadow: 4px 5px 0px #E25B6C;
+}
+
+/* Ticket Notch Punch Effect for bordered elements */
+.ticket-notch-circle-left {
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background-color: var(--background);
+  border-right: 2px solid #111111;
+}
+
+.ticket-notch-circle-right {
+  position: absolute;
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background-color: var(--background);
+  border-left: 2px solid #111111;
+}
+
+/* =========================================================================
+   HERO — 3D TICKET STACK UTILITIES
+   ========================================================================= */
+
+/* True ticket silhouette: each half carries one notch so the cutouts are real */
+.hb-ticket {
+  --notch: 22px;
+  -webkit-mask:
+    radial-gradient(circle var(--notch) at 0 50%, transparent 98%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle var(--notch) at 100% 50%, transparent 98%, #000) right / 51% 100% no-repeat;
+  mask:
+    radial-gradient(circle var(--notch) at 0 50%, transparent 98%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle var(--notch) at 100% 50%, transparent 98%, #000) right / 51% 100% no-repeat;
+}
+
+.hb-ticket-sm {
+  --notch: 9px;
+}
+
+/* Matte paper grain (mirrors the 3D render texture) */
+.hb-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@keyframes hbFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes hbDropIn {
+  from { opacity: 0; transform: translateY(-60px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes hbPopIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.92); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.hb-float { animation: hbFloat 5s ease-in-out infinite; }
+.hb-float-slow { animation: hbFloat 7s ease-in-out infinite; }
+.hb-drop-in { animation: hbDropIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.hb-pop-in { animation: hbPopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hb-float,
+  .hb-float-slow,
+  .hb-drop-in,
+  .hb-pop-in,
+  .animate-marquee,
+  .animate-marquee-reverse {
+    animation: none !important;
+  }
+}
