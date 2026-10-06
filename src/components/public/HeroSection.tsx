@@ -952,27 +952,14 @@ export function HeroSection() {
             </span>
           </NotchedTicket>
 
-          {/* Headline avec effet Pâte à Modeler 3D */}
+          {/* Headline */}
           <h1
             id="hero-title"
-            className="text-[30px] sm:text-5xl lg:text-[54px] xl:text-[62px] font-black tracking-tight mb-3 sm:mb-5 leading-[1.14]"
+            className="text-[30px] sm:text-5xl lg:text-[54px] xl:text-[62px] font-black text-[#111111] tracking-tight mb-3 sm:mb-5 leading-[1.14]"
           >
-            <span className="hb-clay-text inline">
-              {isAr
-                ? 'حوّل كل زيارة إلى'
-                : isFr
-                ? 'Transformez chaque visite en'
-                : 'Turn every single visit into'}
-            </span>{' '}
-            <span className="inline-flex items-center gap-2 flex-wrap sm:flex-nowrap justify-center sm:justify-start">
-              {!isAr && (
-                <span className="hb-clay-text inline">
-                  {isFr ? 'une' : 'a'}
-                </span>
-              )}
-              <span className="hb-clay-badge inline-block mt-2 sm:mt-1 -rotate-1 text-white px-4 sm:px-6 py-1 rounded-2xl w-fit mx-auto sm:mx-0">
-                {isAr ? 'سبب دائم للعودة.' : isFr ? 'raison de revenir.' : 'reason to return.'}
-              </span>
+            {isAr ? 'حوّل كل زيارة إلى' : isFr ? 'Transformez chaque visite en une' : 'Turn every single visit into a'}{' '}
+            <span className="block sm:inline-block mt-2 sm:mt-1 -rotate-1 bg-[#111111] text-white px-4 sm:px-6 py-1 rounded-2xl shadow-[0_4px_0_#E25B6C,0_8px_0_#000] w-fit mx-auto sm:mx-0">
+              {isAr ? 'سبب دائم للعودة.' : isFr ? 'raison de revenir.' : 'reason to return.'}
             </span>
           </h1>
 
