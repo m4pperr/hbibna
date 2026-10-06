@@ -215,132 +215,119 @@ export function StackedCouponCards() {
                   <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-black rounded-bl-sm pointer-events-none" />
                   <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-black rounded-br-sm pointer-events-none" />
 
-                  {/* PASS HEADER: Brand Wordmark & NFC / Status */}
-                  <div className="relative z-10 flex items-start justify-between">
-                    <div>
-                      {/* Official Brand Lockup: 3D Stack Icon + Wordmark with Coral Dot */}
-                      <div className="flex items-center gap-2">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src="/assets/hbibna-icon-trimmed.png"
-                          alt="Hbibna Icon"
-                          className="w-7 h-7 object-contain"
-                        />
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src="/assets/hbibna-wordmark-screen.png"
-                          alt="Hbibna"
-                          className="h-5 w-auto object-contain"
-                        />
-                      </div>
-                      <div className="text-[9px] font-black uppercase tracking-[0.22em] text-[#111111]/70 font-mono mt-1">
-                        {isAr ? 'منصة الولاء الذكية' : isFr ? 'PLATEFORME DE FIDÉLITÉ' : 'LOYALTY PLATFORM'}
+                  {/* PASS HEADER: Business Name, Member & NFC / Badge (Exact Mobile Layout) */}
+                  <div className="relative z-10 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/assets/hbibna-icon-trimmed.png"
+                        alt=""
+                        className="w-6 h-6 object-contain"
+                      />
+                      <div className="text-start">
+                        <div className="text-sm sm:text-base font-black text-[#111111] leading-tight">
+                          {c.business}
+                        </div>
+                        <div className="text-[10px] sm:text-[11px] font-bold text-zinc-500">
+                          {c.member}
+                        </div>
                       </div>
                     </div>
 
-                    {/* Digital Pass Telemetry Capsule */}
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#111111] text-[#FFE600] text-[10px] font-black font-mono shadow-xs">
-                        <Wifi className="w-3 h-3 rotate-90" />
-                        <span>NFC READY</span>
-                      </div>
-                      <span className="px-2 py-0.5 rounded-full bg-white border border-[#111111] text-[#111111] text-[9px] font-black font-mono">
+                    <div className="flex items-center gap-1.5">
+                      <span className="px-2 py-0.5 rounded-full bg-[#111111] text-[#FFE600] text-[9px] font-black font-mono">
+                        NFC
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-md bg-[#FFE600] text-[#111111] border border-black/20 text-[9px] sm:text-[10px] font-black uppercase font-mono shadow-xs">
                         {c.badge}
                       </span>
                     </div>
                   </div>
 
-                  {/* PASS CENTER: HOLOGRAPHIC TICKET + REWARD & VISIBLE PROGRESS GAUGE */}
-                  <div className="relative z-10 my-2 py-2.5 px-3.5 rounded-2xl bg-white/90 backdrop-blur-xs border-2 border-[#111111] shadow-[0_3px_0_#111111] space-y-2">
-                    {/* Row 1: The Pastel Holographic Cutout Ticket + Reward on Left, Points Balance on Right */}
-                    <div className="flex items-center justify-between gap-3">
+                  {/* PASS CENTER: HOLOGRAPHIC TICKET + REWARD & VISIBLE PROGRESS GAUGE (Exact Mobile Design) */}
+                  <div className="relative z-10 my-1.5 py-2.5 px-3.5 rounded-2xl bg-white/95 border-2 border-[#111111] shadow-[0_2.5px_0_#111111] space-y-2">
+                    {/* Row 1: Mini ticket pastel & reward on left, points balance on right */}
+                    <div className="flex items-center justify-between gap-2.5">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div
-                          className={`relative w-20 h-10 rounded-lg p-1 border border-[#111111] flex items-center justify-center bg-gradient-to-r ${c.accentGrad} shadow-xs overflow-hidden shrink-0`}
+                          className={`relative w-14 h-9 rounded-md p-0.5 border border-[#111111] flex items-center justify-center bg-gradient-to-r ${c.accentGrad} shadow-2xs overflow-hidden shrink-0`}
                         >
-                          {/* Micro notches on mini ticket */}
-                          <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white border-r border-[#111111]" />
-                          <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white border-l border-[#111111]" />
-                          {/* Dashed line */}
-                          <div className="h-full border-r border-dashed border-[#111111]/40 mx-auto" />
-                          {/* Micro-barcode */}
-                          <div className="text-[7px] font-mono tracking-tighter text-[#111111] font-black ms-1">
-                            ||||||||
-                          </div>
+                          <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-white border-r border-[#111111]" />
+                          <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-white border-l border-[#111111]" />
+                          <div className="text-[7px] font-mono font-black text-[#111111]">|||||||</div>
                         </div>
-
-                        <div className="text-start min-w-0">
-                          <span className="text-[8px] uppercase font-black tracking-widest text-[#E25B6C] block leading-none">
-                            {isAr ? 'المكافأة القادمة' : isFr ? 'Prochaine récompense' : 'Next Reward'}
+                        <div className="min-w-0 text-start">
+                          <span className="text-[8px] sm:text-[8.5px] uppercase font-black tracking-widest text-[#E25B6C] block leading-none">
+                            {isAr ? 'المكافأة القادمة' : isFr ? 'NEXT REWARD' : 'NEXT REWARD'}
                           </span>
-                          <div className="text-xs font-black text-[#111111] leading-tight truncate mt-0.5 flex items-center gap-1">
-                            <Gift className="w-3.5 h-3.5 text-[#E25B6C] shrink-0" />
+                          <div className="text-xs font-black text-[#111111] truncate leading-tight mt-0.5 flex items-center gap-1">
+                            <Gift className="w-3 h-3 text-[#E25B6C] shrink-0" />
                             <span className="truncate">{c.reward}</span>
                           </div>
-                          <div className="text-[9px] font-mono text-zinc-400 mt-0.5">
+                          <div className="text-[8px] sm:text-[8.5px] font-mono text-zinc-400 mt-0.5">
                             ID: {c.memberId}
                           </div>
                         </div>
                       </div>
 
-                      {/* Live Point Counter */}
                       <div className="text-end shrink-0 pl-1">
-                        <div className="text-[9px] font-mono font-bold text-[#111111]/60 uppercase leading-none mb-0.5">
-                          {isAr ? 'الرصيد الفعلي' : isFr ? 'Solde Live' : 'Live Balance'}
+                        <div className="text-[8px] sm:text-[8.5px] font-mono font-bold text-zinc-400 uppercase leading-none mb-0.5">
+                          {isAr ? 'الرصيد' : isFr ? 'BALANCE' : 'BALANCE'}
                         </div>
-                        <div className="text-2xl font-black text-[#111111] tracking-tight leading-none">
-                          {c.points} <span className="text-xs font-black text-[#E25B6C]">PTS</span>
+                        <div className="text-lg sm:text-2xl font-black text-[#111111] tracking-tight leading-none">
+                          {c.points} <span className="text-[10px] sm:text-xs text-[#E25B6C]">PTS</span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Row 2: Visible Progress Bar inside Card (Matching client portal) */}
-                    <div className="space-y-1 pt-0.5">
+                    {/* Row 2: Visible Progress Bar inside Card (Matching client portal & mobile) */}
+                    <div className="space-y-0.5 pt-0.5">
                       <div className="w-full h-2.5 rounded-full bg-zinc-200 border border-[#111111] p-0.5 overflow-hidden shadow-inner">
                         <div
-                          className="h-full rounded-full transition-all duration-700 shadow-xs"
+                          className="h-full rounded-full transition-all duration-700"
                           style={{
                             width: `${c.progress}%`,
                             backgroundColor: c.frameBg === '#1A1A1A' ? '#111111' : c.frameBg,
                           }}
                         />
                       </div>
-                      <div className="flex items-center justify-between text-[10px] font-mono font-bold text-zinc-600">
+                      <div className="flex items-center justify-between text-[9px] font-mono font-bold text-zinc-600">
                         <span>
-                          {c.progress}% {isAr ? 'نحو المكافأة القادمة' : isFr ? 'vers la prochaine récompense' : 'to next reward'}
+                          {c.progress}% {isAr ? 'نحو المكافأة القادمة' : isFr ? 'to next reward' : 'to next reward'}
                         </span>
-                        <span className="font-black text-[#111111] px-1.5 py-0.5 rounded bg-black/5">
+                        <span className="font-black text-[#111111] px-1 rounded bg-black/5">
                           {c.progress}%
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* PASS FOOTER: Member Name, Barcode & Stars + Verification */}
-                  <div className="relative z-10 pt-1 flex items-end justify-between">
-                    <div>
-                      <div className="text-[9px] font-mono text-[#111111]/60 uppercase font-bold">
-                        {isAr ? 'حامل الجواز' : isFr ? 'Titulaire du pass' : 'Passholder'}
+                  {/* PASS FOOTER: QR Scan & Stars + Verified Status (Exact Mobile Layout) */}
+                  <div className="relative z-10 flex items-center justify-between pt-0.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-[#111111] p-1.5 shadow-2xs shrink-0 flex items-center justify-center">
+                        <QrCode className="w-full h-full text-white" />
                       </div>
-                      <div className="text-sm font-black text-[#111111] leading-tight">
-                        {c.member}
-                      </div>
-                      <div className="text-[10px] font-mono text-[#111111]/60 mt-0.5">
-                        ID: {c.memberId}
+                      <div className="text-start">
+                        <div className="text-[9px] font-mono font-bold text-zinc-600 leading-none">
+                          Scan 1.2s
+                        </div>
+                        <div className="text-[8px] font-mono text-zinc-400 font-bold mt-0.5">
+                          {isAr ? 'في الكاشير' : isFr ? 'At counter' : 'At counter'}
+                        </div>
                       </div>
                     </div>
 
-                    {/* Stars & Verified Status */}
                     <div className="flex flex-col items-end">
-                      <div className="flex items-center gap-1 text-[#EEC044] mb-1">
+                      <div className="flex items-center gap-0.5 text-[#EEC044]">
                         {[...Array(5)].map((_, i) => (
-                          <Star key={i} className="w-3.5 h-3.5 fill-current" />
+                          <Star key={i} className="w-3 h-3 fill-current" />
                         ))}
                       </div>
-                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-800 text-[9px] font-mono font-bold">
+                      <span className="text-[8.5px] font-mono font-bold text-emerald-700 mt-0.5 flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <span>{isAr ? 'مفعّل في الكاشير' : isFr ? 'Pass actif vérifié' : 'Active Pass Verified'}</span>
-                      </div>
+                        {isAr ? 'Pass verified' : isFr ? 'Pass verified' : 'Pass verified'}
+                      </span>
                     </div>
                   </div>
                 </div>

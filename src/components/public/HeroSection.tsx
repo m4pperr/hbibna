@@ -44,11 +44,57 @@ function NotchedTicket({
 }
 
 /* =========================================================================
-   3D STACKED TICKETS — the brand logo turned into the hero visual
+   3D STACKED TICKETS — the brand logo turned into the hero visual (Desktop)
    ========================================================================= */
 function TicketStack({ lang }: { lang: Lang }) {
   const [hover, setHover] = useState(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [activeCardIndex, setActiveCardIndex] = useState(1); // 1 is Artisan Bakery Oran (matching user request)
+
+  const cardData = [
+    {
+      id: 'gold',
+      tier: tr(lang, 'Pass Or VIP', 'Gold VIP Pass', 'بطاقة ذهبية VIP'),
+      badge: 'VIP GOLD',
+      business: 'Café Roastery 44',
+      member: tr(lang, 'Sarah Benali', 'Sarah Benali', 'سارة بن علي'),
+      barcode: 'HB-8821',
+      points: '1 240',
+      progress: 82,
+      reward: tr(lang, 'Café Roastery offert', 'Free signature coffee', 'قهوة مجانية مميزة'),
+      frameBg: '#EEC044',
+      edgeBg: '#C69A2C',
+      accentGrad: 'from-[#4ADE80] via-[#F472B6] to-[#EEC044]',
+    },
+    {
+      id: 'rose',
+      tier: tr(lang, 'Pass Privilège', 'Privilege Pass', 'بطاقة بريفيليدج'),
+      badge: 'PRIVILÈGE',
+      business: 'Artisan Bakery Oran',
+      member: tr(lang, 'Yassine Belkheir', 'Yassine Belkheir', 'ياسين بلخير'),
+      barcode: 'HB-5514',
+      points: '850',
+      progress: 68,
+      reward: tr(lang, 'Remise 20% en caisse', '20% counter discount', 'خصم 20% في الكاشير'),
+      frameBg: '#E25B6C',
+      edgeBg: '#B8434F',
+      accentGrad: 'from-[#F43F5E] via-[#FB7185] to-[#FBBF24]',
+    },
+    {
+      id: 'dark',
+      tier: tr(lang, 'Pass Élite', 'Elite Pass', 'بطاقة النخبة'),
+      badge: 'ELITE 001',
+      business: 'Beauty Studio & Spa',
+      member: tr(lang, 'Karim Mansouri', 'Karim Mansouri', 'كريم منصوري'),
+      barcode: 'HB-9901',
+      points: '2 400',
+      progress: 94,
+      reward: tr(lang, 'Soin VIP Signature', 'VIP treatment session', 'جلسة عناية VIP'),
+      frameBg: '#1A1A1A',
+      edgeBg: '#000000',
+      accentGrad: 'from-[#38BDF8] via-[#818CF8] to-[#C084FC]',
+    },
+  ];
 
   const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
@@ -58,16 +104,26 @@ function TicketStack({ lang }: { lang: Lang }) {
     });
   };
 
-  const gap = hover ? 78 : 56;
-  const layers = [
-    { face: '#1A1A1A', edge: '#000000', z: 0 },
-    { face: '#E25B6C', edge: '#B8434F', z: gap },
-    { face: '#EEC044', edge: '#C69A2C', z: gap * 2 },
+  const gap = hover ? 84 : 60;
+  // Reorder layers so that activeCardIndex is always the top layer (i === 2)
+  const orderedIndices = [
+    (activeCardIndex + 2) % 3,
+    (activeCardIndex + 1) % 3,
+    activeCardIndex,
   ];
+
+  const layers = orderedIndices.map((cardIdx, pos) => ({
+    card: cardData[cardIdx],
+    face: cardData[cardIdx].frameBg,
+    edge: cardData[cardIdx].edgeBg,
+    z: pos * gap,
+  }));
+
+  const activeCard = cardData[activeCardIndex];
 
   return (
     <div
-      className="relative w-[440px] h-[300px]"
+      className="relative w-[440px] h-[300px] cursor-pointer"
       style={{ perspective: '1600px' }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => {
@@ -75,6 +131,8 @@ function TicketStack({ lang }: { lang: Lang }) {
         setTilt({ x: 0, y: 0 });
       }}
       onMouseMove={handleMove}
+      onClick={() => setActiveCardIndex((prev) => (prev + 1) % 3)}
+      title="Click to switch card"
     >
       <div
         className="absolute inset-0"
@@ -93,7 +151,7 @@ function TicketStack({ lang }: { lang: Lang }) {
 
         {layers.map((l, i) => (
           <div
-            key={i}
+            key={`${l.card.id}-${i}`}
             className="absolute inset-0"
             style={{
               transformStyle: 'preserve-3d',
@@ -101,14 +159,36 @@ function TicketStack({ lang }: { lang: Lang }) {
               transition: 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
             }}
           >
-            {/* Thickness */}
+            {/* Thickness edge */}
             <div
-              className="hb-ticket absolute inset-0 rounded-[30px]"
+              className="hb-ticket absolute inset-0 rounded-[28px] border-[2.5px] border-[#111111]"
               style={{ background: l.edge, transform: 'translateZ(-10px)' }}
             />
-            {/* Face */}
-            <div className="hb-ticket absolute inset-0 rounded-[30px]" style={{ background: l.face }}>
-              {i === 2 && <PassFace lang={lang} />}
+            {/* Face bumper */}
+            <div
+              className="hb-ticket absolute inset-0 rounded-[28px] border-[2.5px] border-[#111111] overflow-hidden"
+              style={{ background: l.face }}
+            >
+              {/* Notches cutouts (matching mobile design) */}
+              <div
+                className="absolute -top-2.5 left-1/2 -translate-x-1/2 w-20 h-4 rounded-b-full border-b-[2.5px] border-x-[2.5px] border-[#111111] z-20 pointer-events-none"
+                style={{ backgroundColor: '#FAF8F5' }}
+              />
+              <div
+                className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-20 h-4 rounded-t-full border-t-[2.5px] border-x-[2.5px] border-[#111111] z-20 pointer-events-none"
+                style={{ backgroundColor: '#FAF8F5' }}
+              />
+              <div
+                className="absolute -left-2.5 top-1/2 -translate-y-1/2 w-4 h-10 rounded-r-full border-r-[2.5px] border-y-[2.5px] border-[#111111] z-20 pointer-events-none"
+                style={{ backgroundColor: '#FAF8F5' }}
+              />
+              <div
+                className="absolute -right-2.5 top-1/2 -translate-y-1/2 w-4 h-10 rounded-l-full border-l-[2.5px] border-y-[2.5px] border-[#111111] z-20 pointer-events-none"
+                style={{ backgroundColor: '#FAF8F5' }}
+              />
+
+              {/* Exact mobile pass face on top layer */}
+              {i === 2 && <PassFace lang={lang} card={activeCard} />}
             </div>
           </div>
         ))}
@@ -117,46 +197,131 @@ function TicketStack({ lang }: { lang: Lang }) {
   );
 }
 
-/* Digital loyalty pass printed on the top (yellow) ticket */
-function PassFace({ lang }: { lang: Lang }) {
+/* Digital loyalty pass printed on the top ticket — EXACT SAME DESIGN AS MOBILE VERSION */
+function PassFace({
+  lang,
+  card,
+}: {
+  lang: Lang;
+  card: {
+    business: string;
+    member: string;
+    badge: string;
+    reward: string;
+    barcode: string;
+    points: string;
+    progress: number;
+    accentGrad: string;
+    frameBg: string;
+  };
+}) {
   return (
-    <div className="absolute inset-y-3.5 inset-x-7 rounded-[18px] bg-[#FAF8F5] flex overflow-hidden text-[#111111] text-start border border-black/10 shadow-xs">
-      {/* Main body */}
-      <div className="flex-1 p-3 sm:p-3.5 flex flex-col justify-between min-w-0">
+    <div className="absolute inset-2 sm:inset-2.5 rounded-[20px] bg-[#FAF8F5] border-[2px] border-[#111111] p-3 sm:p-3.5 flex flex-col justify-between overflow-hidden shadow-inner text-[#111111] text-start select-none">
+      {/* 4 Corner retention brackets */}
+      <div className="absolute top-0 left-0 w-2.5 h-2.5 border-t-2 border-l-2 border-black pointer-events-none" />
+      <div className="absolute top-0 right-0 w-2.5 h-2.5 border-t-2 border-r-2 border-black pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b-2 border-l-2 border-black pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b-2 border-r-2 border-black pointer-events-none" />
+
+      {/* Pass Header */}
+      <div className="relative z-10 flex items-center justify-between">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/assets/hbibna-icon-trimmed.png" alt="" className="w-5.5 h-5.5 object-contain" />
+          <div>
+            <div className="text-[13px] font-black text-[#111111] leading-tight">{card.business}</div>
+            <div className="text-[9.5px] font-bold text-zinc-500">{card.member}</div>
+          </div>
+        </div>
         <div className="flex items-center gap-1.5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/assets/hbibna-icon-trimmed.png" alt="" className="w-5 h-5 object-contain" />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/assets/hbibna-wordmark-screen.png" alt="Hbibna" className="h-3.5 w-auto object-contain" />
+          <span className="px-1.5 py-0.5 rounded-full bg-[#111111] text-[#FFE600] text-[8.5px] font-black font-mono">
+            NFC
+          </span>
+          <span className="px-2 py-0.5 rounded-md bg-[#FFE600] text-[#111111] border border-black/20 text-[8.5px] font-black uppercase font-mono shadow-xs">
+            {card.badge}
+          </span>
         </div>
+      </div>
 
-        <div>
-          <div className="text-[13px] font-black leading-tight text-[#111111]">Café Roastery 44</div>
-          <div className="text-[10px] font-bold text-zinc-500">Sarah Benali</div>
-        </div>
-
-        <div>
-          <div className="flex items-baseline justify-between mb-1">
-            <div className="text-[28px] font-black leading-none tracking-tight text-[#111111]">
-              1 240 <span className="text-[13px] text-[#E25B6C]">PTS</span>
+      {/* Pass Center: Hologram Ticket, Next Reward & Progress Bar */}
+      <div className="relative z-10 my-0.5 py-2 px-3 rounded-xl bg-white/95 border border-[#111111] shadow-[0_2px_0_#111111] space-y-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div
+              className={`relative w-12 h-7.5 rounded p-0.5 border border-[#111111] flex items-center justify-center bg-gradient-to-r ${card.accentGrad} shadow-2xs overflow-hidden shrink-0`}
+            >
+              <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-white border-r border-[#111111]" />
+              <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-white border-l border-[#111111]" />
+              <div className="text-[6px] font-mono font-black text-[#111111]">|||||||</div>
             </div>
-            <span className="text-[9px] font-black font-mono text-zinc-600">82%</span>
+            <div className="min-w-0 text-start">
+              <span className="text-[7.5px] uppercase font-black tracking-widest text-[#E25B6C] block leading-none">
+                {tr(lang, 'PROCHAINE RÉCOMPENSE', 'NEXT REWARD', 'المكافأة القادمة')}
+              </span>
+              <div className="text-[10px] sm:text-[10.5px] font-black text-[#111111] truncate leading-tight mt-0.5 flex items-center gap-1">
+                <Gift className="w-3 h-3 text-[#E25B6C] shrink-0" />
+                <span className="truncate">{card.reward}</span>
+              </div>
+              <div className="text-[8px] font-mono text-zinc-400 mt-0.5">ID: {card.barcode}</div>
+            </div>
           </div>
-          <div className="h-2 rounded-full bg-zinc-200 overflow-hidden">
-            <div className="h-full w-[82%] rounded-full bg-[#111111]" />
+          <div className="text-end shrink-0 pl-1">
+            <div className="text-[7.5px] font-mono font-bold text-zinc-400 uppercase leading-none mb-0.5">
+              {tr(lang, 'SOLDE', 'BALANCE', 'الرصيد')}
+            </div>
+            <div className="text-base sm:text-lg font-black text-[#111111] tracking-tight leading-none">
+              {card.points} <span className="text-[9.5px] text-[#E25B6C]">PTS</span>
+            </div>
           </div>
-          <div className="mt-1 text-[8.5px] font-bold text-zinc-500 truncate">
-            {tr(lang, '82% vers la prochaine récompense (260 pts restants)', '82% to next reward (260 pts to go)', '82% نحو المكافأة القادمة (باقي 260 نقطة)')}
+        </div>
+
+        {/* Visible Progress Bar inside Card */}
+        <div className="space-y-0.5 pt-0.5">
+          <div className="w-full h-2 rounded-full bg-zinc-200 border border-[#111111] p-0.5 overflow-hidden shadow-inner">
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{
+                width: `${card.progress}%`,
+                backgroundColor: card.frameBg === '#1A1A1A' ? '#111111' : card.frameBg,
+              }}
+            />
+          </div>
+          <div className="flex items-center justify-between text-[8px] font-mono font-bold text-zinc-600">
+            <span>
+              {card.progress}% {tr(lang, 'vers la prochaine récompense', 'to next reward', 'نحو المكافأة القادمة')}
+            </span>
+            <span className="font-black text-[#111111] px-1 rounded bg-black/5">
+              {card.progress}%
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Tear-off stub */}
-      <div className="w-[84px] shrink-0 border-s-2 border-dashed border-[#111111]/25 flex flex-col items-center justify-center gap-1.5 p-2 bg-amber-50/40">
-        <div className="w-13 h-13 rounded-lg bg-[#111111] p-1.5 shadow-xs">
-          <QrCode className="w-full h-full text-white" />
+      {/* Pass Footer: QR Scan & Stars + Verified Status */}
+      <div className="relative z-10 flex items-center justify-between pt-0.5">
+        <div className="flex items-center gap-1.5">
+          <div className="w-7.5 h-7.5 rounded-md bg-[#111111] p-1 shadow-2xs shrink-0 flex items-center justify-center">
+            <QrCode className="w-full h-full text-white" />
+          </div>
+          <div className="text-start">
+            <div className="text-[8px] font-mono font-bold text-zinc-600 leading-none">Scan 1.2s</div>
+            <div className="text-[7px] font-mono text-zinc-400 font-bold mt-0.5">
+              {tr(lang, 'En caisse', 'At counter', 'في الكاشير')}
+            </div>
+          </div>
         </div>
-        <span className="text-[7.5px] font-black font-mono tracking-widest text-[#111111]/60">HB-8821</span>
+
+        <div className="flex flex-col items-end">
+          <div className="flex items-center gap-0.5 text-[#EEC044]">
+            {[...Array(5)].map((_, i) => (
+              <Star key={i} className="w-2.5 h-2.5 fill-current" />
+            ))}
+          </div>
+          <span className="text-[7.5px] font-mono font-bold text-emerald-700 mt-0.5 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Pass verified
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -266,15 +431,39 @@ function MobileStackedCutoutPass({ lang }: { lang: Lang }) {
         </button>
       </div>
 
+      {/* Tiers Switch Pills (Available in both 3D Pass and Apple Wallet modes) */}
+      <div className="flex items-center justify-center gap-1.5 mb-3.5 z-20">
+        {cards.map((c, idx) => (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => setActiveCardIndex(idx)}
+            className={`px-3 py-1 rounded-full text-[10px] font-black transition-all cursor-pointer flex items-center gap-1.5 border-2 border-[#111111] ${
+              activeCardIndex === idx
+                ? 'bg-[#111111] text-white shadow-[0_3px_0_#111111] -translate-y-0.5'
+                : 'bg-[#FAF8F5] text-zinc-700 hover:bg-zinc-100 shadow-[0_1.5px_0_#111111]'
+            }`}
+          >
+            <span
+              className="w-2 h-2 rounded-full border border-black/30"
+              style={{ backgroundColor: c.frameBg }}
+            />
+            <span>{c.tier}</span>
+          </button>
+        ))}
+      </div>
+
       {viewMode === 'appleWallet' ? (
         /* =========================================================================
-           APPLE WALLET (iOS PassKit) SIMULATION
+           APPLE WALLET (iOS PassKit) SIMULATION — FAITHFUL TO 3D PASS DESIGN
            ========================================================================= */
-        <div className="w-full max-w-[325px] sm:max-w-[340px] bg-black text-white rounded-[2.2rem] p-3.5 border-2 border-zinc-800 shadow-[0_10px_30px_rgba(0,0,0,0.5)] relative overflow-hidden text-start font-sans animate-in fade-in zoom-in-95 duration-200">
-          {/* iOS Status Bar */}
+        <div className="w-full max-w-[325px] sm:max-w-[345px] bg-[#0A0A0C] text-white rounded-[2.4rem] p-3.5 border-2 border-zinc-800 shadow-[0_16px_40px_rgba(0,0,0,0.6)] relative overflow-hidden text-start font-sans animate-in fade-in zoom-in-95 duration-200">
+          {/* iOS Dynamic Island & Status Bar */}
           <div className="flex items-center justify-between text-[10px] font-bold text-zinc-400 px-2 pt-0.5 pb-2">
             <span>09:41</span>
-            <div className="w-16 h-3.5 bg-zinc-900 rounded-full border border-zinc-800/80 mx-auto" />
+            <div className="w-20 h-4 bg-black rounded-full border border-zinc-800 flex items-center justify-center mx-auto shadow-inner">
+              <div className="w-2 h-2 rounded-full bg-[#111111] border border-zinc-700" />
+            </div>
             <div className="flex items-center gap-1.5">
               <Wifi className="w-3 h-3" />
               <div className="w-4 h-2 rounded-xs border border-zinc-400 p-0.5 flex items-center">
@@ -284,74 +473,182 @@ function MobileStackedCutoutPass({ lang }: { lang: Lang }) {
           </div>
 
           {/* Apple Wallet Header */}
-          <div className="flex items-center justify-between px-1 mb-2.5">
-            <span className="text-base font-black tracking-tight text-white">Wallet</span>
-            <div className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-300 text-xs font-bold">
+          <div className="flex items-center justify-between px-1 mb-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-base font-black tracking-tight text-white font-rounded">Wallet</span>
+              <span className="px-1.5 py-0.2 rounded-full bg-zinc-800 text-[8px] font-mono text-zinc-400 font-bold">PassKit</span>
+            </div>
+            <div className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-300 text-xs font-bold cursor-pointer hover:bg-zinc-700 transition-colors">
               •••
             </div>
           </div>
 
-          {/* MAIN APPLE WALLET PASS CARD (.pkpass) */}
-          <div className="relative rounded-2xl bg-[#EEC044] text-[#111111] p-3.5 shadow-xl border border-black/15 overflow-hidden">
-            {/* Header: Logo & Store */}
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-1.5">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/assets/hbibna-icon-trimmed.png" alt="" className="w-5 h-5 object-contain" />
-                <span className="text-xs font-black tracking-tight">Café Roastery 44</span>
-              </div>
-              <span className="text-[8.5px] font-black uppercase font-mono bg-black/10 px-2 py-0.5 rounded">
-                VIP GOLD
-              </span>
-            </div>
+          {/* MAIN APPLE WALLET PASS CARD (.pkpass) — FAITHFUL REPLICA OF THE 3D PASS */}
+          {(() => {
+            const activeCard = cards[activeCardIndex];
+            return (
+              <div
+                className="relative rounded-[1.8rem] border-[2.5px] border-[#111111] shadow-xl p-2 overflow-hidden transition-all duration-300"
+                style={{ backgroundColor: activeCard.frameBg }}
+              >
+                {/* Notches cutouts (Exact signature 3D pass notches) */}
+                <div
+                  className="absolute -top-2.5 left-1/2 -translate-x-1/2 w-16 h-3.5 rounded-b-full border-b-[2px] border-x-[2px] border-[#111111] z-20 pointer-events-none"
+                  style={{ backgroundColor: '#FAF8F5' }}
+                />
+                <div
+                  className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-16 h-3.5 rounded-t-full border-t-[2px] border-x-[2px] border-[#111111] z-20 pointer-events-none"
+                  style={{ backgroundColor: '#FAF8F5' }}
+                />
+                <div
+                  className="absolute -left-2 top-1/2 -translate-y-1/2 w-3.5 h-8 rounded-r-full border-r-[2px] border-y-[2px] border-[#111111] z-20 pointer-events-none"
+                  style={{ backgroundColor: '#FAF8F5' }}
+                />
+                <div
+                  className="absolute -right-2 top-1/2 -translate-y-1/2 w-3.5 h-8 rounded-l-full border-l-[2px] border-y-[2px] border-[#111111] z-20 pointer-events-none"
+                  style={{ backgroundColor: '#FAF8F5' }}
+                />
 
-            {/* Central 3D Trompe-l'œil Strip (Bandeau strip.png d'Apple Wallet) */}
-            <div className="relative my-2 py-2 px-2.5 rounded-xl bg-gradient-to-r from-amber-200 via-amber-100 to-amber-300 border border-black/20 shadow-inner overflow-hidden flex items-center justify-between">
-              {/* Trompe-l'œil 3D Embossed Ticket */}
-              <div className="relative w-20 h-9 rounded-md bg-gradient-to-r from-yellow-300 via-amber-200 to-rose-200 border border-black/30 shadow-[0_2px_4px_rgba(0,0,0,0.15)] flex items-center justify-center">
-                <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-amber-100 border-r border-black/30" />
-                <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-amber-100 border-l border-black/30" />
-                <span className="text-[7.5px] font-black tracking-wider text-black/80 font-mono">🎟️ HBIBNA</span>
-              </div>
-              <div className="text-end">
-                <span className="text-[7.5px] font-bold text-black/60 uppercase block">Points Fidélité</span>
-                <span className="text-lg font-black tracking-tight leading-none text-[#111111]">
-                  1 240 <span className="text-[10px] text-[#E25B6C]">PTS</span>
-                </span>
-              </div>
-            </div>
+                {/* INNER SMARTPASS INSERT (Identical to 3D Pass Face) */}
+                <div className="relative w-full rounded-[1.3rem] bg-[#FAF8F5] border-[2px] border-[#111111] p-3 flex flex-col justify-between overflow-hidden shadow-inner text-[#111111]">
+                  {/* 4 Corner retention brackets */}
+                  <div className="absolute top-0 left-0 w-2.5 h-2.5 border-t-2 border-l-2 border-black pointer-events-none" />
+                  <div className="absolute top-0 right-0 w-2.5 h-2.5 border-t-2 border-r-2 border-black pointer-events-none" />
+                  <div className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b-2 border-l-2 border-black pointer-events-none" />
+                  <div className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b-2 border-r-2 border-black pointer-events-none" />
 
-            {/* Secondary Fields */}
-            <div className="flex items-end justify-between my-2 text-[10px]">
-              <div>
-                <span className="text-[8px] font-bold text-black/60 uppercase block">Titulaire</span>
-                <span className="font-black text-xs text-[#111111]">Sarah Benali</span>
-              </div>
-              <div className="text-end">
-                <span className="text-[8px] font-bold text-black/60 uppercase block">Prochaine récompense</span>
-                <span className="font-black text-[11px] text-amber-950">Café offert à 1 500 pts</span>
-              </div>
-            </div>
+                  {/* Header: Business & Member + Badges */}
+                  <div className="relative z-10 flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/assets/hbibna-icon-trimmed.png" alt="" className="w-5 h-5 object-contain" />
+                      <div>
+                        <div className="text-[12px] font-black text-[#111111] leading-tight">{activeCard.business}</div>
+                        <div className="text-[9px] font-bold text-zinc-500">{activeCard.member}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="px-1.5 py-0.5 rounded-full bg-[#111111] text-[#FFE600] text-[8px] font-black font-mono">
+                        NFC
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded-md bg-[#FFE600] text-[#111111] border border-black/20 text-[8px] font-black uppercase font-mono shadow-xs">
+                        {activeCard.badge}
+                      </span>
+                    </div>
+                  </div>
 
-            {/* Official Apple Wallet Barcode Section */}
-            <div className="mt-2.5 pt-2 border-t border-dashed border-black/20 bg-white rounded-xl p-2.5 flex flex-col items-center justify-center text-center shadow-xs">
-              <div className="w-14 h-14 bg-black p-1 rounded-md mb-1 flex items-center justify-center">
-                <QrCode className="w-full h-full text-white" />
-              </div>
-              <span className="text-[8px] font-mono font-bold tracking-widest text-zinc-700">HB-8821-DZ</span>
-              <span className="text-[7.5px] font-bold text-zinc-400 mt-0.5">Scannez lors du paiement</span>
-            </div>
-          </div>
+                  {/* Center Module: Pastel Hologram Ticket + Next Reward & Balance */}
+                  <div className="relative z-10 my-1 py-2 px-2.5 rounded-xl bg-white/95 border border-[#111111] shadow-[0_2px_0_#111111] space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div
+                          className={`relative w-11 h-7 rounded p-0.5 border border-[#111111] flex items-center justify-center bg-gradient-to-r ${activeCard.accentGrad} shadow-2xs overflow-hidden shrink-0`}
+                        >
+                          <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-white border-r border-[#111111]" />
+                          <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-white border-l border-[#111111]" />
+                          <div className="text-[6px] font-mono font-black text-[#111111]">|||||||</div>
+                        </div>
+                        <div className="min-w-0 text-start">
+                          <span className="text-[7.5px] uppercase font-black tracking-widest text-[#E25B6C] block leading-none">
+                            {tr(lang, 'Prochaine récompense', 'Next Reward', 'المكافأة القادمة')}
+                          </span>
+                          <div className="text-[9.5px] font-black text-[#111111] truncate leading-tight mt-0.5 flex items-center gap-1">
+                            <Gift className="w-2.5 h-2.5 text-[#E25B6C] shrink-0" />
+                            <span className="truncate">{activeCard.reward}</span>
+                          </div>
+                          <div className="text-[7.5px] font-mono text-zinc-400 mt-0.5">ID: {activeCard.barcode}</div>
+                        </div>
+                      </div>
+                      <div className="text-end shrink-0 pl-1">
+                        <div className="text-[7.5px] font-mono font-bold text-zinc-400 uppercase leading-none mb-0.5">
+                          {tr(lang, 'Solde', 'Balance', 'الرصيد')}
+                        </div>
+                        <div className="text-base sm:text-lg font-black text-[#111111] tracking-tight leading-none">
+                          {activeCard.points} <span className="text-[9px] text-[#E25B6C]">PTS</span>
+                        </div>
+                      </div>
+                    </div>
 
-          {/* Native Apple Wallet Stacked Cards underneath */}
+                    {/* Progress Bar inside Card */}
+                    <div className="space-y-0.5 pt-0.5">
+                      <div className="w-full h-2 rounded-full bg-zinc-200 border border-[#111111] p-0.5 overflow-hidden shadow-inner">
+                        <div
+                          className="h-full rounded-full transition-all duration-700"
+                          style={{
+                            width: `${activeCard.progress}%`,
+                            backgroundColor: activeCard.frameBg === '#1A1A1A' ? '#111111' : activeCard.frameBg,
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between text-[8px] font-mono font-bold text-zinc-600">
+                        <span>
+                          {activeCard.progress}% {tr(lang, 'vers la prochaine récompense', 'to next reward', 'نحو المكافأة القادمة')}
+                        </span>
+                        <span className="font-black text-[#111111] px-1 rounded bg-black/5">
+                          {activeCard.progress}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Pass Footer: QR Scan & Stars + Verified Status */}
+                  <div className="relative z-10 flex items-center justify-between pt-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-7 h-7 rounded-md bg-[#111111] p-1 shadow-2xs shrink-0 flex items-center justify-center">
+                        <QrCode className="w-full h-full text-white" />
+                      </div>
+                      <div className="text-start">
+                        <div className="text-[8px] font-mono font-bold text-zinc-500 leading-none">
+                          Scan 1.2s
+                        </div>
+                        <div className="text-[7px] font-mono text-zinc-400 font-bold mt-0.5">
+                          {tr(lang, 'En caisse', 'At counter', 'في الكاشير')}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-end">
+                      <div className="flex items-center gap-0.5 text-[#EEC044]">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className="w-2.5 h-2.5 fill-current" />
+                        ))}
+                      </div>
+                      <span className="text-[7.5px] font-mono font-bold text-emerald-700 mt-0.5 flex items-center gap-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Pass verified
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Native Apple Wallet Stacked Cards underneath — Shows other Hbibna passes */}
           <div className="mt-2.5 space-y-1.5 opacity-90">
-            <div className="h-6 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-800 border border-blue-600/40 px-3 py-1 flex items-center justify-between text-[9px] font-bold text-white shadow-md">
-              <span>Apple Card</span>
-              <span className="font-mono">•••• 4242</span>
-            </div>
-            <div className="h-4 rounded-t-xl bg-gradient-to-r from-zinc-700 to-zinc-900 border-t border-zinc-600/30 px-3 py-0.5 flex items-center justify-between text-[8px] font-bold text-zinc-300 opacity-60">
-              <span>Air Algérie • Vol AH1000</span>
-            </div>
+            {cards
+              .filter((_, idx) => idx !== activeCardIndex)
+              .map((c) => {
+                const targetIdx = cards.findIndex((item) => item.id === c.id);
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setActiveCardIndex(targetIdx)}
+                    className="w-full h-7 rounded-xl border border-black/30 px-3 py-1 flex items-center justify-between text-[9px] font-bold text-[#111111] shadow-md hover:scale-[1.01] transition-all cursor-pointer"
+                    style={{ backgroundColor: c.frameBg }}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/assets/hbibna-icon-trimmed.png" alt="" className="w-3.5 h-3.5 object-contain" />
+                      <span className="font-black truncate">{c.business}</span>
+                    </div>
+                    <span className="font-mono text-[8px] font-black bg-black/15 px-1.5 py-0.2 rounded">
+                      {c.points} PTS
+                    </span>
+                  </button>
+                );
+              })}
           </div>
         </div>
       ) : (
@@ -359,28 +656,6 @@ function MobileStackedCutoutPass({ lang }: { lang: Lang }) {
            PASS WEB 3D DÉCOUPÉ (PHYGITAL PASS)
            ========================================================================= */
         <>
-          {/* Tiers Switch Pills */}
-          <div className="flex items-center justify-center gap-1.5 mb-3.5 z-20">
-            {cards.map((c, idx) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => setActiveCardIndex(idx)}
-                className={`px-3 py-1 rounded-full text-[10px] font-black transition-all cursor-pointer flex items-center gap-1.5 border-2 border-[#111111] ${
-                  activeCardIndex === idx
-                    ? 'bg-[#111111] text-white shadow-[0_3px_0_#111111] -translate-y-0.5'
-                    : 'bg-[#FAF8F5] text-zinc-700 hover:bg-zinc-100 shadow-[0_1.5px_0_#111111]'
-                }`}
-              >
-                <span
-                  className="w-2 h-2 rounded-full border border-black/30"
-                  style={{ backgroundColor: c.frameBg }}
-                />
-                <span>{c.tier}</span>
-              </button>
-            ))}
-          </div>
-
           {/* 3D Stacked Container */}
           <div className="relative w-full max-w-[330px] sm:max-w-[350px] h-[280px] sm:h-[295px] flex items-center justify-center">
             {cards.map((c, idx) => {

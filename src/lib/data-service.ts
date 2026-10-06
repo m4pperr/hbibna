@@ -776,13 +776,13 @@ export interface PublicBusinessCatalogItem {
 }
 
 export async function getPublicRewardsCatalog(): Promise<PublicBusinessCatalogItem[]> {
-  try {
-    if (isSupabaseConfigured()) {
+  if (isSupabaseConfigured()) {
+    try {
       const supabase = await createClient();
       const { data: businesses, error: bizError } = await supabase
         .from('businesses')
         .select('id, name, logo_url, phone')
-        .eq('subscription_status', 'active');
+        .in('subscription_status', ['active', 'trial', 'pending_payment']);
 
       if (!bizError && businesses && businesses.length > 0) {
         const { data: rewards, error: rewError } = await supabase
@@ -806,7 +806,7 @@ export async function getPublicRewardsCatalog(): Promise<PublicBusinessCatalogIt
             .map((b) => ({
               id: b.id,
               name: b.name,
-              category: 'Partner Merchant',
+              category: 'Commerce Partenaire',
               logo_url: b.logo_url,
               phone: b.phone,
               rewards: rewardsByBiz[b.id] || [],
@@ -814,93 +814,13 @@ export async function getPublicRewardsCatalog(): Promise<PublicBusinessCatalogIt
             .filter((b) => b.rewards.length > 0);
         }
       }
+      return [];
+    } catch (err) {
+      console.warn('Notice fetching public rewards from Supabase:', err);
+      return [];
     }
-  } catch (err) {
-    console.warn('Error fetching public rewards from Supabase, using local catalog:', err);
   }
 
-  // Fallback to local partner businesses and their catalogs (strictly public, zero customer data)
-  const defaultList: PublicBusinessCatalogItem[] = [
-    {
-      id: DEFAULT_BUSINESS.id,
-      name: DEFAULT_BUSINESS.name,
-      category: 'Artisanal Café',
-      logo_url: DEFAULT_BUSINESS.logo_url,
-      phone: DEFAULT_BUSINESS.phone,
-      rewards: CAFE_REWARDS.map((r) => ({
-        id: r.id,
-        name: r.name,
-        description: r.description,
-        points_required: r.points_required,
-      })),
-    },
-    {
-      id: BUSINESS_BEAUTY.id,
-      name: BUSINESS_BEAUTY.name,
-      category: 'Beauty & Wellness',
-      logo_url: BUSINESS_BEAUTY.logo_url,
-      phone: BUSINESS_BEAUTY.phone,
-      rewards: BEAUTY_REWARDS.map((r) => ({
-        id: r.id,
-        name: r.name,
-        description: r.description,
-        points_required: r.points_required,
-      })),
-    },
-    {
-      id: BUSINESS_RESTAURANT.id,
-      name: BUSINESS_RESTAURANT.name,
-      category: 'Fine Dining & Grill',
-      logo_url: BUSINESS_RESTAURANT.logo_url,
-      phone: BUSINESS_RESTAURANT.phone,
-      rewards: RESTAURANT_REWARDS.map((r) => ({
-        id: r.id,
-        name: r.name,
-        description: r.description,
-        points_required: r.points_required,
-      })),
-    },
-  ];
-
-  // Add other partner businesses with catalogs
-  ALL_CUSTOMER_BUSINESSES.slice(3).forEach((item) => {
-    const bizData = getOrGenerateBusinessData({
-      id: `mem-${item.id}`,
-      customer_id: '',
-      business_id: item.id,
-      points_balance: 0,
-      created_at: '',
-      updated_at: '',
-      business: {
-        id: item.id,
-        name: item.name,
-        logo_url: null,
-        email: null,
-        phone: null,
-        subscription_status: 'active',
-        plan_name: 'Hbibna Business',
-        plan_price_da: 9800,
-        currency: 'DA',
-        created_at: '',
-        updated_at: '',
-      },
-    });
-
-    defaultList.push({
-      id: item.id,
-      name: item.name,
-      category: item.category,
-      logo_url: null,
-      phone: null,
-      rewards: bizData.rewards.map((r) => ({
-        id: r.id,
-        name: r.name,
-        description: r.description,
-        points_required: r.points_required,
-      })),
-    });
-  });
-
-  return defaultList;
+  return [];
 }
 

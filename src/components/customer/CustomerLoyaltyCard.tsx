@@ -43,6 +43,7 @@ export function CustomerLoyaltyCard({
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
   const [walletAdded, setWalletAdded] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const customerName = customer?.name || (isAr ? 'سارة بن علي' : 'Sarah Benali');
@@ -134,8 +135,7 @@ export function CustomerLoyaltyCard({
   };
 
   const handleAddToWallet = () => {
-    setWalletAdded(true);
-    setTimeout(() => setWalletAdded(false), 4000);
+    setShowWalletModal(true);
   };
 
   return (
@@ -385,6 +385,86 @@ export function CustomerLoyaltyCard({
               <QrCode className="w-3.5 h-3.5 stroke-[2.5]" />
               <span>{isAr ? 'تكبير الرمز' : isFr ? 'Plein écran' : 'Fullscreen'}</span>
             </Link>
+          </div>
+        </div>
+      )}
+
+      {/* 5. MODAL GUIDE : INSTALLATION DU PASS SUR IPHONE / SMARTPHONE */}
+      {showWalletModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-sm bg-[#FAF8F5] border-[2.5px] border-[#111111] rounded-[2rem] p-6 shadow-[0_12px_0_#111111] space-y-4 text-start font-rounded text-[#111111]">
+            <button
+              type="button"
+              onClick={() => setShowWalletModal(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/5 hover:bg-black/10 flex items-center justify-center text-[#111111] font-black cursor-pointer"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-2xl bg-[#111111] flex items-center justify-center text-white shadow-xs">
+                <Smartphone className="w-5 h-5 text-[#FFE600]" />
+              </div>
+              <div>
+                <h3 className="text-base font-black leading-tight">
+                  {isAr ? 'حفظ البطاقة على هاتفك' : isFr ? 'Installer votre Pass sur iPhone' : 'Save Pass to iPhone'}
+                </h3>
+                <p className="text-[11px] font-bold text-zinc-500">
+                  {isAr ? 'بطاقة رقمية فورية بدون تطبيق' : isFr ? 'Pass Web PWA 100% sans téléchargement' : '100% App-Free Digital Pass'}
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-white border-2 border-[#111111] space-y-2.5 shadow-2xs">
+              <div className="flex items-start gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-[#FFE600] border border-black/30 text-black text-[11px] font-black flex items-center justify-center shrink-0">1</span>
+                <p className="text-xs font-bold leading-snug">
+                  {isAr ? 'في متصفح Safari، اضغط على زر المشاركة (⎋) في الأسفل' : isFr ? 'Dans Safari, touchez le bouton Partager ⎋ en bas' : 'In Safari, tap the Share icon ⎋ at bottom'}
+                </p>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-[#FFE600] border border-black/30 text-black text-[11px] font-black flex items-center justify-center shrink-0">2</span>
+                <p className="text-xs font-bold leading-snug">
+                  {isAr ? 'اختر "إضافة إلى الشاشة الرئيسية" 📲' : isFr ? 'Sélectionnez « Sur l’écran d’accueil » 📲' : 'Select “Add to Home Screen” 📲'}
+                </p>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-[#FFE600] border border-black/30 text-black text-[11px] font-black flex items-center justify-center shrink-0">3</span>
+                <p className="text-xs font-bold leading-snug">
+                  {isAr ? 'البطاقة الآن على شاشتك جاهزة دائماً للدفع والمسح!' : isFr ? 'Votre Pass s’installe instantanément, accessible même hors-ligne !' : 'Your pass is instantly saved and available offline!'}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof navigator !== 'undefined' && navigator.share) {
+                    navigator.share({
+                      title: `${activeBusinessName} — Pass Fidélité`,
+                      text: `Mon Pass Fidélité ${activeBusinessName}`,
+                      url: window.location.href,
+                    }).catch(() => {});
+                  } else {
+                    navigator.clipboard?.writeText(window.location.href);
+                    alert(isAr ? 'تم نسخ الرابط !' : isFr ? 'Lien du Pass copié !' : 'Pass link copied!');
+                  }
+                }}
+                className="w-full py-3 px-4 rounded-xl bg-[#111111] hover:bg-neutral-900 text-[#FFE600] text-xs font-black border-2 border-black shadow-[0_3px_0_#000] flex items-center justify-center gap-2 cursor-pointer active:translate-y-0.5"
+              >
+                <span>{isAr ? 'مشاركة أو نسخ رابط البطاقة' : isFr ? 'Partager / Copier le lien du Pass' : 'Share / Copy Pass Link'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowWalletModal(false)}
+                className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-zinc-100 text-[#111111] text-xs font-black border-2 border-black cursor-pointer text-center"
+              >
+                {isAr ? 'فهمت، إغلاق' : isFr ? 'Compris, fermer' : 'Got it, close'}
+              </button>
+            </div>
           </div>
         </div>
       )}
