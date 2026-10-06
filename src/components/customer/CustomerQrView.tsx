@@ -21,7 +21,7 @@ export function CustomerQrView({
   const isAr = language === 'ar';
   const isFr = language === 'fr';
 
-  const activeBusinessName = business?.name || activeMembership.business?.name || (isAr ? 'مقهى الباهية' : 'Café Roastery 44');
+  const activeBusinessName = business?.name || activeMembership.business?.name || (isAr ? 'المتجر الشريك' : 'Commerce Partenaire');
   const activeQueryStr = business?.id ? `?b=${business.id}` : '';
 
   return (

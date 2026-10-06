@@ -24,7 +24,7 @@ export function CustomerActivityView({
 }: CustomerActivityViewProps) {
   const { t, isRtl, language } = useLanguage();
 
-  const activeBusinessName = business?.name || activeMembership.business?.name || 'Café El Bahia';
+  const activeBusinessName = business?.name || activeMembership.business?.name || 'Commerce Partenaire';
   const pointsBalance = activeMembership.points_balance;
 
   const displayTransactions =

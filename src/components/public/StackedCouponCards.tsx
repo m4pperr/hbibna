@@ -18,14 +18,14 @@ export function StackedCouponCards() {
     {
       id: 'gold',
       tier: isAr ? 'بطاقة Hbibna الذهبية' : isFr ? 'Pass Hbibna Or VIP' : 'Hbibna Gold VIP Pass',
-      category: isAr ? 'المقاهي والمطاعم' : isFr ? 'Café & Specialty Coffee' : 'Café & Roastery',
+      category: isAr ? 'الأزياء والأناقة' : isFr ? 'Mode & Prêt-à-Porter' : 'Fashion & Apparel',
       badge: 'VIP GOLD',
-      business: 'Café Roastery 44',
+      business: 'Boutique Prestige Alger',
       member: isAr ? 'سارة بن علي' : 'Sarah Benali',
       memberId: 'HB-8821-DZ',
       points: '1,240',
       progress: 82,
-      reward: isAr ? 'مشروب وحلوى مجاناً' : isFr ? 'Café & Pâtisserie Signature' : 'Signature Coffee & Pastry',
+      reward: isAr ? 'قسيمة شراء 1,000 دج' : isFr ? 'Bon d’achat 1 000 DA' : '1,000 DA Store Voucher',
       // Holder bumper color (Outer frame from photo)
       frameBg: '#EEC044',
       frameBorder: '#111111',

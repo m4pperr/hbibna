@@ -38,10 +38,10 @@ export function CustomerPortalLayoutClient({
     memberships[0] || {
       business_id: 'default',
       points_balance: 0,
-      business: { name: 'Café El Bahia' },
+      business: { name: 'Commerce Partenaire' },
     };
 
-  const activeBusinessName = activeMembership.business?.name || 'Café El Bahia';
+  const activeBusinessName = activeMembership.business?.name || 'Commerce Partenaire';
 
   const getHref = (targetPath: string) => {
     const params = new URLSearchParams(searchParams.toString());

@@ -48,7 +48,7 @@ export function CustomerLoyaltyCard({
 
   const customerName = customer?.name || (isAr ? 'سارة بن علي' : 'Sarah Benali');
   const activeBusinessName =
-    business?.name || membership?.business?.name || (isAr ? 'مقهى الباهية' : 'Café Roastery 44');
+    business?.name || membership?.business?.name || (isAr ? 'المتجر الشريك' : 'Artisan Bakery Oran');
   const points =
     overridePoints !== undefined
       ? overridePoints
@@ -96,10 +96,10 @@ export function CustomerLoyaltyCard({
         : 'Exclusive VIP Gift & Beverage'
       : points >= 500
       ? isAr
-        ? 'مشروب فاخر أو تحلية مجانية'
+        ? 'هدية حصرية أو مشروب مجاني'
         : isFr
-        ? 'Café ou Boisson Offerte'
-        : 'Free Beverage or Dessert'
+        ? 'Cadeau Privilège ou Boisson Offerte'
+        : 'Free Gift or Beverage'
       : isAr
       ? 'خصم 20% على طلبك القادم'
       : isFr
@@ -134,8 +134,20 @@ export function CustomerLoyaltyCard({
     setIsHovered(false);
   };
 
-  const handleAddToWallet = () => {
+  const handleAddToWallet = async () => {
     setShowWalletModal(true);
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: `${activeBusinessName} — Pass Fidélité`,
+          text: `Mon Pass Fidélité ${activeBusinessName}`,
+          url: window.location.href,
+        });
+        setWalletAdded(true);
+      } catch {
+        // Modal remains open with step-by-step instructions
+      }
+    }
   };
 
   return (
@@ -354,7 +366,7 @@ export function CustomerLoyaltyCard({
             </p>
           </div>
 
-          {/* 4. ACTIONS : AJOUTER À APPLE WALLET */}
+          {/* 4. ACTIONS : ENREGISTRER LE PASS SUR LE TÉLÉPHONE */}
           <div className="pt-3 border-t-2 border-dashed border-[#111111]/25 flex flex-col sm:flex-row items-center justify-center gap-2">
             <button
               type="button"
@@ -368,12 +380,12 @@ export function CustomerLoyaltyCard({
               {walletAdded ? (
                 <>
                   <Check className="w-4 h-4 stroke-[2.5]" />
-                  <span>{isAr ? 'تمت الإضافة بنجاح !' : isFr ? 'Pass ajouté à Apple Wallet !' : 'Added to Apple Wallet!'}</span>
+                  <span>{isAr ? 'تم فتح خيارات الحفظ !' : isFr ? 'Pass prêt à enregistrer !' : 'Pass ready to save!'}</span>
                 </>
               ) : (
                 <>
                   <Smartphone className="w-4 h-4 stroke-[2.5]" />
-                  <span>{isAr ? 'أضف إلى Apple Wallet' : isFr ? 'Ajouter à Apple Wallet' : 'Add to Apple Wallet'}</span>
+                  <span>{isAr ? '📲 حفظ في الهاتف (Wallet & الشاشة)' : isFr ? '📲 Enregistrer sur Téléphone (Wallet / Écran)' : '📲 Save to Phone (Wallet / Home Screen)'}</span>
                 </>
               )}
             </button>
@@ -391,8 +403,8 @@ export function CustomerLoyaltyCard({
 
       {/* 5. MODAL GUIDE : INSTALLATION DU PASS SUR IPHONE / SMARTPHONE */}
       {showWalletModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-sm bg-[#FAF8F5] border-[2.5px] border-[#111111] rounded-[2rem] p-6 shadow-[0_12px_0_#111111] space-y-4 text-start font-rounded text-[#111111]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-sm max-h-[92vh] overflow-y-auto bg-[#FAF8F5] border-[2.5px] border-[#111111] rounded-[2rem] p-6 shadow-[0_12px_0_#111111] space-y-4 text-start font-rounded text-[#111111]">
             <button
               type="button"
               onClick={() => setShowWalletModal(false)}
@@ -408,31 +420,57 @@ export function CustomerLoyaltyCard({
               </div>
               <div>
                 <h3 className="text-base font-black leading-tight">
-                  {isAr ? 'حفظ البطاقة على هاتفك' : isFr ? 'Installer votre Pass sur iPhone' : 'Save Pass to iPhone'}
+                  {isAr ? 'حفظ البطاقة على هاتفك' : isFr ? 'Ajouter à l’écran d’accueil' : 'Save Pass to Phone'}
                 </h3>
                 <p className="text-[11px] font-bold text-zinc-500">
-                  {isAr ? 'بطاقة رقمية فورية بدون تطبيق' : isFr ? 'Pass Web PWA 100% sans téléchargement' : '100% App-Free Digital Pass'}
+                  {isAr ? 'بطاقة رقمية فورية 100% بدون تطبيق' : isFr ? 'Pass Web PWA • Zéro téléchargement requis' : '100% App-Free Instant Pass'}
                 </p>
               </div>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-white border-2 border-[#111111] space-y-2.5 shadow-2xs">
+            {/* Note d'explication Apple Wallet vs PWA */}
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-300/80 text-[11px] text-amber-900 leading-snug space-y-1">
+              <p className="font-black flex items-center gap-1.5 text-amber-950">
+                <span>🍏 Sur iPhone (Safari) :</span>
+              </p>
+              <p className="text-[10.5px]">
+                {isFr
+                  ? 'Pour garder votre pass toujours sous la main en 1 clic sans installer d’application :'
+                  : isAr
+                  ? 'لحفظ بطاقتك دائماً في متناول يدك بضغطة واحدة وبدون أي تطبيق :'
+                  : 'To keep your pass accessible in 1 tap without installing any App Store app:'}
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-white border-2 border-[#111111] space-y-3 shadow-2xs">
               <div className="flex items-start gap-2.5">
                 <span className="w-5 h-5 rounded-full bg-[#FFE600] border border-black/30 text-black text-[11px] font-black flex items-center justify-center shrink-0">1</span>
                 <p className="text-xs font-bold leading-snug">
-                  {isAr ? 'في متصفح Safari، اضغط على زر المشاركة (⎋) في الأسفل' : isFr ? 'Dans Safari, touchez le bouton Partager ⎋ en bas' : 'In Safari, tap the Share icon ⎋ at bottom'}
+                  {isAr
+                    ? 'في Safari، اضغط على زر المشاركة (⎋) في الأسفل'
+                    : isFr
+                    ? 'Dans Safari, touchez l’icône Partager ⎋ (ou le menu ⋮ sur Chrome)'
+                    : 'In Safari, tap the Share icon ⎋ (or ⋮ on Chrome)'}
                 </p>
               </div>
               <div className="flex items-start gap-2.5">
                 <span className="w-5 h-5 rounded-full bg-[#FFE600] border border-black/30 text-black text-[11px] font-black flex items-center justify-center shrink-0">2</span>
                 <p className="text-xs font-bold leading-snug">
-                  {isAr ? 'اختر "إضافة إلى الشاشة الرئيسية" 📲' : isFr ? 'Sélectionnez « Sur l’écran d’accueil » 📲' : 'Select “Add to Home Screen” 📲'}
+                  {isAr
+                    ? 'مرر للأسفل واختر "إضافة إلى الشاشة الرئيسية" 📲'
+                    : isFr
+                    ? 'Faites défiler et choisissez « Sur l’écran d’accueil » 📲'
+                    : 'Scroll and tap “Add to Home Screen” 📲'}
                 </p>
               </div>
               <div className="flex items-start gap-2.5">
                 <span className="w-5 h-5 rounded-full bg-[#FFE600] border border-black/30 text-black text-[11px] font-black flex items-center justify-center shrink-0">3</span>
                 <p className="text-xs font-bold leading-snug">
-                  {isAr ? 'البطاقة الآن على شاشتك جاهزة دائماً للدفع والمسح!' : isFr ? 'Votre Pass s’installe instantanément, accessible même hors-ligne !' : 'Your pass is instantly saved and available offline!'}
+                  {isAr
+                    ? 'البطاقة الآن على شاشة هاتفك جاهزة دائماً للدفع والمسح حتى بدون إنترنت!'
+                    : isFr
+                    ? 'Votre Pass s’installe instantanément, accessible en plein écran et même hors-ligne en caisse !'
+                    : 'Your pass is instantly saved and available offline for quick counter scanning!'}
                 </p>
               </div>
             </div>
@@ -449,12 +487,12 @@ export function CustomerLoyaltyCard({
                     }).catch(() => {});
                   } else {
                     navigator.clipboard?.writeText(window.location.href);
-                    alert(isAr ? 'تم نسخ الرابط !' : isFr ? 'Lien du Pass copié !' : 'Pass link copied!');
+                    alert(isAr ? 'تم نسخ رابط البطاقة !' : isFr ? 'Lien du Pass copié !' : 'Pass link copied!');
                   }
                 }}
                 className="w-full py-3 px-4 rounded-xl bg-[#111111] hover:bg-neutral-900 text-[#FFE600] text-xs font-black border-2 border-black shadow-[0_3px_0_#000] flex items-center justify-center gap-2 cursor-pointer active:translate-y-0.5"
               >
-                <span>{isAr ? 'مشاركة أو نسخ رابط البطاقة' : isFr ? 'Partager / Copier le lien du Pass' : 'Share / Copy Pass Link'}</span>
+                <span>{isAr ? 'مشاركة أو نسخ رابط البطاقة' : isFr ? 'Partager / Enregistrer maintenant' : 'Share / Save Pass Link'}</span>
               </button>
 
               <button

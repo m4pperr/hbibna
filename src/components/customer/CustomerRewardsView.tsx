@@ -19,7 +19,7 @@ export function CustomerRewardsView({
 }: CustomerRewardsViewProps) {
   const { t, isRtl } = useLanguage();
 
-  const activeBusinessName = business?.name || activeMembership.business?.name || 'Café El Bahia';
+  const activeBusinessName = business?.name || activeMembership.business?.name || 'Commerce Partenaire';
   const pointsBalance = activeMembership.points_balance;
 
   return (

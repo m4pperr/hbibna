@@ -43,7 +43,7 @@ export function CustomerHomeView({
   const { t, isRtl, language } = useLanguage();
 
   const customerName = customer?.name || 'Sarah Benali';
-  const activeBusinessName = business?.name || activeMembership.business?.name || 'Café El Bahia';
+  const activeBusinessName = business?.name || activeMembership.business?.name || 'Commerce Partenaire';
   const pointsBalance = activeMembership.points_balance;
 
   // Customer transactions for the active business

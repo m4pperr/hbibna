@@ -14,9 +14,9 @@ import { isSupabaseConfigured } from '@/lib/supabase/config';
 // ---------------------------------------------------------------------------
 export const DEFAULT_BUSINESS: Business = {
   id: '00000000-0000-0000-0000-000000000001',
-  name: 'Café El Bahia',
+  name: 'Artisan Bakery Oran',
   logo_url: null,
-  email: 'contact@elbahia-cafe.dz',
+  email: 'contact@artisan-bakery.dz',
   phone: '0550 12 34 56',
   subscription_status: 'active',
   plan_name: 'Hbibna Business',
@@ -70,9 +70,9 @@ export const DEFAULT_LOYALTY: LoyaltyProgram = {
 };
 
 // ---------------------------------------------------------------------------
-// 3. BUSINESS A (Café El Bahia) CUSTOMERS
-// Notice: Café El Bahia only sees Sarah's points at Café El Bahia (1,250).
-// Café El Bahia has ZERO awareness of Beauty Studio or Restaurant XYZ.
+// 3. BUSINESS A (Artisan Bakery Oran) CUSTOMERS
+// Notice: Artisan Bakery Oran only sees Sarah's points at Artisan Bakery Oran (1,250).
+// Artisan Bakery Oran has ZERO awareness of Beauty Studio or Restaurant XYZ.
 // ---------------------------------------------------------------------------
 export const DEFAULT_CUSTOMERS: Customer[] = [
   {
@@ -110,12 +110,12 @@ export const DEFAULT_CUSTOMERS: Customer[] = [
 // ---------------------------------------------------------------------------
 // 4. REWARDS PER BUSINESS (Isolated Catalogs)
 // ---------------------------------------------------------------------------
-export const CAFE_REWARDS: Reward[] = [
+export const STORE_REWARDS: Reward[] = [
   {
-    id: 'r1-coffee',
+    id: 'r1-gift',
     business_id: DEFAULT_BUSINESS.id,
-    name: 'Free Coffee',
-    description: 'Enjoy one regular coffee on us.',
+    name: 'Boîte de Viennoiseries Artisanales',
+    description: 'Assortiment de 6 viennoiseries fraîches au choix.',
     points_required: 500,
     is_active: true,
     created_at: new Date().toISOString(),
@@ -124,8 +124,8 @@ export const CAFE_REWARDS: Reward[] = [
   {
     id: 'r2-dessert',
     business_id: DEFAULT_BUSINESS.id,
-    name: 'Free Dessert',
-    description: 'Choose any handcrafted cake, tart, or pastry.',
+    name: 'Gâteau Signature & Pâtisserie',
+    description: 'Pâtisserie fine de saison préparée le matin même.',
     points_required: 1000,
     is_active: true,
     created_at: new Date().toISOString(),
@@ -134,14 +134,16 @@ export const CAFE_REWARDS: Reward[] = [
   {
     id: 'r3-discount',
     business_id: DEFAULT_BUSINESS.id,
-    name: '500 DA Discount',
-    description: '500 DA voucher valid on any purchase over 2,000 DA.',
+    name: 'Bon d’achat 1 000 DA',
+    description: 'Bon d’achat de 1 000 DA valable sur toute la boutique.',
     points_required: 2000,
     is_active: true,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
 ];
+
+export const CAFE_REWARDS = STORE_REWARDS;
 
 export const BEAUTY_REWARDS: Reward[] = [
   {
@@ -209,12 +211,12 @@ export const RESTAURANT_REWARDS: Reward[] = [
   },
 ];
 
-export const DEFAULT_REWARDS: Reward[] = CAFE_REWARDS;
+export const DEFAULT_REWARDS: Reward[] = STORE_REWARDS;
 
 // ---------------------------------------------------------------------------
 // 5. TRANSACTIONS PER BUSINESS (Isolated Ledgers)
 // ---------------------------------------------------------------------------
-export const CAFE_TRANSACTIONS: Transaction[] = [
+export const STORE_TRANSACTIONS: Transaction[] = [
   {
     id: 't1',
     business_id: DEFAULT_BUSINESS.id,
@@ -222,7 +224,7 @@ export const CAFE_TRANSACTIONS: Transaction[] = [
     type: 'earn',
     amount: 2500,
     points: 25,
-    description: 'Purchase',
+    description: 'Achats en boutique',
     created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
     customer: { name: 'Sarah Benali', phone: '0555 12 34 56' },
   },
@@ -233,7 +235,7 @@ export const CAFE_TRANSACTIONS: Transaction[] = [
     type: 'earn',
     amount: 5000,
     points: 50,
-    description: 'Purchase',
+    description: 'Achats en boutique',
     created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
     customer: { name: 'Sarah Benali', phone: '0555 12 34 56' },
   },
@@ -244,11 +246,13 @@ export const CAFE_TRANSACTIONS: Transaction[] = [
     type: 'redeem',
     amount: 0,
     points: -500,
-    description: 'Free Coffee',
+    description: 'Récompense utilisée',
     created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
     customer: { name: 'Sarah Benali', phone: '0555 12 34 56' },
   },
 ];
+
+export const CAFE_TRANSACTIONS = STORE_TRANSACTIONS;
 
 export const BEAUTY_TRANSACTIONS: Transaction[] = [
   {
@@ -334,28 +338,28 @@ export const ALL_CUSTOMER_BUSINESSES: {
   points: number;
   category: string;
 }[] = [
-  { id: DEFAULT_BUSINESS.id, name: 'Café El Bahia', points: 1250, category: 'Coffee & Bakery' },
-  { id: '00000000-0000-0000-0000-000000000004', name: 'Café Central', points: 850, category: 'Café & Lounge' },
+  { id: DEFAULT_BUSINESS.id, name: 'Artisan Bakery Oran', points: 1250, category: 'Boulangerie & Pâtisserie' },
+  { id: '00000000-0000-0000-0000-000000000004', name: 'Boutique Prestige Alger', points: 850, category: 'Mode & Prêt-à-porter' },
   { id: BUSINESS_RESTAURANT.id, name: 'Restaurant XYZ', points: 2100, category: 'Dining & Grill' },
-  { id: BUSINESS_BEAUTY.id, name: 'Salon Beauty', points: 640, category: 'Hair & Esthetics' },
-  { id: '00000000-0000-0000-0000-000000000005', name: 'Pâtisserie La Rose', points: 420, category: 'French Pastry' },
-  { id: '00000000-0000-0000-0000-000000000006', name: 'Artisan Bakery Oran', points: 1150, category: 'Bakery' },
-  { id: '00000000-0000-0000-0000-000000000007', name: 'Librairie Moderne', points: 310, category: 'Books & Stationery' },
-  { id: '00000000-0000-0000-0000-000000000008', name: 'FitLife Gym & Spa', points: 920, category: 'Fitness & Wellness' },
-  { id: '00000000-0000-0000-0000-000000000009', name: 'Optique Vision Plus', points: 580, category: 'Eyewear & Care' },
-  { id: '00000000-0000-0000-0000-000000000010', name: 'Fleuriste Jasmine', points: 190, category: 'Flowers & Gifts' },
-  { id: '00000000-0000-0000-0000-000000000011', name: 'Pizzeria Napoli', points: 760, category: 'Italian Cuisine' },
-  { id: '00000000-0000-0000-0000-000000000012', name: 'Boutique Élégance', points: 1400, category: 'Fashion & Apparel' },
-  { id: '00000000-0000-0000-0000-000000000013', name: 'Glacier Al-Amir', points: 340, category: 'Artisanal Ice Cream' },
-  { id: '00000000-0000-0000-0000-000000000014', name: 'Cyber Café Connect', points: 150, category: 'Internet & Work' },
-  { id: '00000000-0000-0000-0000-000000000015', name: 'Clinique Dentaire Sourire', points: 800, category: 'Dental Care' },
-  { id: '00000000-0000-0000-0000-000000000016', name: 'Auto Wash Express', points: 490, category: 'Car Detailing' },
-  { id: '00000000-0000-0000-0000-000000000017', name: 'Superette El Baraka', points: 1670, category: 'Grocery & Market' },
-  { id: '00000000-0000-0000-0000-000000000018', name: 'Café des Arts', points: 610, category: 'Coffee & Books' },
-  { id: '00000000-0000-0000-0000-000000000019', name: 'Parfumerie Royale', points: 1850, category: 'Luxury Fragrance' },
-  { id: '00000000-0000-0000-0000-000000000020', name: 'Gourmet Burger Co.', points: 980, category: 'Burgers & Shakes' },
-  { id: '00000000-0000-0000-0000-000000000021', name: 'Spa & Hammam Andalou', points: 2300, category: 'Baths & Relaxation' },
-  { id: '00000000-0000-0000-0000-000000000022', name: 'Café Panorama', points: 730, category: 'Rooftop Lounge' },
+  { id: BUSINESS_BEAUTY.id, name: 'Salon Beauty', points: 640, category: 'Coiffure & Esthétique' },
+  { id: '00000000-0000-0000-0000-000000000005', name: 'Pâtisserie La Rose', points: 420, category: 'Pâtisserie Fine' },
+  { id: '00000000-0000-0000-0000-000000000006', name: 'Atelier Gourmand Oran', points: 1150, category: 'Boulangerie Artisanale' },
+  { id: '00000000-0000-0000-0000-000000000007', name: 'Librairie Moderne', points: 310, category: 'Papeterie & Livres' },
+  { id: '00000000-0000-0000-0000-000000000008', name: 'FitLife Gym & Spa', points: 920, category: 'Fitness & Bien-être' },
+  { id: '00000000-0000-0000-0000-000000000009', name: 'Optique Vision Plus', points: 580, category: 'Optique & Lunettes' },
+  { id: '00000000-0000-0000-0000-000000000010', name: 'Fleuriste Jasmine', points: 190, category: 'Fleurs & Décoration' },
+  { id: '00000000-0000-0000-0000-000000000011', name: 'Pizzeria Napoli', points: 760, category: 'Restauration Italienne' },
+  { id: '00000000-0000-0000-0000-000000000012', name: 'Boutique Élégance', points: 1400, category: 'Mode & Accessoires' },
+  { id: '00000000-0000-0000-0000-000000000013', name: 'Glacier Al-Amir', points: 340, category: 'Glacier Artisanal' },
+  { id: '00000000-0000-0000-0000-000000000014', name: 'Espace Coworking Connect', points: 150, category: 'Coworking & Bureaux' },
+  { id: '00000000-0000-0000-0000-000000000015', name: 'Clinique Dentaire Sourire', points: 800, category: 'Soins Dentaires' },
+  { id: '00000000-0000-0000-0000-000000000016', name: 'Auto Wash Express', points: 490, category: 'Lavage & Entretien Auto' },
+  { id: '00000000-0000-0000-0000-000000000017', name: 'Superette El Baraka', points: 1670, category: 'Alimentation Générale' },
+  { id: '00000000-0000-0000-0000-000000000018', name: 'Galerie des Arts & Livres', points: 610, category: 'Arts & Culture' },
+  { id: '00000000-0000-0000-0000-000000000019', name: 'Parfumerie Royale', points: 1850, category: 'Parfumerie de Luxe' },
+  { id: '00000000-0000-0000-0000-000000000020', name: 'Gourmet Burger Co.', points: 980, category: 'Burgers Gourmets' },
+  { id: '00000000-0000-0000-0000-000000000021', name: 'Spa & Hammam Andalou', points: 2300, category: 'Bains & Relaxation' },
+  { id: '00000000-0000-0000-0000-000000000022', name: 'Rooftop Lounge Oran', points: 730, category: 'Lounge Panoramique' },
 ];
 
 export const SARAH_MEMBERSHIPS: CustomerBusinessMembership[] = ALL_CUSTOMER_BUSINESSES.map((b, idx) => ({
@@ -735,7 +739,7 @@ export async function fetchCustomerPortalData(params?: {
   // Get all memberships belonging to this customer
   const memberships = SARAH_MEMBERSHIPS;
 
-  // Active membership: selected via businessId or default to the first one (Café El Bahia)
+  // Active membership: selected via businessId or default to the first one (Artisan Bakery Oran)
   let activeMembership = memberships[0];
   if (businessId) {
     const found = memberships.find((m) => m.business_id === businessId);

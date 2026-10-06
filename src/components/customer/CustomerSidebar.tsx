@@ -55,7 +55,7 @@ export function CustomerSidebar({
       memberships[0] || {
         business_id: 'default',
         points_balance: 0,
-        business: { name: 'Café El Bahia', id: 'default' },
+        business: { name: 'Commerce Partenaire', id: 'default' },
       }
     );
   }, [memberships, activeBusinessId]);
@@ -152,7 +152,7 @@ export function CustomerSidebar({
           </span>
         </div>
 
-        {/* Trigger Button: e.g. "Café El Bahia ▼" */}
+        {/* Trigger Button: e.g. "Artisan Bakery Oran ▼" */}
         <button
           type="button"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
