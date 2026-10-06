@@ -46,15 +46,15 @@ export function CustomerLoyaltyCard({
   const [showWalletModal, setShowWalletModal] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const customerName = customer?.name || (isAr ? 'سارة بن علي' : 'Sarah Benali');
+  const customerName = customer?.name || (isAr ? 'العميل' : 'Client');
   const activeBusinessName =
-    business?.name || membership?.business?.name || (isAr ? 'المتجر الشريك' : 'Artisan Bakery Oran');
+    business?.name || membership?.business?.name || (isAr ? 'المتجر الشريك' : 'Commerce Partenaire');
   const points =
     overridePoints !== undefined
       ? overridePoints
       : membership?.points_balance !== undefined
       ? membership.points_balance
-      : customer?.points_balance || 1240;
+      : customer?.points_balance || 0;
 
   // Tier visual configuration
   const tierConfig =

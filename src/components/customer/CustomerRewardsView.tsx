@@ -17,7 +17,8 @@ export function CustomerRewardsView({
   rewards,
   business,
 }: CustomerRewardsViewProps) {
-  const { t, isRtl } = useLanguage();
+  const { t, isRtl, language } = useLanguage();
+  const isAr = language === 'ar';
 
   const activeBusinessName = business?.name || activeMembership.business?.name || 'Commerce Partenaire';
   const pointsBalance = activeMembership.points_balance;
@@ -50,7 +51,7 @@ export function CustomerRewardsView({
             {activeBusinessName} • {t('customer.balance')}
           </span>
           <h2 className="text-base sm:text-lg font-black text-black">
-            {customer?.name || 'Sarah Benali'}
+            {customer?.name || (isAr ? 'العميل' : 'Client')}
           </h2>
         </div>
         <div className={isRtl ? 'text-left' : 'text-right'}>

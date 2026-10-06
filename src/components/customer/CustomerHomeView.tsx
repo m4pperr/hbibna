@@ -41,20 +41,14 @@ export function CustomerHomeView({
   activeQueryStr,
 }: CustomerHomeViewProps) {
   const { t, isRtl, language } = useLanguage();
+  const isAr = language === 'ar';
 
-  const customerName = customer?.name || 'Sarah Benali';
+  const customerName = customer?.name || (isAr ? 'العميل' : 'Client');
   const activeBusinessName = business?.name || activeMembership.business?.name || 'Commerce Partenaire';
   const pointsBalance = activeMembership.points_balance;
 
   // Customer transactions for the active business
-  const displayActivity =
-    transactions.length > 0
-      ? transactions.slice(0, 5)
-      : [
-          { id: '1', points: 25, type: 'earn', description: 'Purchase' },
-          { id: '2', points: 50, type: 'earn', description: 'Purchase' },
-          { id: '3', points: -500, type: 'redeem', description: 'Reward Redeemed' },
-        ];
+  const displayActivity = transactions.slice(0, 5);
 
   return (
     <div className="space-y-8 font-rounded">
@@ -201,18 +195,23 @@ export function CustomerHomeView({
         </div>
 
         <div className="bg-white border-2 border-black rounded-3xl shadow-[0_8px_0_#000] divide-y-2 divide-black/10 overflow-hidden font-bold">
-          {displayActivity.map((act) => {
-            const isEarn = act.points > 0;
-            const title =
-              act.description ||
-              (act as any).title ||
-              (isEarn ? t('customer.earnedPts') : t('customer.spentPts'));
+          {displayActivity.length === 0 ? (
+            <div className="p-8 text-center text-xs text-black/60 font-bold">
+              {t('customer.noTransactions')}
+            </div>
+          ) : (
+            displayActivity.map((act) => {
+              const isEarn = act.points > 0;
+              const title =
+                act.description ||
+                (act as any).title ||
+                (isEarn ? t('customer.earnedPts') : t('customer.spentPts'));
 
-            return (
-              <div
-                key={act.id}
-                className="p-4 sm:p-5 flex items-center justify-between hover:bg-[#FFF9D2]/40 transition-colors"
-              >
+              return (
+                <div
+                  key={act.id}
+                  className="p-4 sm:p-5 flex items-center justify-between hover:bg-[#FFF9D2]/40 transition-colors"
+                >
                 <div className="flex items-center gap-3.5">
                   <div
                     className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border-2 border-black shadow-[0_2px_0_#000] ${
@@ -251,7 +250,7 @@ export function CustomerHomeView({
                 </div>
               </div>
             );
-          })}
+          }))}
         </div>
       </div>
     </div>

@@ -25,12 +25,12 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
     const { DEFAULT_BUSINESS, DEFAULT_CUSTOMERS, DEFAULT_REWARDS, DEFAULT_TRANSACTIONS } = await import('@/lib/data-service');
     return {
       businessName: DEFAULT_BUSINESS.name,
-      ownerName: 'Owner',
-      totalCustomers: DEFAULT_CUSTOMERS.length,
-      totalPointsIssued: 485,
-      totalPointsRedeemed: 50,
-      totalRewards: DEFAULT_REWARDS.length,
-      recentActivity: DEFAULT_TRANSACTIONS.slice(0, 10),
+      ownerName: 'Commerçant',
+      totalCustomers: 0,
+      totalPointsIssued: 0,
+      totalPointsRedeemed: 0,
+      totalRewards: 0,
+      recentActivity: [],
     };
   }
 

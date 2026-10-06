@@ -23,45 +23,12 @@ export function CustomerActivityView({
   business,
 }: CustomerActivityViewProps) {
   const { t, isRtl, language } = useLanguage();
+  const isAr = language === 'ar';
 
   const activeBusinessName = business?.name || activeMembership.business?.name || 'Commerce Partenaire';
   const pointsBalance = activeMembership.points_balance;
 
-  const displayTransactions =
-    transactions.length > 0
-      ? transactions
-      : [
-          {
-            id: '1',
-            points: 25,
-            type: 'earn' as const,
-            amount: 2500,
-            business_id: activeMembership.business_id,
-            customer_id: customer?.id || 'c1-sarah',
-            description: t('business.purchase'),
-            created_at: new Date().toISOString(),
-          },
-          {
-            id: '2',
-            points: 50,
-            type: 'earn' as const,
-            amount: 5000,
-            business_id: activeMembership.business_id,
-            customer_id: customer?.id || 'c1-sarah',
-            description: t('business.purchase'),
-            created_at: new Date(Date.now() - 86400000).toISOString(),
-          },
-          {
-            id: '3',
-            points: -500,
-            type: 'redeem' as const,
-            amount: 0,
-            business_id: activeMembership.business_id,
-            customer_id: customer?.id || 'c1-sarah',
-            description: t('customer.spentPts'),
-            created_at: new Date(Date.now() - 172800000).toISOString(),
-          },
-        ];
+  const displayTransactions = transactions;
 
   return (
     <div className="space-y-6 font-rounded">
@@ -91,7 +58,7 @@ export function CustomerActivityView({
             {activeBusinessName} • {t('customer.balance')}
           </span>
           <h2 className="text-base sm:text-lg font-black text-black">
-            {customer?.name || 'Sarah Benali'}
+            {customer?.name || (isAr ? 'العميل' : 'Client')}
           </h2>
         </div>
         <div className={isRtl ? 'text-left' : 'text-right'}>

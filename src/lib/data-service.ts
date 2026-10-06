@@ -70,319 +70,35 @@ export const DEFAULT_LOYALTY: LoyaltyProgram = {
 };
 
 // ---------------------------------------------------------------------------
-// 3. BUSINESS A (Artisan Bakery Oran) CUSTOMERS
-// Notice: Artisan Bakery Oran only sees Sarah's points at Artisan Bakery Oran (1,250).
-// Artisan Bakery Oran has ZERO awareness of Beauty Studio or Restaurant XYZ.
-// ---------------------------------------------------------------------------
-export const DEFAULT_CUSTOMERS: Customer[] = [
-  {
-    id: 'c1-sarah',
-    business_id: DEFAULT_BUSINESS.id,
-    name: 'Sarah Benali',
-    phone: '0555 12 34 56',
-    email: 'sarah.benali@example.com',
-    points_balance: 1250,
-    created_at: new Date(Date.now() - 86400000 * 14).toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 'c2-amine',
-    business_id: DEFAULT_BUSINESS.id,
-    name: 'Amine Haddad',
-    phone: '0661 22 33 44',
-    email: 'amine@example.com',
-    points_balance: 850,
-    created_at: new Date(Date.now() - 86400000 * 7).toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 'c3-yasmine',
-    business_id: DEFAULT_BUSINESS.id,
-    name: 'Yasmine K.',
-    phone: '0770 99 88 77',
-    email: null,
-    points_balance: 350,
-    created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
+// 3. CLEAN CUSTOMERS (Production isolated database)
+export const DEFAULT_CUSTOMERS: Customer[] = [];
 
 // ---------------------------------------------------------------------------
 // 4. REWARDS PER BUSINESS (Isolated Catalogs)
 // ---------------------------------------------------------------------------
-export const STORE_REWARDS: Reward[] = [
-  {
-    id: 'r1-gift',
-    business_id: DEFAULT_BUSINESS.id,
-    name: 'Boîte de Viennoiseries Artisanales',
-    description: 'Assortiment de 6 viennoiseries fraîches au choix.',
-    points_required: 500,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 'r2-dessert',
-    business_id: DEFAULT_BUSINESS.id,
-    name: 'Gâteau Signature & Pâtisserie',
-    description: 'Pâtisserie fine de saison préparée le matin même.',
-    points_required: 1000,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 'r3-discount',
-    business_id: DEFAULT_BUSINESS.id,
-    name: 'Bon d’achat 1 000 DA',
-    description: 'Bon d’achat de 1 000 DA valable sur toute la boutique.',
-    points_required: 2000,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
-
-export const CAFE_REWARDS = STORE_REWARDS;
-
-export const BEAUTY_REWARDS: Reward[] = [
-  {
-    id: 'r4-manicure',
-    business_id: BUSINESS_BEAUTY.id,
-    name: 'Express Manicure',
-    description: 'Nail shaping, cuticle care, and natural polish.',
-    points_required: 400,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 'r5-hair',
-    business_id: BUSINESS_BEAUTY.id,
-    name: 'Keratin Hair Treatment',
-    description: 'Deep hydration mask and blow-dry styling.',
-    points_required: 800,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 'r6-facial',
-    business_id: BUSINESS_BEAUTY.id,
-    name: 'Deluxe Glow Facial',
-    description: 'Customized rejuvenating facial with natural serums.',
-    points_required: 1500,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
-
-export const RESTAURANT_REWARDS: Reward[] = [
-  {
-    id: 'r7-mocktail',
-    business_id: BUSINESS_RESTAURANT.id,
-    name: 'Artisanal Mocktail',
-    description: 'Signature freshly pressed tropical mocktail.',
-    points_required: 300,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 'r8-burger',
-    business_id: BUSINESS_RESTAURANT.id,
-    name: 'Signature Burger & Fries',
-    description: 'Gourmet Angus beef burger with homemade seasoned fries.',
-    points_required: 1200,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 'r9-dinner',
-    business_id: BUSINESS_RESTAURANT.id,
-    name: '3-Course Gourmet Dinner',
-    description: 'Starter, Chef special main course, and dessert for two.',
-    points_required: 2500,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
-
-export const DEFAULT_REWARDS: Reward[] = STORE_REWARDS;
+export const STORE_REWARDS: Reward[] = [];
+export const CAFE_REWARDS: Reward[] = [];
+export const BEAUTY_REWARDS: Reward[] = [];
+export const RESTAURANT_REWARDS: Reward[] = [];
+export const DEFAULT_REWARDS: Reward[] = [];
 
 // ---------------------------------------------------------------------------
 // 5. TRANSACTIONS PER BUSINESS (Isolated Ledgers)
 // ---------------------------------------------------------------------------
-export const STORE_TRANSACTIONS: Transaction[] = [
-  {
-    id: 't1',
-    business_id: DEFAULT_BUSINESS.id,
-    customer_id: 'c1-sarah',
-    type: 'earn',
-    amount: 2500,
-    points: 25,
-    description: 'Achats en boutique',
-    created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-    customer: { name: 'Sarah Benali', phone: '0555 12 34 56' },
-  },
-  {
-    id: 't2',
-    business_id: DEFAULT_BUSINESS.id,
-    customer_id: 'c1-sarah',
-    type: 'earn',
-    amount: 5000,
-    points: 50,
-    description: 'Achats en boutique',
-    created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
-    customer: { name: 'Sarah Benali', phone: '0555 12 34 56' },
-  },
-  {
-    id: 't3',
-    business_id: DEFAULT_BUSINESS.id,
-    customer_id: 'c1-sarah',
-    type: 'redeem',
-    amount: 0,
-    points: -500,
-    description: 'Récompense utilisée',
-    created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
-    customer: { name: 'Sarah Benali', phone: '0555 12 34 56' },
-  },
-];
+export const STORE_TRANSACTIONS: Transaction[] = [];
+export const CAFE_TRANSACTIONS: Transaction[] = [];
+export const BEAUTY_TRANSACTIONS: Transaction[] = [];
+export const RESTAURANT_TRANSACTIONS: Transaction[] = [];
+export const DEFAULT_TRANSACTIONS: Transaction[] = [];
 
-export const CAFE_TRANSACTIONS = STORE_TRANSACTIONS;
-
-export const BEAUTY_TRANSACTIONS: Transaction[] = [
-  {
-    id: 't-b1',
-    business_id: BUSINESS_BEAUTY.id,
-    customer_id: 'c1-sarah',
-    type: 'earn',
-    amount: 4000,
-    points: 40,
-    description: 'Hair Styling & Blow Dry',
-    created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-    customer: { name: 'Sarah Benali', phone: '0555 12 34 56' },
-  },
-  {
-    id: 't-b2',
-    business_id: BUSINESS_BEAUTY.id,
-    customer_id: 'c1-sarah',
-    type: 'earn',
-    amount: 6000,
-    points: 60,
-    description: 'Manicure & Spa Treatment',
-    created_at: new Date(Date.now() - 86400000 * 5).toISOString(),
-    customer: { name: 'Sarah Benali', phone: '0555 12 34 56' },
-  },
-  {
-    id: 't-b3',
-    business_id: BUSINESS_BEAUTY.id,
-    customer_id: 'c1-sarah',
-    type: 'redeem',
-    amount: 0,
-    points: -300,
-    description: 'Express Treatment',
-    created_at: new Date(Date.now() - 86400000 * 12).toISOString(),
-    customer: { name: 'Sarah Benali', phone: '0555 12 34 56' },
-  },
-];
-
-export const RESTAURANT_TRANSACTIONS: Transaction[] = [
-  {
-    id: 't-r1',
-    business_id: BUSINESS_RESTAURANT.id,
-    customer_id: 'c1-sarah',
-    type: 'earn',
-    amount: 8500,
-    points: 85,
-    description: 'Gourmet Lunch Menu',
-    created_at: new Date(Date.now() - 86400000 * 1).toISOString(),
-    customer: { name: 'Sarah Benali', phone: '0555 12 34 56' },
-  },
-  {
-    id: 't-r2',
-    business_id: BUSINESS_RESTAURANT.id,
-    customer_id: 'c1-sarah',
-    type: 'earn',
-    amount: 15000,
-    points: 150,
-    description: 'Family Weekend Dinner',
-    created_at: new Date(Date.now() - 86400000 * 6).toISOString(),
-    customer: { name: 'Sarah Benali', phone: '0555 12 34 56' },
-  },
-  {
-    id: 't-r3',
-    business_id: BUSINESS_RESTAURANT.id,
-    customer_id: 'c1-sarah',
-    type: 'redeem',
-    amount: 0,
-    points: -600,
-    description: "Chef's Special Tasting",
-    created_at: new Date(Date.now() - 86400000 * 15).toISOString(),
-    customer: { name: 'Sarah Benali', phone: '0555 12 34 56' },
-  },
-];
-
-export const DEFAULT_TRANSACTIONS: Transaction[] = CAFE_TRANSACTIONS;
-
-// ---------------------------------------------------------------------------
-// 6. CUSTOMER MULTI-BUSINESS MEMBERSHIPS (1, 5, 20+ Businesses Supported)
-// Sarah Benali belongs to 22 active businesses with isolated point balances:
-// ---------------------------------------------------------------------------
 export const ALL_CUSTOMER_BUSINESSES: {
   id: string;
   name: string;
   points: number;
   category: string;
-}[] = [
-  { id: DEFAULT_BUSINESS.id, name: 'Artisan Bakery Oran', points: 1250, category: 'Boulangerie & Pâtisserie' },
-  { id: '00000000-0000-0000-0000-000000000004', name: 'Boutique Prestige Alger', points: 850, category: 'Mode & Prêt-à-porter' },
-  { id: BUSINESS_RESTAURANT.id, name: 'Restaurant XYZ', points: 2100, category: 'Dining & Grill' },
-  { id: BUSINESS_BEAUTY.id, name: 'Salon Beauty', points: 640, category: 'Coiffure & Esthétique' },
-  { id: '00000000-0000-0000-0000-000000000005', name: 'Pâtisserie La Rose', points: 420, category: 'Pâtisserie Fine' },
-  { id: '00000000-0000-0000-0000-000000000006', name: 'Atelier Gourmand Oran', points: 1150, category: 'Boulangerie Artisanale' },
-  { id: '00000000-0000-0000-0000-000000000007', name: 'Librairie Moderne', points: 310, category: 'Papeterie & Livres' },
-  { id: '00000000-0000-0000-0000-000000000008', name: 'FitLife Gym & Spa', points: 920, category: 'Fitness & Bien-être' },
-  { id: '00000000-0000-0000-0000-000000000009', name: 'Optique Vision Plus', points: 580, category: 'Optique & Lunettes' },
-  { id: '00000000-0000-0000-0000-000000000010', name: 'Fleuriste Jasmine', points: 190, category: 'Fleurs & Décoration' },
-  { id: '00000000-0000-0000-0000-000000000011', name: 'Pizzeria Napoli', points: 760, category: 'Restauration Italienne' },
-  { id: '00000000-0000-0000-0000-000000000012', name: 'Boutique Élégance', points: 1400, category: 'Mode & Accessoires' },
-  { id: '00000000-0000-0000-0000-000000000013', name: 'Glacier Al-Amir', points: 340, category: 'Glacier Artisanal' },
-  { id: '00000000-0000-0000-0000-000000000014', name: 'Espace Coworking Connect', points: 150, category: 'Coworking & Bureaux' },
-  { id: '00000000-0000-0000-0000-000000000015', name: 'Clinique Dentaire Sourire', points: 800, category: 'Soins Dentaires' },
-  { id: '00000000-0000-0000-0000-000000000016', name: 'Auto Wash Express', points: 490, category: 'Lavage & Entretien Auto' },
-  { id: '00000000-0000-0000-0000-000000000017', name: 'Superette El Baraka', points: 1670, category: 'Alimentation Générale' },
-  { id: '00000000-0000-0000-0000-000000000018', name: 'Galerie des Arts & Livres', points: 610, category: 'Arts & Culture' },
-  { id: '00000000-0000-0000-0000-000000000019', name: 'Parfumerie Royale', points: 1850, category: 'Parfumerie de Luxe' },
-  { id: '00000000-0000-0000-0000-000000000020', name: 'Gourmet Burger Co.', points: 980, category: 'Burgers Gourmets' },
-  { id: '00000000-0000-0000-0000-000000000021', name: 'Spa & Hammam Andalou', points: 2300, category: 'Bains & Relaxation' },
-  { id: '00000000-0000-0000-0000-000000000022', name: 'Rooftop Lounge Oran', points: 730, category: 'Lounge Panoramique' },
-];
+}[] = [];
 
-export const SARAH_MEMBERSHIPS: CustomerBusinessMembership[] = ALL_CUSTOMER_BUSINESSES.map((b, idx) => ({
-  id: `mem-${idx + 1}`,
-  customer_id: 'c1-sarah',
-  business_id: b.id,
-  points_balance: b.points,
-  created_at: new Date(Date.now() - 86400000 * (10 + idx * 5)).toISOString(),
-  updated_at: new Date().toISOString(),
-  business: {
-    id: b.id,
-    name: b.name,
-    logo_url: null,
-    email: `contact@${b.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.dz`,
-    phone: `0550 ${String(10 + idx).padStart(2, '0')} 00 00`,
-    subscription_status: 'active',
-    plan_name: 'Hbibna Business',
-    plan_price_da: 9800,
-    currency: 'DA',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-}));
+export const SARAH_MEMBERSHIPS: CustomerBusinessMembership[] = [];
 
 // Map of business ID to rewards & transactions
 const BUSINESS_MAP: Record<
@@ -724,37 +440,35 @@ export async function fetchCustomerPortalData(params?: {
     }
   }
 
-  // Graceful fallback to multi-business mock data for development & preview
-  let customer: Customer = DEFAULT_CUSTOMERS[0];
-  if (phone) {
-    const found = DEFAULT_CUSTOMERS.find(
-      (c) => c.phone.replace(/\s+/g, '') === phone.replace(/\s+/g, '')
-    );
-    if (found) customer = found;
-  } else if (customerId) {
-    const found = DEFAULT_CUSTOMERS.find((c) => c.id === customerId);
-    if (found) customer = found;
-  }
+  // Clean fallback when no customer is found
+  const cleanCustomer: Customer = {
+    id: customerId || 'guest',
+    business_id: businessId || DEFAULT_BUSINESS.id,
+    name: 'Nouveau Client',
+    phone: phone || '',
+    email: null,
+    points_balance: 0,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
 
-  // Get all memberships belonging to this customer
-  const memberships = SARAH_MEMBERSHIPS;
-
-  // Active membership: selected via businessId or default to the first one (Artisan Bakery Oran)
-  let activeMembership = memberships[0];
-  if (businessId) {
-    const found = memberships.find((m) => m.business_id === businessId);
-    if (found) activeMembership = found;
-  }
-
-  const activeBizData = getOrGenerateBusinessData(activeMembership);
+  const cleanMembership: CustomerBusinessMembership = {
+    id: 'mem-clean',
+    customer_id: cleanCustomer.id,
+    business_id: businessId || DEFAULT_BUSINESS.id,
+    points_balance: 0,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    business: DEFAULT_BUSINESS,
+  };
 
   return {
-    customer,
-    memberships,
-    activeMembership,
-    rewards: activeBizData.rewards,
-    transactions: activeBizData.transactions,
-    business: activeBizData.business,
+    customer: cleanCustomer,
+    memberships: [],
+    activeMembership: cleanMembership,
+    rewards: [],
+    transactions: [],
+    business: DEFAULT_BUSINESS,
   };
 }
 
