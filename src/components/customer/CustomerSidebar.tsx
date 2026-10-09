@@ -18,6 +18,7 @@ import {
   QrCode,
   X,
   Sparkles,
+  Users,
 } from 'lucide-react';
 
 interface CustomerSidebarProps {
@@ -37,7 +38,7 @@ export function CustomerSidebar({
   isOpenMobile,
   onCloseMobile,
 }: CustomerSidebarProps) {
-  const { t, isRtl } = useLanguage();
+  const { t, isRtl, language } = useLanguage();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -111,6 +112,12 @@ export function CustomerSidebar({
 
   const navItems = [
     { name: t('customer.dashboard'), path: '/customer', icon: LayoutDashboard },
+    {
+      name: language === 'ar' ? 'الإحالة والمكافآت' : language === 'fr' ? 'Parrainage' : 'Referrals',
+      path: '/customer/referral',
+      icon: Users,
+      badge: language === 'ar' ? 'مكافأة' : language === 'fr' ? '+Bonus' : '+Bonus',
+    },
     { name: t('customer.rewards'), path: '/customer/rewards', icon: Gift },
     { name: t('customer.activity'), path: '/customer/activity', icon: Clock },
     { name: t('customer.myQr'), path: '/customer/qr', icon: QrCode },
@@ -298,7 +305,14 @@ export function CustomerSidebar({
                   isActive ? 'text-[#FFE600] stroke-[2.5]' : 'text-black stroke-[2]'
                 }`}
               />
-              <span>{item.name}</span>
+              <span className="flex-1 truncate">{item.name}</span>
+              {item.badge && (
+                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-wider ${
+                  isActive ? 'bg-[#FFE600] text-black' : 'bg-[#FFE600] text-black border border-black'
+                }`}>
+                  {item.badge}
+                </span>
+              )}
             </Link>
           );
         })}

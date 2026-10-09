@@ -6,6 +6,7 @@ import type {
   LoyaltyProgram,
   Business,
   CustomerBusinessMembership,
+  Referral,
 } from '@/types/database';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 
@@ -65,6 +66,8 @@ export const DEFAULT_LOYALTY: LoyaltyProgram = {
   points_per_currency: 1,
   currency_unit: 100,
   points_per_purchase: 10,
+  referral_bonus_points: 50,
+  referee_welcome_points: 25,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };
@@ -297,7 +300,6 @@ export async function fetchBusinessData() {
         ? (dbRewards as Reward[])
         : authUser ? [] : DEFAULT_REWARDS;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const transactions: Transaction[] =
       dbTransactions !== null
         ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -337,6 +339,8 @@ export interface CustomerPortalData {
   rewards: Reward[];
   transactions: Transaction[];
   business: Business;
+  loyalty: LoyaltyProgram;
+  referrals: Referral[];
 }
 
 export async function fetchCustomerPortalData(params?: {
@@ -387,6 +391,14 @@ export async function fetchCustomerPortalData(params?: {
       }
 
       if (dbCustomer) {
+        // Guarantee referral code if missing
+        if (!dbCustomer.referral_code) {
+          const generatedCode = 'HB-' + (dbCustomer.id.replace(/-/g, '').slice(0, 6).toUpperCase() || 'AMIS01');
+          dbCustomer.referral_code = generatedCode;
+          // Optionally update DB in background
+          supabase.from('customers').update({ referral_code: generatedCode }).eq('id', dbCustomer.id).then();
+        }
+
         // Query isolated memberships for this customer across businesses
         const { data: membershipsData } = await supabase
           .from('customer_businesses')
@@ -417,6 +429,20 @@ export async function fetchCustomerPortalData(params?: {
             .eq('is_active', true)
             .order('points_required', { ascending: true });
 
+          // Fetch loyalty rules for referral points
+          const { data: loyaltyData } = await supabase
+            .from('loyalty_programs')
+            .select('*')
+            .eq('business_id', activeMembership.business_id)
+            .maybeSingle();
+
+          // Fetch referrals made by this customer
+          const { data: referralsData } = await supabase
+            .from('referrals')
+            .select('*, referred:customers!referrals_referred_id_fkey(name, phone)')
+            .eq('referrer_id', dbCustomer.id)
+            .order('created_at', { ascending: false });
+
           // Fetch transaction activity for this customer at the selected business
           const { data: txData } = await supabase
             .from('transactions')
@@ -432,6 +458,8 @@ export async function fetchCustomerPortalData(params?: {
             rewards: (rewardsData as Reward[]) || [],
             transactions: (txData as Transaction[]) || [],
             business: activeMembership.business || DEFAULT_BUSINESS,
+            loyalty: (loyaltyData as LoyaltyProgram) || DEFAULT_LOYALTY,
+            referrals: (referralsData as unknown as Referral[]) || [],
           };
         }
       }
@@ -441,13 +469,15 @@ export async function fetchCustomerPortalData(params?: {
   }
 
   // Clean fallback when no customer is found
+  const cleanId = customerId || 'guest';
   const cleanCustomer: Customer = {
-    id: customerId || 'guest',
+    id: cleanId,
     business_id: businessId || DEFAULT_BUSINESS.id,
     name: 'Nouveau Client',
     phone: phone || '',
     email: null,
     points_balance: 0,
+    referral_code: 'HB-' + (cleanId.replace(/-/g, '').slice(0, 6).toUpperCase() || 'AMIS01'),
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -469,6 +499,8 @@ export async function fetchCustomerPortalData(params?: {
     rewards: [],
     transactions: [],
     business: DEFAULT_BUSINESS,
+    loyalty: DEFAULT_LOYALTY,
+    referrals: [],
   };
 }
 

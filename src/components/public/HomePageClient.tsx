@@ -32,6 +32,9 @@ import {
   UtensilsCrossed,
   Sparkle,
   Smile,
+  Users,
+  Share2,
+  MessageCircle,
 } from 'lucide-react';
 import { HeroSection } from '@/components/public/HeroSection';
 
@@ -1035,6 +1038,84 @@ export function HomePageClient() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          SECTION 6.5: VIRAL AFFILIATION & REFERRAL SHOWCASE
+         ========================================================================= */}
+      <section className="w-full bg-[#FFE600] py-20 lg:py-28 border-y-2 border-black" id="referrals-showcase">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-14 space-y-3">
+            <span className="px-4 py-1.5 rounded-full bg-black text-[#FFE600] text-xs font-black uppercase tracking-wider inline-flex items-center gap-1.5 shadow-[0_3px_0_#000]">
+              <Sparkles className="w-3.5 h-3.5 fill-[#FFE600]" />
+              <span>{isAr ? 'نظام الإحالة والأفلييت الفيروسي' : isFr ? 'Système d’Affiliation & Parrainage Viral' : 'Viral Referral & Affiliate Engine'}</span>
+            </span>
+            <h2 className="text-3xl sm:text-5xl font-black text-black tracking-tight leading-tight">
+              {isAr
+                ? 'عملاؤك يجلبون لك عملاء جدد تلقائياً.'
+                : isFr
+                ? 'Vos clients deviennent vos meilleurs ambassadeurs.'
+                : 'Turn your customers into your top brand advocates.'}
+            </h2>
+            <p className="text-base sm:text-lg text-black/85 font-bold">
+              {isAr
+                ? 'كل عميل يملك رابط إحالة خاص به. يشاركه مع أصدقائه على واتساب، فيحصل الصديق على نقاط ترحيبية فورية ويكسب عميلك نقاطاً إضافية، ليتضاعف عدد زوارك دون إنفاق دينار واحد على الإعلانات الممولة.'
+                : isFr
+                ? 'Chaque client dispose de son lien personnel à partager sur WhatsApp. Le filleul reçoit des points de bienvenue, le parrain gagne des points bonus : votre clientèle grandit organiquement sans budget publicitaire.'
+                : 'Every customer gets their own WhatsApp shareable invite link. The friend gets welcome points, the customer earns bonus points—growing your foot traffic without paid ads.'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="p-7 rounded-[2rem] bg-white border-2 border-black shadow-[0_8px_0_#000] space-y-3 text-start">
+              <div className="w-12 h-12 rounded-2xl bg-black text-[#FFE600] border-2 border-black flex items-center justify-center shadow-[0_2px_0_#000]">
+                <Share2 className="w-6 h-6 stroke-[2.5]" />
+              </div>
+              <h3 className="font-black text-lg text-black">
+                {isAr ? 'مشاركة بنقرة واحدة عبر واتساب' : isFr ? 'Partage 1-clic sur WhatsApp' : '1-Click WhatsApp Sharing'}
+              </h3>
+              <p className="text-xs sm:text-sm text-black/70 font-semibold leading-relaxed">
+                {isAr
+                  ? 'رسالة دعوة مخصصة وجاهزة للإرسال مباشرة إلى العائلة والأصدقاء دون أي تعقيد تقني.'
+                  : isFr
+                  ? 'Une invitation personnalisée préremplie envoyée directement aux proches en quelques secondes.'
+                  : 'Pre-formatted invitation messages sent directly to friends and family in seconds.'}
+              </p>
+            </div>
+
+            <div className="p-7 rounded-[2rem] bg-white border-2 border-black shadow-[0_8px_0_#000] space-y-3 text-start">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-400 text-black border-2 border-black flex items-center justify-center shadow-[0_2px_0_#000]">
+                <Gift className="w-6 h-6 stroke-[2.5]" />
+              </div>
+              <h3 className="font-black text-lg text-black">
+                {isAr ? 'مكافأة عادلة للطرفين (Win-Win)' : isFr ? 'Points Gagnant-Gagnant' : 'Win-Win Point Rewards'}
+              </h3>
+              <p className="text-xs sm:text-sm text-black/70 font-semibold leading-relaxed">
+                {isAr
+                  ? 'الراعي يكسب +50 نقطة والصديق يحصل على +25 نقطة فورية عند أول تسجيل، مما يحفز التجربة الفورية.'
+                  : isFr
+                  ? 'Le parrain empoche +50 pts et son ami reçoit +25 pts dès son inscription : motivation immédiate.'
+                  : 'Referrers pocket bonus points and friends receive instant welcome points upon signing up.'}
+              </p>
+            </div>
+
+            <div className="p-7 rounded-[2rem] bg-white border-2 border-black shadow-[0_8px_0_#000] space-y-3 text-start">
+              <div className="w-12 h-12 rounded-2xl bg-[#FFE600] text-black border-2 border-black flex items-center justify-center shadow-[0_2px_0_#000]">
+                <Users className="w-6 h-6 stroke-[2.5]" />
+              </div>
+              <h3 className="font-black text-lg text-black">
+                {isAr ? 'صفر تكلفة إعلانية (0 DA)' : isFr ? '0 DA de frais d’acquisition' : 'Zero Advertising Expense'}
+              </h3>
+              <p className="text-xs sm:text-sm text-black/70 font-semibold leading-relaxed">
+                {isAr
+                  ? 'توصيات العملاء الشفهية الموثوقة تحقق أعلى نسبة تردد ومبيعات مقارنة بأي حملة إعلانية تقليدية.'
+                  : isFr
+                  ? 'Le bouche-à-oreille digital génère le meilleur taux de conversion sans payer de publicité Meta ou Google.'
+                  : 'Organic word-of-mouth conversion far outpaces paid advertising at a fraction of the cost.'}
+              </p>
             </div>
           </div>
         </div>

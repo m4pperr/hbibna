@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   Sparkles,
@@ -12,6 +13,11 @@ import {
   ArrowDownRight,
   ShieldCheck,
   Store,
+  Users,
+  Share2,
+  Copy,
+  Check,
+  MessageCircle,
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { CustomerLoyaltyCard } from '@/components/customer/CustomerLoyaltyCard';
@@ -21,6 +27,8 @@ import type {
   Reward,
   Transaction,
   Business,
+  LoyaltyProgram,
+  Referral,
 } from '@/types/database';
 
 interface CustomerHomeViewProps {
@@ -29,6 +37,8 @@ interface CustomerHomeViewProps {
   rewards: Reward[];
   transactions: Transaction[];
   business?: Business | null;
+  loyalty?: LoyaltyProgram | null;
+  referrals?: Referral[];
   activeQueryStr: string;
 }
 
@@ -38,10 +48,16 @@ export function CustomerHomeView({
   rewards,
   transactions,
   business,
+  loyalty,
+  referrals = [],
   activeQueryStr,
 }: CustomerHomeViewProps) {
   const { t, isRtl, language } = useLanguage();
   const isAr = language === 'ar';
+  const isFr = language === 'fr';
+
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
 
   const customerName = customer?.name || (isAr ? 'العميل' : 'Client');
   const activeBusinessName = business?.name || activeMembership.business?.name || 'Commerce Partenaire';
@@ -49,6 +65,46 @@ export function CustomerHomeView({
 
   // Customer transactions for the active business
   const displayActivity = transactions.slice(0, 5);
+
+  // Referral calculations & handlers
+  const referralBonus = loyalty?.referral_bonus_points ?? 50;
+  const refereeWelcomeBonus = loyalty?.referee_welcome_points ?? 25;
+  const referralCode =
+    customer?.referral_code ||
+    (customer?.id ? 'HB-' + customer.id.replace(/-/g, '').slice(0, 6).toUpperCase() : 'VIP100');
+
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const referralLink = `${origin}/customer/join?ref=${referralCode}&b=${activeMembership.business_id}`;
+
+  const handleCopyLink = () => {
+    if (typeof navigator !== 'undefined') {
+      navigator.clipboard.writeText(referralLink);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2500);
+    }
+  };
+
+  const handleCopyCode = () => {
+    if (typeof navigator !== 'undefined') {
+      navigator.clipboard.writeText(referralCode);
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2500);
+    }
+  };
+
+  const handleShareWhatsApp = () => {
+    const shareMessage = isAr
+      ? `انضم إليّ في برنامج الولاء الخاص بـ ${activeBusinessName}! سجل الآن عبر هذا الرابط لتحصل على +${refereeWelcomeBonus} نقطة ترحيبية فورية: ${referralLink}`
+      : isFr
+      ? `Rejoins-moi sur le pass fidélité de ${activeBusinessName} ! Clique ici pour recevoir +${refereeWelcomeBonus} points cadeaux dès ton inscription : ${referralLink}`
+      : `Join me on ${activeBusinessName}'s rewards pass! Tap here to get +${refereeWelcomeBonus} welcome points right away: ${referralLink}`;
+
+    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareMessage)}`;
+    window.open(waUrl, '_blank');
+  };
+
+  const friendsReferredCount = referrals.length;
+  const totalReferralPointsWon = referrals.reduce((acc, r) => acc + (r.points_awarded || referralBonus), 0);
 
   return (
     <div className="space-y-8 font-rounded">
@@ -95,6 +151,112 @@ export function CustomerHomeView({
         activeQueryStr={activeQueryStr}
         showQrStub={true}
       />
+
+      {/* 2b. AFFILIATION & REFERRAL SHOWCASE (SPOTLIGHT CARD) */}
+      <div className="relative overflow-hidden rounded-3xl border-2 border-black bg-gradient-to-br from-[#FFE600] via-[#FFF275] to-[#FFE600] p-6 sm:p-7 shadow-[0_8px_0_#000] space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black text-[#FFE600] text-xs font-black uppercase tracking-wider shadow-[0_2px_0_#000]">
+              <Sparkles className="w-3.5 h-3.5 fill-[#FFE600]" />
+              <span>{isAr ? 'برنامج الإحالة الحصري' : isFr ? 'Programme d’Affiliation Exclusif' : 'Exclusive Referral Program'}</span>
+            </span>
+            <span className="px-2.5 py-1 rounded-full bg-white text-black border border-black text-xs font-black">
+              +{referralBonus} {t('common.pts')} / {isAr ? 'صديق' : isFr ? 'ami' : 'friend'}
+            </span>
+          </div>
+
+          <Link
+            href={`/customer/referral${activeQueryStr}`}
+            className="text-xs font-black text-black hover:underline inline-flex items-center gap-1 bg-white px-3 py-1.5 rounded-xl border-2 border-black shadow-[0_2px_0_#000] shrink-0"
+          >
+            <span>{isAr ? 'لوحة تحكم الإحالة' : isFr ? 'Espace Parrainage complet' : 'Referral Hub'}</span>
+            <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180 stroke-[2.5]" />
+          </Link>
+        </div>
+
+        <div className="space-y-1.5">
+          <h2 className="text-xl sm:text-2xl font-black text-black tracking-tight leading-tight">
+            {isAr
+              ? `ادعُ أصدقاءك واكسب +${referralBonus} نقطة مع كل صديق!`
+              : isFr
+              ? `Parrainez vos proches & Gagnez +${referralBonus} points par ami !`
+              : `Invite your friends & Earn +${referralBonus} points per friend!`}
+          </h2>
+          <p className="text-xs sm:text-sm text-black/80 font-bold max-w-2xl">
+            {isAr
+              ? `شارك كود إحالتك أو رابطك الشخصي. صديقك يحصل فوراً على +${refereeWelcomeBonus} نقطة ترحيبية وأنت تحصل على +${referralBonus} نقطة بمجرد انضمامه!`
+              : isFr
+              ? `Partagez votre code ou votre lien. Votre ami reçoit immédiatement +${refereeWelcomeBonus} points de bienvenue, et vous empochez +${referralBonus} points !`
+              : `Share your code or link. Your friend gets +${refereeWelcomeBonus} instant welcome points, and you get +${referralBonus} points!`}
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
+          <div className="flex items-center justify-between gap-3 bg-white px-4 py-2.5 rounded-2xl border-2 border-black shadow-[0_3px_0_#000]">
+            <div className="text-start">
+              <span className="text-[10px] uppercase font-black text-black/60 block leading-tight">
+                {isAr ? 'كود إحالتك الشخصي' : isFr ? 'Votre Code Parrain' : 'Your Referral Code'}
+              </span>
+              <span className="font-mono text-base font-black text-black tracking-wider">
+                {referralCode}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleCopyCode}
+              className="p-2 rounded-xl bg-[#FFF9D2] hover:bg-[#FFE600] border-2 border-black text-black transition-all cursor-pointer shrink-0"
+              title="Copier le code"
+            >
+              {copiedCode ? <Check className="w-4 h-4 text-emerald-600 stroke-[3]" /> : <Copy className="w-4 h-4 stroke-[2.5]" />}
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleCopyLink}
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-white hover:bg-neutral-50 text-black text-xs font-black border-2 border-black shadow-[0_4px_0_#000] active:translate-y-0.5 active:shadow-[0_2px_0_#000] transition-all cursor-pointer"
+          >
+            {copiedLink ? (
+              <>
+                <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />
+                <span>{isAr ? 'تم نسخ الرابط!' : isFr ? 'Lien copié !' : 'Link copied!'}</span>
+              </>
+            ) : (
+              <>
+                <Share2 className="w-4 h-4 stroke-[2.5]" />
+                <span>{isAr ? 'نسخ رابط الدعوة' : isFr ? 'Copier le lien d’invitation' : 'Copy invite link'}</span>
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleShareWhatsApp}
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black border-2 border-black shadow-[0_4px_0_#000] active:translate-y-0.5 active:shadow-[0_2px_0_#000] transition-all cursor-pointer"
+          >
+            <MessageCircle className="w-4 h-4 stroke-[2.5] fill-white" />
+            <span>{isAr ? 'مشاركة عبر واتساب' : isFr ? 'Partager sur WhatsApp' : 'Share on WhatsApp'}</span>
+          </button>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-4 pt-3 border-t-2 border-black/15 text-xs font-black text-black">
+          <div className="flex items-center gap-1.5">
+            <Users className="w-4 h-4 stroke-[2.5]" />
+            <span>
+              {friendsReferredCount}{' '}
+              {isAr ? 'أصدقاء انضموا' : isFr ? 'amis parrainés' : 'friends referred'}
+            </span>
+          </div>
+          <span className="text-black/30">•</span>
+          <div className="flex items-center gap-1.5">
+            <Gift className="w-4 h-4 stroke-[2.5]" />
+            <span>
+              +{totalReferralPointsWon}{' '}
+              {isAr ? 'نقاط مكتسبة من الإحالة' : isFr ? 'points cumulés via parrainage' : 'points earned via referrals'}
+            </span>
+          </div>
+        </div>
+      </div>
 
       {/* 3. YOUR REWARDS FOR THIS BUSINESS */}
       <div className="space-y-4">

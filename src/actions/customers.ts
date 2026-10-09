@@ -121,6 +121,8 @@ export async function createCustomer(formData: FormData): Promise<CreateCustomer
   const phone = (formData.get('phone') as string)?.trim();
   const rawEmail = (formData.get('email') as string)?.trim();
   const email = rawEmail && rawEmail.length > 0 ? rawEmail.toLowerCase() : null;
+  const rawRefCode = (formData.get('referral_code') as string)?.trim();
+  const referralCode = rawRefCode ? rawRefCode.toUpperCase() : null;
 
   if (!name || !phone) {
     return { error: 'Please enter both the customer name and phone number.' };
@@ -135,7 +137,39 @@ export async function createCustomer(formData: FormData): Promise<CreateCustomer
 
   const businessId = authBusiness.business.id;
 
-  // Insert customer strictly initialized with 0 points
+  // Resolve optional referrer
+  let referrerId: string | null = null;
+  let referrerCustomer: Customer | null = null;
+  let welcomePoints = 0;
+  let referralBonus = 50;
+
+  if (referralCode) {
+    const { data: refMatch } = await supabase
+      .from('customers')
+      .select('*')
+      .eq('business_id', businessId)
+      .ilike('referral_code', referralCode)
+      .maybeSingle();
+
+    if (refMatch && refMatch.phone !== phone) {
+      referrerCustomer = refMatch as Customer;
+      referrerId = referrerCustomer.id;
+
+      // Check business loyalty settings for referral points
+      const { data: lp } = await supabase
+        .from('loyalty_programs')
+        .select('referral_bonus_points, referee_welcome_points')
+        .eq('business_id', businessId)
+        .maybeSingle();
+
+      referralBonus = lp?.referral_bonus_points ?? 50;
+      welcomePoints = lp?.referee_welcome_points ?? 25;
+    }
+  }
+
+  const generatedRefCode = 'HB-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+
+  // Insert customer with optional welcome points
   const { data: newCustomer, error } = await supabase
     .from('customers')
     .insert({
@@ -143,7 +177,9 @@ export async function createCustomer(formData: FormData): Promise<CreateCustomer
       name,
       phone,
       email,
-      points_balance: 0, // Always initialized with 0 points per spec
+      points_balance: welcomePoints,
+      referral_code: generatedRefCode,
+      referred_by_customer_id: referrerId,
     })
     .select()
     .single();
@@ -153,6 +189,62 @@ export async function createCustomer(formData: FormData): Promise<CreateCustomer
       return { error: 'A customer with this phone number already exists in your business.' };
     }
     return { error: error.message };
+  }
+
+  // Create isolated membership in customer_businesses
+  await supabase.from('customer_businesses').upsert(
+    {
+      customer_id: newCustomer.id,
+      business_id: businessId,
+      points_balance: welcomePoints,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'customer_id,business_id' }
+  );
+
+  // If referred, credit referrer and log transactions
+  if (referrerCustomer && referrerId) {
+    const newRefBalance = (referrerCustomer.points_balance || 0) + referralBonus;
+    await supabase
+      .from('customers')
+      .update({ points_balance: newRefBalance, updated_at: new Date().toISOString() })
+      .eq('id', referrerId);
+
+    await supabase
+      .from('customer_businesses')
+      .update({ points_balance: newRefBalance, updated_at: new Date().toISOString() })
+      .eq('customer_id', referrerId)
+      .eq('business_id', businessId);
+
+    // Referrer reward transaction
+    await supabase.from('transactions').insert({
+      business_id: businessId,
+      customer_id: referrerId,
+      type: 'earn',
+      amount: 0,
+      points: referralBonus,
+      description: `Bonus Parrainage: ami(e) ${name} inscrit(e) (+${referralBonus} pts)`,
+    });
+
+    // Welcome bonus transaction
+    if (welcomePoints > 0) {
+      await supabase.from('transactions').insert({
+        business_id: businessId,
+        customer_id: newCustomer.id,
+        type: 'earn',
+        amount: 0,
+        points: welcomePoints,
+        description: `Bonus de Bienvenue Parrainage (invité(e) par ${referrerCustomer.name})`,
+      });
+    }
+
+    // Referral log
+    await supabase.from('referrals').insert({
+      business_id: businessId,
+      referrer_id: referrerId,
+      referred_id: newCustomer.id,
+      points_awarded: referralBonus,
+    });
   }
 
   revalidatePath('/customers');

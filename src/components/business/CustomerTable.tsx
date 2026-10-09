@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Search, Receipt, ArrowRight, QrCode } from 'lucide-react';
+import { Search, Receipt, ArrowRight, QrCode, UserPlus, Tag } from 'lucide-react';
 import { RecordPurchaseModal } from './RecordPurchaseModal';
 import { ScanCustomerModal } from './ScanCustomerModal';
+import { AddCustomerModal } from './AddCustomerModal';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import type { Customer, LoyaltyProgram } from '@/types/database';
 
@@ -18,6 +19,7 @@ export function CustomerTable({ initialCustomers, loyaltyRule }: CustomerTablePr
   const [search, setSearch] = useState('');
   const [selectedCustomerForPurchase, setSelectedCustomerForPurchase] = useState<Customer | null>(null);
   const [showScanModal, setShowScanModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const filtered = initialCustomers.filter(
     (c) =>
@@ -42,6 +44,14 @@ export function CustomerTable({ initialCustomers, loyaltyRule }: CustomerTablePr
         </div>
 
         <div className="flex items-center gap-2 sm:gap-2.5">
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-[#FFE600] hover:bg-yellow-400 text-black text-xs font-black border-2 border-black shadow-[0_4px_0_#000] hover:translate-x-0.5 active:translate-y-1 active:shadow-none transition-all cursor-pointer min-h-[44px] w-full sm:w-auto"
+          >
+            <UserPlus className="w-4 h-4 stroke-[2.5]" />
+            <span>{t('business.addCustomer')}</span>
+          </button>
+
           <button
             onClick={() => setShowScanModal(true)}
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-black hover:bg-zinc-800 text-white text-xs font-black border-2 border-black shadow-[0_4px_0_#000] hover:translate-x-0.5 active:translate-y-1 active:shadow-none transition-all cursor-pointer min-h-[44px] w-full sm:w-auto"
@@ -85,12 +95,22 @@ export function CustomerTable({ initialCustomers, loyaltyRule }: CustomerTablePr
                   <tr key={customer.id} className="hover:bg-[#FFF9D2]/50 transition-colors">
                     {/* Name */}
                     <td className="px-6 py-4">
-                      <Link
-                        href={`/customers/${customer.id}`}
-                        className="font-black text-black hover:underline transition-colors"
-                      >
-                        {customer.name}
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/customers/${customer.id}`}
+                          className="font-black text-black hover:underline transition-colors"
+                        >
+                          {customer.name}
+                        </Link>
+                        {customer.referral_code && (
+                          <span
+                            className="font-mono text-[10px] font-bold bg-[#FFF9D2] border border-black/30 px-1.5 py-0.5 rounded-md text-black/80"
+                            title="Code de parrainage"
+                          >
+                            {customer.referral_code}
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* Phone */}
@@ -234,6 +254,13 @@ export function CustomerTable({ initialCustomers, loyaltyRule }: CustomerTablePr
           onClose={() => setShowScanModal(false)}
           customers={initialCustomers}
           loyaltyRule={loyaltyRule}
+        />
+      )}
+
+      {showAddModal && (
+        <AddCustomerModal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
         />
       )}
     </div>

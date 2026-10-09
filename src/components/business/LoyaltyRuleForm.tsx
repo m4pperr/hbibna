@@ -9,6 +9,9 @@ import {
   Calculator,
   ShieldCheck,
   ArrowRight,
+  Users,
+  Gift,
+  Sparkles,
 } from 'lucide-react';
 import { updateLoyaltyProgram, type UpdateLoyaltyResult } from '@/actions/loyalty';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
@@ -31,6 +34,12 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
   );
   const [pointsPerCurrency, setPointsPerCurrency] = useState<string>(
     String(initialLoyalty?.points_per_currency || 1)
+  );
+  const [referralBonusPoints, setReferralBonusPoints] = useState<string>(
+    String(initialLoyalty?.referral_bonus_points ?? 50)
+  );
+  const [refereeWelcomePoints, setRefereeWelcomePoints] = useState<string>(
+    String(initialLoyalty?.referee_welcome_points ?? 25)
   );
 
   // Live simulation test purchase
@@ -135,6 +144,8 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
     formData.append('pointsPerPurchase', pointsPerPurchase);
     formData.append('currencyUnit', currencyUnit);
     formData.append('pointsPerCurrency', pointsPerCurrency);
+    formData.append('referralBonusPoints', referralBonusPoints);
+    formData.append('refereeWelcomePoints', refereeWelcomePoints);
 
     startTransition(async () => {
       try {
@@ -419,6 +430,82 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
             </div>
           </div>
 
+          {/* 3. SYSTÈME D'AFFILIATION & PARRAINAGE */}
+          <div className="bg-white border-2 border-black rounded-3xl p-5 sm:p-6 shadow-[0_6px_0_#000] space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-[#FFE600] border-2 border-black text-black flex items-center justify-center shrink-0 shadow-[0_2px_0_#000]">
+                  <Users className="w-6 h-6 stroke-[2.5]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-black text-base text-black">
+                      {language === 'ar' ? 'نظام الإحالة والولاء الجماعي' : language === 'fr' ? 'Système d’Affiliation & Parrainage' : 'Referral & Affiliation System'}
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-300 text-black border border-black uppercase tracking-wider">
+                      {language === 'ar' ? 'نمو تلقائي' : language === 'fr' ? 'Croissance Virale' : 'Viral Growth'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-black/70 font-semibold mt-0.5">
+                    {language === 'ar'
+                      ? 'مكافأة العملاء الذين يدعون أصدقاءهم للانضمام لبرنامج الولاء، مما يضاعف عدد زوار محلك تلقائياً.'
+                      : language === 'fr'
+                      ? 'Récompensez vos clients fidèles lorsqu’ils invitent leurs proches, démultipliant vos clients sans frais de pub.'
+                      : 'Reward your customers when they refer friends, driving new visits organically.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t-2 border-black/10">
+              {/* Parrain Bonus Points */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-black text-black uppercase tracking-wide">
+                  {language === 'ar' ? 'النقاط الممنوحة للمُحيل (الراعي) :' : language === 'fr' ? 'Points offerts au parrain :' : 'Points for the referrer:'}
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    step="5"
+                    value={referralBonusPoints}
+                    onChange={(e) => setReferralBonusPoints(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-2xl border-2 border-black bg-[#FFF9D2] text-sm text-black font-black shadow-[0_2px_0_#000] focus:outline-none"
+                  />
+                  <span className="absolute ltr:right-3 rtl:left-3 top-1/2 -translate-y-1/2 text-xs font-black text-black">
+                    {t('common.pts')}
+                  </span>
+                </div>
+                <p className="text-[11px] text-black/60 font-semibold">
+                  {language === 'ar' ? 'يُمنح عند تسجيل الصديق بنجاح' : language === 'fr' ? 'Crédité dès que l’ami rejoint le programme' : 'Awarded when referred friend signs up'}
+                </p>
+              </div>
+
+              {/* Referee Welcome Bonus Points */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-black text-black uppercase tracking-wide">
+                  {language === 'ar' ? 'نقاط الترحيب بالصديق (المُحال) :' : language === 'fr' ? 'Points de bienvenue au filleul :' : 'Welcome bonus for the friend:'}
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    step="5"
+                    value={refereeWelcomePoints}
+                    onChange={(e) => setRefereeWelcomePoints(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-2xl border-2 border-black bg-white text-sm text-black font-black shadow-[0_2px_0_#000] focus:outline-none"
+                  />
+                  <span className="absolute ltr:right-3 rtl:left-3 top-1/2 -translate-y-1/2 text-xs font-black text-black">
+                    {t('common.pts')}
+                  </span>
+                </div>
+                <p className="text-[11px] text-black/60 font-semibold">
+                  {language === 'ar' ? 'رصيد ترحيبي فوري في بطاقته' : language === 'fr' ? 'Crédité immédiatement sur son pass digital' : 'Instant welcome points on pass'}
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Action Save Button */}
           <div className="pt-2">
             <button
@@ -521,6 +608,22 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
             <p className="text-xs text-black/80 font-bold pt-1">
               {previewExplanation}
             </p>
+          </div>
+
+          {/* Referral Bonus Preview Badge */}
+          <div className="p-4 rounded-2xl bg-white border-2 border-black shadow-[0_3px_0_#000] space-y-2">
+            <div className="flex items-center gap-2 text-xs font-black text-black">
+              <Users className="w-4 h-4 text-emerald-600" />
+              <span>{language === 'ar' ? 'مكافآت الإحالة النشطة' : language === 'fr' ? 'Gains d’affiliation configurés' : 'Configured Referral Rewards'}</span>
+            </div>
+            <div className="flex items-center justify-between text-xs font-bold pt-1 border-t border-black/10">
+              <span className="text-black/70">{language === 'ar' ? 'للمُحيل (الراعي) :' : language === 'fr' ? 'Pour le parrain :' : 'For Referrer:'}</span>
+              <span className="font-mono font-black text-black bg-[#FFE600] px-2 py-0.5 rounded-lg border border-black">+{referralBonusPoints || 0} pts</span>
+            </div>
+            <div className="flex items-center justify-between text-xs font-bold">
+              <span className="text-black/70">{language === 'ar' ? 'للصديق (الترحيب) :' : language === 'fr' ? 'Pour le filleul :' : 'For Referee:'}</span>
+              <span className="font-mono font-black text-black bg-emerald-200 px-2 py-0.5 rounded-lg border border-black">+{refereeWelcomePoints || 0} pts</span>
+            </div>
           </div>
 
           {/* Security Note */}

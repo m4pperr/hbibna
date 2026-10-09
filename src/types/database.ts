@@ -33,6 +33,8 @@ export interface Customer {
   phone: string;
   email: string | null;
   points_balance: number;
+  referral_code?: string | null;
+  referred_by_customer_id?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -56,8 +58,21 @@ export interface LoyaltyProgram {
   points_per_purchase: number;
   points_per_currency: number;
   currency_unit: number;
+  referral_bonus_points?: number;
+  referee_welcome_points?: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface Referral {
+  id: string;
+  business_id: string;
+  referrer_id: string;
+  referred_id: string;
+  points_awarded: number;
+  created_at: string;
+  referrer?: Customer;
+  referred?: Customer;
 }
 
 export interface Reward {
@@ -167,6 +182,14 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Omit<Redemption, 'id'>>;
+      };
+      referrals: {
+        Row: Referral;
+        Insert: Omit<Referral, 'id' | 'created_at' | 'referrer' | 'referred'> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Omit<Referral, 'id'>>;
       };
     };
     Functions: {

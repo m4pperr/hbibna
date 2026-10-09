@@ -1,15 +1,15 @@
 import { fetchCustomerPortalData } from '@/lib/data-service';
-import { CustomerHomeView } from '@/components/customer/CustomerHomeView';
+import { CustomerReferralView } from '@/components/customer/CustomerReferralView';
 
 export const dynamic = 'force-dynamic';
 
-interface CustomerHomePageProps {
+interface CustomerReferralPageProps {
   searchParams: Promise<{ phone?: string; c?: string; b?: string }>;
 }
 
-export default async function CustomerHomePage({ searchParams }: CustomerHomePageProps) {
+export default async function CustomerReferralPage({ searchParams }: CustomerReferralPageProps) {
   const { phone, c: customerId, b: businessId } = await searchParams;
-  const { customer, activeMembership, rewards, transactions, business, loyalty, referrals } =
+  const { customer, activeMembership, business, loyalty, referrals } =
     await fetchCustomerPortalData({ phone, customerId, businessId });
 
   // Build query string helper for links
@@ -25,11 +25,9 @@ export default async function CustomerHomePage({ searchParams }: CustomerHomePag
   const activeQueryStr = createQueryStr();
 
   return (
-    <CustomerHomeView
+    <CustomerReferralView
       customer={customer}
       activeMembership={activeMembership}
-      rewards={rewards}
-      transactions={transactions}
       business={business}
       loyalty={loyalty}
       referrals={referrals}

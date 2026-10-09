@@ -55,6 +55,18 @@ export function FaqSection({ variant = 'default' }: FaqSectionProps) {
     },
     {
       question: isAr
+        ? 'كيف يعمل نظام الإحالة والأفلييت للعملاء؟'
+        : isFr
+        ? 'Comment fonctionne le système d’affiliation et de parrainage ?'
+        : 'How does the customer referral and affiliate system work?',
+      answer: isAr
+        ? 'يحصل كل عميل على كود ورابط إحالة فريدين في بطاقته الرقمية. عندما يدعو صديقاً وينضم عبر الرابط أو يقدم الكود عند الكاونتر، يحصل الصديق على نقاط ترحيبية فورية، ويحصل العميل المُحيل على نقاط إضافية مجانية، مما يضاعف عدد زبائن متجرك دون أي تكاليف إعلانية.'
+        : isFr
+        ? 'Chaque client dispose d’un code et d’un lien de parrainage uniques sur son pass digital. Lorsqu’il invite un ami qui s’inscrit ou présente son code en caisse, le filleul reçoit un bonus de bienvenue immédiat et le parrain reçoit des points supplémentaires sur sa carte fidélité, démultipliant naturellement votre clientèle sans dépense en publicité.'
+        : 'Every customer gets a unique referral code and link on their digital pass. When they invite a friend who joins or enters the code at checkout, the friend receives instant welcome points and the referrer earns bonus points, organically growing your customer base without ad spend.',
+    },
+    {
+      question: isAr
         ? 'هل يمكنني إنشاء مكافآتي الخاصة؟'
         : isFr
         ? 'Puis-je créer mes propres récompenses ?'

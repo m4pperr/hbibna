@@ -13,6 +13,7 @@ import {
   ArrowUpRight,
   Clock,
   Coins,
+  Tag,
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import type { Customer, Transaction, Reward, LoyaltyProgram, Business } from '@/types/database';
@@ -93,6 +94,18 @@ export function CustomerDetailClientView({
                 )}
               </span>
             </div>
+
+            {customer.referral_code && (
+              <div className="flex items-center gap-1.5 font-mono text-black">
+                <Tag className="w-4 h-4 text-black stroke-[2.5]" />
+                <span className="text-[11px] font-bold text-black/60">
+                  {language === 'ar' ? 'كود الإحالة:' : language === 'fr' ? 'Code parrain :' : 'Referral code:'}
+                </span>
+                <span className="bg-[#FFE600] px-2 py-0.5 rounded-lg border border-black font-black text-xs">
+                  {customer.referral_code}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

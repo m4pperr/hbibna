@@ -80,6 +80,13 @@ export async function updateLoyaltyProgram(formData: FormData): Promise<UpdateLo
     }
   }
 
+  // Referral Bonus Points Validation
+  const rawReferralBonus = formData.get('referralBonusPoints') as string;
+  const rawRefereeWelcome = formData.get('refereeWelcomePoints') as string;
+
+  const referralBonusPoints = rawReferralBonus ? Math.max(0, parseInt(rawReferralBonus, 10) || 50) : 50;
+  const refereeWelcomePoints = rawRefereeWelcome ? Math.max(0, parseInt(rawRefereeWelcome, 10) || 25) : 25;
+
   const supabase = await createClient();
   const authBusiness = await getAuthenticatedBusiness();
 
@@ -100,6 +107,8 @@ export async function updateLoyaltyProgram(formData: FormData): Promise<UpdateLo
         points_per_purchase: pointsPerPurchase,
         points_per_currency: pointsPerCurrency,
         currency_unit: currencyUnit,
+        referral_bonus_points: referralBonusPoints,
+        referee_welcome_points: refereeWelcomePoints,
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'business_id' }

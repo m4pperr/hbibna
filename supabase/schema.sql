@@ -39,6 +39,8 @@ create table if not exists public.customers (
     phone text not null,
     email text,
     points_balance integer not null default 0 check (points_balance >= 0),
+    referral_code text unique,
+    referred_by_customer_id uuid references public.customers(id) on delete set null,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now(),
     constraint uq_customer_business_phone unique (business_id, phone)
@@ -65,8 +67,21 @@ create table if not exists public.loyalty_programs (
     points_per_purchase integer not null default 10 check (points_per_purchase >= 0),
     points_per_currency integer not null default 1 check (points_per_currency >= 0),
     currency_unit integer not null default 100 check (currency_unit > 0),
+    referral_bonus_points integer not null default 50 check (referral_bonus_points >= 0),
+    referee_welcome_points integer not null default 25 check (referee_welcome_points >= 0),
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
+);
+
+-- 4b. REFERRALS TABLE (AFFILIATION & REWARDS)
+create table if not exists public.referrals (
+    id uuid primary key default gen_random_uuid(),
+    business_id uuid not null references public.businesses(id) on delete cascade,
+    referrer_id uuid not null references public.customers(id) on delete cascade,
+    referred_id uuid not null references public.customers(id) on delete cascade,
+    points_awarded integer not null default 50 check (points_awarded >= 0),
+    created_at timestamptz not null default now(),
+    constraint uq_referrer_referred unique (referrer_id, referred_id)
 );
 
 -- 5. REWARDS TABLE
