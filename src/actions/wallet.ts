@@ -23,23 +23,31 @@ export async function getOrCreateCustomerWallet(
     return { configured: false };
   }
 
-  const cleanPhone = phone.replace(/[\s-]/g, '');
+  const cleanPhone = phone ? phone.replace(/[\s-]/g, '') : '';
+  if (!cleanPhone) {
+    return { configured: true, error: 'Numéro de téléphone requis.' };
+  }
+
+  const altPhone = cleanPhone.startsWith('0')
+    ? `+213${cleanPhone.slice(1)}`
+    : cleanPhone.startsWith('+213')
+    ? `0${cleanPhone.slice(4)}`
+    : cleanPhone;
+
   const adminClient = createAdminClient();
 
   try {
-    // 1. Fetch customer
+    // 1. Fetch customer by phone or alternate format
     const { data: customer } = await adminClient
       .from('customers')
       .select('*')
-      .eq('phone', cleanPhone)
+      .or(`phone.eq.${cleanPhone},phone.eq.${altPhone}`)
       .maybeSingle();
 
-    if (!customer) {
-      return { configured: true, error: 'Client introuvable.' };
-    }
+    const customerName = customer?.name || 'Client Fidèle';
 
     // 2. Fetch business
-    const targetBusinessId = businessId || customer.business_id;
+    const targetBusinessId = businessId || customer?.business_id;
     let businessName = 'Hbibna Loyalty';
 
     if (targetBusinessId) {
@@ -60,7 +68,7 @@ export async function getOrCreateCustomerWallet(
       points_balance?: number;
     } | null = null;
 
-    if (targetBusinessId) {
+    if (customer?.id && targetBusinessId) {
       const { data: membership } = await adminClient
         .from('customer_businesses')
         .select('*')
@@ -71,10 +79,14 @@ export async function getOrCreateCustomerWallet(
     }
 
     // If pass was already created, return existing URLs
-    if (existingMembership?.wallet_share_url || customer.wallet_share_url) {
-      const shareUrl = (existingMembership?.wallet_share_url || customer.wallet_share_url)!;
-      const serialNumber = (existingMembership?.wallet_serial_number || customer.wallet_serial_number)!;
-      const googleSaveUrl = existingMembership?.wallet_google_url || customer.wallet_google_url || undefined;
+    const existingSerial = existingMembership?.wallet_serial_number || customer?.wallet_serial_number;
+    const existingShare = existingMembership?.wallet_share_url || customer?.wallet_share_url;
+    const existingGoogle = existingMembership?.wallet_google_url || customer?.wallet_google_url;
+
+    if (existingSerial || existingShare) {
+      const serialNumber = existingSerial || '';
+      const shareUrl = existingShare || (serialNumber ? `https://pass.walletwallet.dev/p/${serialNumber}` : '');
+      const googleSaveUrl = existingGoogle || undefined;
 
       return {
         configured: true,
@@ -88,11 +100,11 @@ export async function getOrCreateCustomerWallet(
     }
 
     // Otherwise generate a fresh pass via WalletWallet
-    const points = existingMembership?.points_balance ?? customer.points_balance ?? 0;
+    const points = existingMembership?.points_balance ?? customer?.points_balance ?? 0;
     const tierName = points >= 500 ? 'Membre Gold' : points >= 200 ? 'Membre Silver' : 'Membre Bronze';
 
     const pass = await generateWalletPass({
-      customerName: customer.name,
+      customerName,
       phone: cleanPhone,
       businessName,
       points,
@@ -116,14 +128,16 @@ export async function getOrCreateCustomerWallet(
           .eq('id', existingMembership.id);
       }
 
-      await adminClient
-        .from('customers')
-        .update({
-          wallet_serial_number: pass.serialNumber,
-          wallet_share_url: pass.shareUrl,
-          wallet_google_url: pass.googleSaveUrl || null,
-        })
-        .eq('id', customer.id);
+      if (customer?.id) {
+        await adminClient
+          .from('customers')
+          .update({
+            wallet_serial_number: pass.serialNumber,
+            wallet_share_url: pass.shareUrl,
+            wallet_google_url: pass.googleSaveUrl || null,
+          })
+          .eq('id', customer.id);
+      }
     } catch (saveErr) {
       console.warn('Notice saving wallet pass metadata:', saveErr);
     }
@@ -132,9 +146,7 @@ export async function getOrCreateCustomerWallet(
       configured: true,
       shareUrl: pass.shareUrl,
       googleSaveUrl: pass.googleSaveUrl,
-      applePassUrl: pass.serialNumber
-        ? `https://api.walletwallet.dev/p/${pass.serialNumber}/apple.pkpass`
-        : `/api/wallet/pass?phone=${encodeURIComponent(cleanPhone)}${targetBusinessId ? `&b=${targetBusinessId}` : ''}`,
+      applePassUrl: `https://api.walletwallet.dev/p/${pass.serialNumber}/apple.pkpass`,
       serialNumber: pass.serialNumber,
     };
   } catch (err) {

@@ -44,17 +44,41 @@ export function CustomerLoyaltyCard({
   const isAr = language === 'ar';
   const isFr = language === 'fr';
 
+  const initialSerial =
+    membership?.wallet_serial_number || customer?.wallet_serial_number;
+  const initialShareUrl =
+    membership?.wallet_share_url || customer?.wallet_share_url;
+  const initialGoogleUrl =
+    membership?.wallet_google_url || customer?.wallet_google_url;
+
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
   const [walletAdded, setWalletAdded] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [walletLoading, setWalletLoading] = useState(false);
+  const [phoneInput, setPhoneInput] = useState('');
   const [walletData, setWalletData] = useState<{
     shareUrl?: string;
     googleSaveUrl?: string;
     applePassUrl?: string;
-  } | null>(null);
+  } | null>(() => {
+    if (initialSerial || initialShareUrl) {
+      return {
+        shareUrl: initialShareUrl || (initialSerial ? `https://pass.walletwallet.dev/p/${initialSerial}` : undefined),
+        googleSaveUrl: initialGoogleUrl || undefined,
+        applePassUrl: initialSerial ? `https://api.walletwallet.dev/p/${initialSerial}/apple.pkpass` : undefined,
+      };
+    }
+    return null;
+  });
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const effectivePhone =
+    customer?.phone ||
+    (typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('phone') || ''
+      : '') ||
+    phoneInput;
 
   const customerName = customer?.name || (isAr ? 'العميل' : 'Client');
   const activeBusinessName =
@@ -170,14 +194,15 @@ export function CustomerLoyaltyCard({
     setIsHovered(false);
   };
 
-  const handleAddToWallet = async () => {
+  const handleAddToWallet = async (phoneOverride?: string | React.MouseEvent) => {
     setShowWalletModal(true);
     setWalletAdded(true);
-    if (!walletData && customer?.phone) {
+    const phoneToUse = (typeof phoneOverride === 'string' ? phoneOverride : null) || effectivePhone;
+    if (!walletData && phoneToUse) {
       setWalletLoading(true);
       try {
         const res = await getOrCreateCustomerWallet(
-          customer.phone,
+          phoneToUse,
           membership?.business_id || business?.id
         );
         if (res?.configured && (res.shareUrl || res.applePassUrl)) {
@@ -529,6 +554,39 @@ export function CustomerLoyaltyCard({
                 {isAr ? '⚡ الإضافة المباشرة إلى المحفظة :' : isFr ? '⚡ Intégration Native Wallet :' : '⚡ Native Wallet Pass :'}
               </p>
 
+              {!effectivePhone && !walletData && (
+                <div className="p-3.5 rounded-2xl bg-white border-2 border-black space-y-2.5 shadow-xs">
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="w-4 h-4 text-[#111111]" />
+                    <p className="text-xs font-black text-black">
+                      {isAr
+                        ? 'أدخل رقم هاتفك لتفعيل بطاقة المحفظة :'
+                        : 'Entrez votre numéro pour générer le Pass Wallet :'}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="tel"
+                      value={phoneInput}
+                      onChange={(e) => setPhoneInput(e.target.value)}
+                      placeholder="ex: 0554126311"
+                      className="flex-1 px-3 py-2 rounded-xl border-2 border-black text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#FFE600] bg-zinc-50"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (phoneInput.trim()) {
+                          handleAddToWallet(phoneInput.trim());
+                        }
+                      }}
+                      className="px-4 py-2 rounded-xl bg-black text-[#FFE600] text-xs font-black cursor-pointer border-2 border-black shadow-[0_2px_0_#000] active:translate-y-0.5"
+                    >
+                      {isAr ? 'تأكيد' : 'Valider'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {walletLoading ? (
                 <div className="p-4 rounded-2xl bg-white border-2 border-black flex items-center justify-center gap-3">
                   <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
@@ -542,7 +600,9 @@ export function CustomerLoyaltyCard({
                   <a
                     href={
                       walletData?.applePassUrl ||
-                      (walletData?.shareUrl ?? `/api/wallet/pass?phone=${encodeURIComponent(customer?.phone || '')}`)
+                      (effectivePhone
+                        ? `/api/wallet/pass?phone=${encodeURIComponent(effectivePhone)}${membership?.business_id ? `&b=${membership.business_id}` : ''}`
+                        : `/api/wallet/pass${customer?.id ? `?c=${encodeURIComponent(customer.id)}` : ''}`)
                     }
                     target="_blank"
                     rel="noopener noreferrer"

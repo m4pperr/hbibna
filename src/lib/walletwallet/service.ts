@@ -21,11 +21,18 @@ export interface CreatePassParams {
   serialNumber?: string;
 }
 
+const DEFAULT_WALLET_API_KEY = 'ww_live_aa77cb8f6ab767677d98eaaa0c1fc63d';
+
+function getApiKey(): string {
+  const key = process.env.WALLETWALLET_API_KEY?.trim() || DEFAULT_WALLET_API_KEY;
+  return key;
+}
+
 /**
  * Checks if WalletWallet API key is configured.
  */
 export function isWalletWalletConfigured(): boolean {
-  const key = process.env.WALLETWALLET_API_KEY?.trim();
+  const key = getApiKey();
   return Boolean(key && key.startsWith('ww_live_'));
 }
 
@@ -36,7 +43,7 @@ export function isWalletWalletConfigured(): boolean {
 export async function generateWalletPass(
   params: CreatePassParams
 ): Promise<WalletPassResult | null> {
-  const apiKey = process.env.WALLETWALLET_API_KEY?.trim();
+  const apiKey = getApiKey();
   if (!apiKey) {
     console.warn('WalletWallet API key is missing. Skipping pass generation.');
     return null;
@@ -128,7 +135,7 @@ export async function updateWalletPass(
   serialNumber: string,
   params: CreatePassParams
 ): Promise<boolean> {
-  const apiKey = process.env.WALLETWALLET_API_KEY?.trim();
+  const apiKey = getApiKey();
   if (!apiKey || !serialNumber) return false;
 
   try {
