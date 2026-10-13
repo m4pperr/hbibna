@@ -52,15 +52,11 @@ export function PublicNavbar({ variant = 'friendly' }: PublicNavbarProps) {
                 />
               </div>
 
-              {/* Wordmark with signature Coral Dot */}
-              <div className="flex items-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/assets/hbibna-wordmark-screen.png"
-                  alt="Hbibna"
-                  className="h-5 sm:h-5.5 w-auto object-contain"
-                />
-              </div>
+              {/* Crisp Vector Wordmark with signature Coral Dot */}
+              <span className="font-black text-xl sm:text-2xl tracking-tight text-black flex items-baseline gap-1 leading-none">
+                <span>Hbibna</span>
+                <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#E25B6C] inline-block shrink-0 shadow-[0_1px_0_rgba(0,0,0,0.3)]" />
+              </span>
             </Link>
 
             {/* Perforated vertical tear divider */}

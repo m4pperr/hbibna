@@ -32,7 +32,7 @@ export function PricingCards({ variant = 'friendly' }: PricingCardsProps) {
   };
 
   return (
-    <div className="space-y-8 max-w-xl mx-auto w-full px-2 sm:px-0 font-rounded">
+    <div className="space-y-6 max-w-xl mx-auto w-full px-2 sm:px-0 font-rounded">
       {/* BILLING TOGGLE (Segmented Control) */}
       <div className="flex justify-center">
         <div

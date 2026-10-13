@@ -3,14 +3,16 @@
 import React from 'react';
 import { CustomerTable } from '@/components/business/CustomerTable';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
-import type { Customer, LoyaltyProgram } from '@/types/database';
+import type { Customer, LoyaltyProgram, Transaction } from '@/types/database';
 
 export function CustomersView({
   customers,
   loyalty,
+  transactions = [],
 }: {
   customers: Customer[];
   loyalty?: LoyaltyProgram | null;
+  transactions?: Transaction[];
 }) {
   const { t } = useLanguage();
 
@@ -25,7 +27,11 @@ export function CustomersView({
         </p>
       </div>
 
-      <CustomerTable initialCustomers={customers} loyaltyRule={loyalty} />
+      <CustomerTable
+        initialCustomers={customers}
+        loyaltyRule={loyalty}
+        transactions={transactions}
+      />
     </div>
   );
 }

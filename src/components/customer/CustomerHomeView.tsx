@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { CustomerLoyaltyCard } from '@/components/customer/CustomerLoyaltyCard';
+import { RewardMilestoneGoal } from '@/components/customer/RewardMilestoneGoal';
 import type {
   Customer,
   CustomerBusinessMembership,
@@ -107,7 +108,7 @@ export function CustomerHomeView({
   const totalReferralPointsWon = referrals.reduce((acc, r) => acc + (r.points_awarded || referralBonus), 0);
 
   return (
-    <div className="space-y-8 font-rounded">
+    <div className="space-y-5 sm:space-y-6 font-rounded">
       {/* 1. PORTAL HEADER: Focused on Currently Selected Business */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b-2 border-black/15">
         <div className="space-y-1">
@@ -150,6 +151,14 @@ export function CustomerHomeView({
         membership={activeMembership}
         activeQueryStr={activeQueryStr}
         showQrStub={true}
+      />
+
+      {/* 2a. REWARD MILESTONE GOAL (Gamified progress towards next gift) */}
+      <RewardMilestoneGoal
+        pointsBalance={pointsBalance}
+        rewards={rewards}
+        loyalty={loyalty}
+        activeQueryStr={activeQueryStr}
       />
 
       {/* 2b. AFFILIATION & REFERRAL SHOWCASE (SPOTLIGHT CARD) */}
@@ -359,7 +368,7 @@ export function CustomerHomeView({
         <div className="bg-white border-2 border-black rounded-3xl shadow-[0_8px_0_#000] divide-y-2 divide-black/10 overflow-hidden font-bold">
           {displayActivity.length === 0 ? (
             <div className="p-8 text-center text-xs text-black/60 font-bold">
-              {t('customer.noTransactions')}
+              {t('customer.noActivity')}
             </div>
           ) : (
             displayActivity.map((act) => {

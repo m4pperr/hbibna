@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Lock, AlertCircle, ArrowRight } from 'lucide-react';
+import { Lock, AlertCircle, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { updatePassword } from '@/actions/auth';
 import { HbibnaLogo } from '@/components/brand/HbibnaLogo';
 import { LanguageSelector } from '@/components/common/LanguageSelector';
@@ -15,7 +15,7 @@ export default function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [, setSuccess] = useState(false);
+  const [success, setSuccess] = useState(false);
   const { t } = useLanguage();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,21 +67,43 @@ export default function ResetPasswordPage() {
       {/* Main card */}
       <main className="flex-1 flex items-center justify-center px-4 py-8 sm:py-12">
         <div className="w-full max-w-md bg-white border-2 border-black rounded-[2.5rem] p-6 sm:p-10 shadow-[0_12px_0_#000] space-y-6">
-          <div className="space-y-1.5 text-center">
-            <h1 className="text-3xl font-black text-black tracking-tight">
-              {t('auth.resetPasswordTitle')}
-            </h1>
-            <p className="text-xs sm:text-sm text-black/75 font-medium">
-              {t('auth.chooseSecurePassword')}
-            </p>
-          </div>
-
-          {error && (
-            <div className="p-3.5 rounded-2xl bg-rose-50 border-2 border-rose-500 text-rose-800 text-xs font-bold flex items-center gap-2.5">
-              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-              <span>{error}</span>
+          {success ? (
+            <div className="text-center space-y-4 py-4">
+              <div className="w-16 h-16 rounded-2xl bg-[#FFE600] border-2 border-black flex items-center justify-center mx-auto shadow-[0_4px_0_#000]">
+                <CheckCircle2 className="w-8 h-8 text-black" />
+              </div>
+              <h2 className="text-2xl font-black text-black">
+                {t('auth.resetSuccessTitle')}
+              </h2>
+              <p className="text-xs sm:text-sm text-black/75 font-bold">
+                {t('auth.resetSuccessDesc')}
+              </p>
+              <div className="pt-2">
+                <Link
+                  href="/dashboard"
+                  className="inline-flex items-center justify-center w-full py-3.5 rounded-2xl bg-black hover:bg-zinc-800 text-[#FFE600] text-xs font-black border-2 border-black shadow-[0_4px_0_#000]"
+                >
+                  Accéder à mon espace
+                </Link>
+              </div>
             </div>
-          )}
+          ) : (
+            <>
+              <div className="space-y-1.5 text-center">
+                <h1 className="text-3xl font-black text-black tracking-tight">
+                  {t('auth.resetPasswordTitle')}
+                </h1>
+                <p className="text-xs sm:text-sm text-black/75 font-medium">
+                  {t('auth.chooseSecurePassword')}
+                </p>
+              </div>
+
+              {error && (
+                <div className="p-3.5 rounded-2xl bg-rose-50 border-2 border-rose-500 text-rose-800 text-xs font-bold flex items-center gap-2.5">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                  <span>{error}</span>
+                </div>
+              )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -131,6 +153,8 @@ export default function ResetPasswordPage() {
               <ArrowRight className="w-4 h-4 rtl:rotate-180 text-[#FFE600]" />
             </button>
           </form>
+          </>
+          )}
         </div>
       </main>
 

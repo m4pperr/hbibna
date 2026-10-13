@@ -15,10 +15,28 @@ function LoginContent() {
     ? 'customer'
     : 'business';
 
+  const errorParam = searchParams.get('error');
+  const initialError = errorParam === 'unauthorized'
+    ? 'Ce compte ne possède pas de profil commerçant. Veuillez vous connecter avec le bon compte ou créer votre commerce.'
+    : errorParam === 'session_expired'
+    ? 'Votre session a expiré. Veuillez vous reconnecter.'
+    : null;
+
   const [activeTab, setActiveTab] = useState<'business' | 'customer'>(initialTab);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError);
   const [loading, setLoading] = useState(false);
   const { t, language } = useLanguage();
+
+  const handleTabChange = (tab: 'business' | 'customer') => {
+    setActiveTab(tab);
+    setError(null);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', tab);
+      url.searchParams.delete('error');
+      window.history.replaceState({}, '', url.toString());
+    }
+  };
 
   const handleBusinessSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -32,8 +50,14 @@ function LoginContent() {
         setError(res.error);
         setLoading(false);
       }
-    } catch {
-      // Server redirect handled automatically
+    } catch (err: unknown) {
+      const errorObj = err as { digest?: string; message?: string };
+      if (errorObj?.digest?.startsWith('NEXT_REDIRECT')) {
+        // Redirection in progress
+        return;
+      }
+      console.error('Login error:', err);
+      setError('Une erreur est survenue lors de la connexion. Veuillez réessayer.');
       setLoading(false);
     }
   };
@@ -50,8 +74,14 @@ function LoginContent() {
         setError(res.error);
         setLoading(false);
       }
-    } catch {
-      // Server redirect handled automatically
+    } catch (err: unknown) {
+      const errorObj = err as { digest?: string; message?: string };
+      if (errorObj?.digest?.startsWith('NEXT_REDIRECT')) {
+        // Redirection in progress
+        return;
+      }
+      console.error('Customer login error:', err);
+      setError('Une erreur est survenue lors de la connexion. Veuillez réessayer.');
       setLoading(false);
     }
   };
@@ -78,10 +108,7 @@ function LoginContent() {
       <div className="grid grid-cols-2 p-1.5 bg-black/5 rounded-2xl border-2 border-black">
         <button
           type="button"
-          onClick={() => {
-            setActiveTab('business');
-            setError(null);
-          }}
+          onClick={() => handleTabChange('business')}
           className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
             activeTab === 'business'
               ? 'bg-black text-[#FFE600] shadow-[0_2px_0_#000]'
@@ -93,10 +120,7 @@ function LoginContent() {
         </button>
         <button
           type="button"
-          onClick={() => {
-            setActiveTab('customer');
-            setError(null);
-          }}
+          onClick={() => handleTabChange('customer')}
           className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
             activeTab === 'customer'
               ? 'bg-black text-[#FFE600] shadow-[0_2px_0_#000]'

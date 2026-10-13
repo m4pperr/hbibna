@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { X, UserPlus, AlertCircle, CheckCircle2, Phone, Mail, User, Tag } from 'lucide-react';
 import { createCustomer, type CreateCustomerResult } from '@/actions/customers';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { useToast } from '@/components/ui/ToastProvider';
 
 interface AddCustomerModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface AddCustomerModalProps {
 
 export function AddCustomerModal({ isOpen, onClose }: AddCustomerModalProps) {
   const { t, language } = useLanguage();
+  const { success: toastSuccess, error: toastError } = useToast();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -39,9 +41,11 @@ export function AddCustomerModal({ isOpen, onClose }: AddCustomerModalProps) {
       const res: CreateCustomerResult = await createCustomer(formData);
       if (res.error) {
         setError(res.error);
+        toastError(res.error);
         setLoading(false);
       } else {
         setSuccessCustomer({ name, phone });
+        toastSuccess(t('common.saved'));
         setTimeout(() => {
           onClose();
           setSuccessCustomer(null);

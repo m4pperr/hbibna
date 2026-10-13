@@ -1,21 +1,27 @@
 {
-  "name": "Hbibna Loyalty Hub",
+  "name": "Hbibna Loyalty Hub | حبيبنا",
   "short_name": "Hbibna",
-  "description": "Digital Loyalty Platform for Growing Businesses",
+  "description": "Plateforme de fidélité digitale pour commerces en Algérie",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#fe3144",
+  "orientation": "portrait",
+  "background_color": "#FFF9D2",
+  "theme_color": "#FFE600",
+  "dir": "auto",
+  "lang": "fr",
+  "categories": ["business", "shopping", "lifestyle"],
   "icons": [
     {
       "src": "/assets/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "/assets/hbibna-logo.png",
+      "src": "/assets/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/assets/apple-touch-icon.png",

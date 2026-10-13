@@ -9,9 +9,13 @@ import type { Customer } from '@/types/database';
 
 interface DashboardQuickActionsProps {
   customers: Customer[];
+  businessName?: string;
+  businessId?: string;
 }
 
-export function DashboardQuickActions({ customers }: DashboardQuickActionsProps) {
+export function DashboardQuickActions({
+  customers,
+}: DashboardQuickActionsProps) {
   const [showScanModal, setShowScanModal] = useState(false);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const { t } = useLanguage();

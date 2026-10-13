@@ -194,6 +194,19 @@ export async function signUpCustomer(formData: FormData): Promise<AuthActionResu
 
     const userId = authData?.user?.id;
 
+    if (userId) {
+      try {
+        await adminClient.auth.admin.updateUserById(userId, { email_confirm: true });
+        // Automatically sign in the customer so they have an active session
+        await supabase.auth.signInWithPassword({
+          email: authEmail,
+          password,
+        });
+      } catch (confirmErr) {
+        console.warn('Customer auto-confirm notice:', confirmErr);
+      }
+    }
+
     // Insert or update customer profile in customers table
     const { data: existingCustomer } = await adminClient
       .from('customers')
@@ -236,7 +249,7 @@ export async function signInBusiness(formData: FormData): Promise<AuthActionResu
   const password = formData.get('password') as string;
 
   if (!email || !password) {
-    return { error: 'Please enter your email and password.' };
+    return { error: 'Veuillez saisir votre e-mail et votre mot de passe.' };
   }
 
   const supabase = await createClient();
@@ -247,8 +260,14 @@ export async function signInBusiness(formData: FormData): Promise<AuthActionResu
   });
 
   if (error) {
-    if (error.message.includes('Invalid login credentials')) {
-      return { error: 'Incorrect email or password. Please verify and try again.' };
+    if (
+      error.message.includes('Invalid login credentials') ||
+      error.message.includes('invalid_credentials')
+    ) {
+      return { error: 'E-mail ou mot de passe incorrect. Veuillez vérifier et réessayer.' };
+    }
+    if (error.message.toLowerCase().includes('email not confirmed')) {
+      return { error: 'Veuillez confirmer votre adresse e-mail avant de vous connecter.' };
     }
     return { error: error.message };
   }
@@ -264,46 +283,66 @@ export async function signInCustomer(formData: FormData): Promise<AuthActionResu
   const password = formData.get('password') as string;
 
   if (!phone || !password) {
-    return { error: 'Please enter your phone number and password.' };
+    return { error: 'Veuillez saisir votre numéro de téléphone et votre mot de passe.' };
   }
 
   const cleanPhone = phone.replace(/[\s-]/g, '');
 
   if (cleanPhone.length < 8) {
-    return { error: 'Please enter a valid phone number.' };
+    return { error: 'Veuillez saisir un numéro de téléphone valide.' };
   }
 
   if (password.length < 6) {
-    return { error: 'Password must be at least 6 characters long.' };
+    return { error: 'Le mot de passe doit comporter au moins 6 caractères.' };
   }
 
   const supabase = await createClient();
   const adminClient = createAdminClient();
 
-  try {
-    // 1. Check if customer exists in database
-    const { data: customer } = await adminClient
-      .from('customers')
-      .select('email')
-      .eq('phone', cleanPhone)
-      .maybeSingle();
+  // 1. Check if customer exists in database
+  const { data: customer } = await adminClient
+    .from('customers')
+    .select('id, email, auth_user_id')
+    .eq('phone', cleanPhone)
+    .maybeSingle();
 
-    // 2. Identify the corresponding Supabase Auth email (registered or synthetic)
-    const authEmail = customer?.email || `${cleanPhone.replace(/\+/g, '')}@customer.hbibna.local`;
+  // 2. Identify the corresponding Supabase Auth email (registered or synthetic)
+  const authEmail = customer?.email || `${cleanPhone.replace(/\+/g, '')}@customer.hbibna.local`;
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email: authEmail,
-      password,
-    });
+  const { error: authError } = await supabase.auth.signInWithPassword({
+    email: authEmail,
+    password,
+  });
 
-    if (authError) {
-      if (authError.message.includes('Invalid login credentials')) {
-        return { error: 'Incorrect phone number or password. Please verify and try again.' };
+  if (authError) {
+    // If error was email not confirmed, auto-confirm for customer and retry
+    if (authError.message.toLowerCase().includes('email not confirmed')) {
+      try {
+        if (customer?.auth_user_id) {
+          await adminClient.auth.admin.updateUserById(customer.auth_user_id, {
+            email_confirm: true,
+          });
+          const { error: retryError } = await supabase.auth.signInWithPassword({
+            email: authEmail,
+            password,
+          });
+          if (!retryError) {
+            redirect(`/customer?phone=${encodeURIComponent(cleanPhone)}`);
+          }
+        }
+      } catch (confirmErr) {
+        console.warn('Auto-confirm retry notice:', confirmErr);
       }
-      console.warn('Notice during customer signIn in Supabase:', authError.message);
     }
-  } catch (err: unknown) {
-    console.warn('Notice during customer signIn:', err);
+
+    if (
+      authError.message.includes('Invalid login credentials') ||
+      authError.message.includes('invalid_credentials')
+    ) {
+      return { error: 'Numéro de téléphone ou mot de passe incorrect. Veuillez vérifier et réessayer.' };
+    }
+
+    return { error: authError.message };
   }
 
   redirect(`/customer?phone=${encodeURIComponent(cleanPhone)}`);
@@ -466,7 +505,7 @@ export async function updatePassword(formData: FormData): Promise<AuthActionResu
     return { error: error.message };
   }
 
-  redirect('/dashboard');
+  return { success: true };
 }
 
 /**

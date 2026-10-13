@@ -10,5 +10,16 @@ export default async function DashboardPage() {
     fetchBusinessData(),
   ]);
 
-  return <DashboardClientView metrics={metrics} customers={data.customers} />;
+  return (
+    <DashboardClientView
+      metrics={metrics}
+      customers={data.customers}
+      business={data.business}
+      transactions={data.transactions}
+      hasConfiguredLoyalty={!!data.loyalty}
+      hasRewards={data.rewards && data.rewards.length > 0}
+      hasCustomers={data.customers && data.customers.length > 0}
+      hasTransactions={data.transactions && data.transactions.length > 0}
+    />
+  );
 }

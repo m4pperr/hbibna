@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { getAuthenticatedBusiness } from '@/actions/auth';
 import { revalidatePath } from 'next/cache';
+import { verifyDynamicQrToken } from '@/lib/qr-security';
 import type { Customer, Transaction } from '@/types/database';
 
 export interface CreateCustomerResult {
@@ -309,22 +310,25 @@ export interface ResolveCustomerResult {
 export async function resolveCustomerFromQr(token: string): Promise<ResolveCustomerResult> {
   const trimmed = (token || '').trim();
   if (!trimmed) {
-    return { error: 'No QR code or token provided.' };
-  }
-
-  // Extract ID from format "hbibna:c:<customerId>" or raw ID
-  let customerId = trimmed;
-  if (customerId.startsWith('hbibna:c:')) {
-    customerId = customerId.slice('hbibna:c:'.length).trim();
+    return { error: 'Aucun code QR fourni.' };
   }
 
   // Reject raw personal information mistakenly passed as token
-  if (customerId.includes('@') || /^\+?\d{9,15}$/.test(customerId)) {
+  if (trimmed.includes('@') || /^\+?\d{9,15}$/.test(trimmed)) {
     return {
-      error: 'Invalid QR format. QR code must contain a secure customer token, not raw contact information.',
+      error: 'Format QR invalide. Le QR code doit contenir un jeton sécurisé, pas des coordonnées brutes.',
     };
   }
 
+  // Cryptographic & time-based anti-fraud token verification
+  const verification = verifyDynamicQrToken(trimmed);
+  if (!verification.valid || !verification.customerId) {
+    return {
+      error: verification.error || 'QR code invalide ou expiré.',
+    };
+  }
+
+  const customerId = verification.customerId;
   const supabase = await createClient();
   const authBusiness = await getAuthenticatedBusiness();
   const businessId = authBusiness?.business?.id;

@@ -18,6 +18,7 @@ import {
   CloudOff,
   Wifi,
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { resolveCustomerFromQr, type ResolveCustomerResult } from '@/actions/customers';
 import { recordPurchase, type RecordPurchaseResult } from '@/actions/transactions';
 import { calculateLoyaltyPoints } from '@/lib/loyalty-engine';
@@ -103,6 +104,18 @@ export function ScanCustomerModal({
       c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.phone.replace(/\s+/g, '').includes(searchQuery.replace(/\s+/g, ''))
   );
+
+  // Trigger celebratory confetti on success
+  useEffect(() => {
+    if (stage === 'success') {
+      confetti({
+        particleCount: 50,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#FFE600', '#E25B6C', '#111111', '#10B981'],
+      });
+    }
+  }, [stage]);
 
   // Initialize and clean up Html5Qrcode when camera is toggled
   useEffect(() => {
@@ -224,6 +237,18 @@ export function ScanCustomerModal({
       const result: ResolveCustomerResult = await resolveCustomerFromQr(rawToken);
 
       if (result.error) {
+        // Prioritize security/expiration rejection over offline fallback
+        const isSecurityError =
+          result.error.toLowerCase().includes('expiré') ||
+          result.error.toLowerCase().includes('falsifi') ||
+          result.error.toLowerCase().includes('scanné');
+
+        if (isSecurityError) {
+          setError(result.error);
+          setResolving(false);
+          return;
+        }
+
         // Fallback to offline cache
         const cached = await findCachedCustomerByQr(bizId, rawToken);
         if (cached) {
@@ -442,8 +467,8 @@ export function ScanCustomerModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150 font-rounded">
-      <div className="bg-white border-2 border-black rounded-[2.5rem] w-full max-w-lg overflow-hidden shadow-[0_12px_0_#000] flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 font-rounded">
+      <div className="bg-white border-2 border-black rounded-[2.5rem] w-full max-w-lg overflow-hidden shadow-[0_16px_0_#000] flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200">
         {/* Modal Header */}
         <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b-2 border-black flex items-center justify-between bg-[#FFE600] sticky top-0 z-10">
           <div className="flex items-center gap-2.5 min-w-0">

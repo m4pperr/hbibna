@@ -17,7 +17,7 @@ export default async function BusinessLayout({
   ]);
 
   if (isSupabaseConfigured() && !authBusiness) {
-    redirect('/login');
+    redirect('/login?error=unauthorized');
   }
 
   // Enforce plan selection & payment before gaining access to business dashboard

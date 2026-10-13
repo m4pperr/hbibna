@@ -7,6 +7,7 @@ import { EditRewardModal } from './EditRewardModal';
 import { RedeemRewardModal } from './RedeemRewardModal';
 import { toggleRewardStatus } from '@/actions/rewards';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { useToast } from '@/components/ui/ToastProvider';
 import type { Reward, Customer } from '@/types/database';
 
 interface RewardListProps {
@@ -19,9 +20,27 @@ export function RewardList({ initialRewards, customers }: RewardListProps) {
   const [editingReward, setEditingReward] = useState<Reward | null>(null);
   const [redeemingReward, setRedeemingReward] = useState<Reward | null>(null);
   const { t, language } = useLanguage();
+  const { success: toastSuccess, error: toastError } = useToast();
 
   const handleToggle = async (id: string, currentStatus: boolean) => {
-    await toggleRewardStatus(id, !currentStatus);
+    try {
+      const res = await toggleRewardStatus(id, !currentStatus);
+      if (res?.error) {
+        toastError(res.error);
+      } else {
+        toastSuccess(
+          currentStatus
+            ? language === 'ar'
+              ? 'تم تعطيل المكافأة'
+              : 'Récompense désactivée'
+            : language === 'ar'
+            ? 'تم تفعيل المكافأة'
+            : 'Récompense activée'
+        );
+      }
+    } catch {
+      toastError(t('common.error'));
+    }
   };
 
   return (

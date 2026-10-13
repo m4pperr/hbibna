@@ -324,13 +324,13 @@ export function HomePageClient() {
       {/* =========================================================================
           SECTION 2: "FINI..." (PAIN-POINTS TO GAIN - ALTERNATING BLACK & WHITE CARDS)
          ========================================================================= */}
-      <section className="w-full bg-[#FFFDF0] py-20 lg:py-28 border-y-2 border-black/10">
+      <section className="w-full bg-[#FFFDF0] py-10 sm:py-14 lg:py-16 border-y-2 border-black/10">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <span className="text-xs uppercase font-black tracking-widest text-white bg-black px-4 py-1.5 rounded-full inline-block mb-3 shadow-md">
             {isAr ? 'ودّع المتاعب القديمة' : isFr ? 'La fin des frictions' : 'No more friction'}
           </span>
 
-          <h2 className="text-3xl sm:text-5xl font-black text-black tracking-tight mb-12">
+          <h2 className="text-3xl sm:text-5xl font-black text-black tracking-tight mb-8 sm:mb-10">
             {isAr ? (
               <>
                 انتهى زمن...{' '}
@@ -358,7 +358,7 @@ export function HomePageClient() {
           </h2>
 
           {/* Friction Cards Grid (Alternating: White / Black / White!) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-14 text-start">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 sm:mb-10 text-start">
             {/* Card 1: White with Black text */}
             <div className="p-7 rounded-3xl bg-white text-black border-2 border-black shadow-[0_6px_0_#000] hover:-translate-y-1 transition-transform">
               <div className="w-10 h-10 rounded-2xl bg-black text-[#FFE600] flex items-center justify-center font-black text-lg mb-4">
@@ -451,7 +451,7 @@ export function HomePageClient() {
           </div>
 
           {/* Interactive Core Platform Features Carousel */}
-          <div className="mt-14 max-w-xl mx-auto" id="fonctionnalites">
+          <div className="mt-8 sm:mt-10 max-w-xl mx-auto" id="fonctionnalites">
             <FeatureCarousel />
           </div>
         </div>
@@ -460,9 +460,9 @@ export function HomePageClient() {
       {/* =========================================================================
           SECTION 3: HOW IT WORKS STEP TABS (ALTERNATING BLACK & WHITE)
          ========================================================================= */}
-      <section className="w-full bg-[#FEF08A] py-20 lg:py-28 border-b-2 border-black/10" id="comment-ca-marche">
+      <section className="w-full bg-[#FEF08A] py-10 sm:py-14 lg:py-16 border-b-2 border-black/10" id="comment-ca-marche">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-14">
+          <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-10">
             <span className="text-xs uppercase font-black tracking-widest text-white bg-black px-4 py-1.5 rounded-full inline-block mb-3 shadow-md">
               {isAr ? 'طريقة العمل' : isFr ? 'Comment ça marche ?' : 'How it works'}
             </span>
@@ -476,7 +476,7 @@ export function HomePageClient() {
           </div>
 
           {/* Segmented Pill Tabs */}
-          <div className="flex justify-center mb-10 sm:mb-12">
+          <div className="flex justify-center mb-6 sm:mb-8">
             <div className="inline-flex flex-wrap items-center justify-center p-1.5 rounded-2xl sm:rounded-full bg-white border-2 border-black gap-1 shadow-[0_4px_0_#000]">
               {howToTabs.map((tab, idx) => (
                 <button
@@ -573,9 +573,9 @@ export function HomePageClient() {
       {/* =========================================================================
           SECTION 4: THE 5-STAGE LOYALTY LOOP
          ========================================================================= */}
-      <section className="w-full bg-[#FFFDF0] py-20 lg:py-28 border-b-2 border-black/10" id="loyalty-loop">
+      <section className="w-full bg-[#FFFDF0] py-10 sm:py-14 lg:py-16 border-b-2 border-black/10" id="loyalty-loop">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row items-start justify-between gap-8 mb-14">
+          <div className="flex flex-col lg:flex-row items-start justify-between gap-8 mb-8 sm:mb-10">
             <div className="max-w-xl text-start">
               <span className="px-4 py-1.5 rounded-full bg-black text-white text-xs font-black uppercase tracking-wider mb-3 inline-block shadow-md">
                 {isAr ? 'هندسة الاستبقاء' : isFr ? 'L’Architecture de Rétention' : 'Architecture of Retention'}
@@ -620,7 +620,7 @@ export function HomePageClient() {
           </div>
 
           {/* Stage Detail Display Card (White Box with Black/Yellow Visual) */}
-          <div className="w-full bg-white text-black rounded-[2.5rem] p-8 sm:p-12 shadow-[0_8px_0_#000] border-2 border-black relative overflow-hidden flex flex-col lg:flex-row items-center justify-between gap-10">
+          <div className="w-full bg-white text-black rounded-[2.5rem] p-6 sm:p-8 lg:p-10 shadow-[0_8px_0_#000] border-2 border-black relative overflow-hidden flex flex-col lg:flex-row items-center justify-between gap-8 sm:gap-10">
             <div className="w-full lg:w-1/2 flex flex-col items-start z-10 text-start">
               <div className="px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider mb-3 bg-black text-[#FFE600]">
                 {currentStage.badge}
@@ -660,8 +660,8 @@ export function HomePageClient() {
       {/* =========================================================================
           SECTION 5: LIVE INTERACTIVE PRODUCT SIMULATOR (HIGH CONTRAST DUAL PANEL)
          ========================================================================= */}
-      <section className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28" id="demo-simulator">
-        <div className="text-center max-w-2xl mx-auto mb-16">
+      <section className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 lg:py-16" id="demo-simulator">
+        <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-10">
           <span className="px-4 py-1.5 rounded-full bg-black text-white text-xs font-black uppercase tracking-wider mb-3 inline-block shadow-md">
             {isAr ? 'محاكي تفاعلي حي' : isFr ? 'Simulateur Interactif en Direct' : 'Real-Time Simulator'}
           </span>
@@ -904,9 +904,9 @@ export function HomePageClient() {
       {/* =========================================================================
           SECTION 6: AMBASSADOR TESTIMONIALS (ALTERNATING WHITE & BLACK CARDS)
          ========================================================================= */}
-      <section className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
-        <div className="w-full bg-black text-white rounded-[3rem] p-8 sm:p-14 border-4 border-black relative overflow-hidden shadow-2xl">
-          <div className="text-center max-w-2xl mx-auto mb-12">
+      <section className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 lg:py-16">
+        <div className="w-full bg-black text-white rounded-[3rem] p-6 sm:p-10 lg:p-12 border-4 border-black relative overflow-hidden shadow-2xl">
+          <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-10">
             <span className="px-4 py-1.5 rounded-full bg-[#FFE600] text-black text-xs font-black uppercase tracking-wider mb-3 inline-block shadow-md">
               {isAr ? 'شهادات التجار' : isFr ? 'Témoignages Commerçants' : 'Merchant Testimonials'}
             </span>
@@ -1046,9 +1046,9 @@ export function HomePageClient() {
       {/* =========================================================================
           SECTION 6.5: VIRAL AFFILIATION & REFERRAL SHOWCASE
          ========================================================================= */}
-      <section className="w-full bg-[#FFE600] py-20 lg:py-28 border-y-2 border-black" id="referrals-showcase">
+      <section className="w-full bg-[#FFE600] py-10 sm:py-14 lg:py-16 border-y-2 border-black" id="referrals-showcase">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-14 space-y-3">
+          <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10 space-y-2">
             <span className="px-4 py-1.5 rounded-full bg-black text-[#FFE600] text-xs font-black uppercase tracking-wider inline-flex items-center gap-1.5 shadow-[0_3px_0_#000]">
               <Sparkles className="w-3.5 h-3.5 fill-[#FFE600]" />
               <span>{isAr ? 'نظام الإحالة والأفلييت الفيروسي' : isFr ? 'Système d’Affiliation & Parrainage Viral' : 'Viral Referral & Affiliate Engine'}</span>
@@ -1124,9 +1124,9 @@ export function HomePageClient() {
       {/* =========================================================================
           SECTION 7: PRICING SECTION (WITH FRIENDLY VARIANT)
          ========================================================================= */}
-      <section className="w-full py-20 lg:py-28" id="pricing">
+      <section className="w-full py-10 sm:py-14 lg:py-16" id="pricing">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
-          <div className="text-center max-w-xl mb-14">
+          <div className="text-center max-w-xl mb-8 sm:mb-10">
             <span className="px-4 py-1.5 rounded-full bg-black text-white text-xs font-black uppercase tracking-wider mb-3 inline-block shadow-md">
               {isAr ? 'تسعير واضح وشفاف' : isFr ? 'Tarification Prévisible' : 'Predictable Pricing'}
             </span>
@@ -1154,8 +1154,8 @@ export function HomePageClient() {
       {/* =========================================================================
           SECTION 9: FINAL CTA STATEMENT SECTION
          ========================================================================= */}
-      <section className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
-        <div className="w-full rounded-[3rem] bg-black p-10 sm:p-16 text-white relative overflow-hidden shadow-[0_14px_0_#000] border-4 border-black flex flex-col items-center text-center">
+      <section className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 lg:py-16">
+        <div className="w-full rounded-[3rem] bg-black p-8 sm:p-12 text-white relative overflow-hidden shadow-[0_14px_0_#000] border-4 border-black flex flex-col items-center text-center">
           <span className="px-4 py-1.5 rounded-full bg-white/10 text-white text-xs font-black uppercase tracking-wider mb-6 z-10 backdrop-blur-md border border-white/20">
             {isAr
               ? 'انضم إلى مئات المتاجر المزدهرة مع Hbibna'
@@ -1189,7 +1189,7 @@ export function HomePageClient() {
             )}
           </h2>
 
-          <p className="text-base sm:text-lg text-white/85 max-w-xl mb-10 z-10 leading-relaxed font-semibold">
+          <p className="text-base sm:text-lg text-white/85 max-w-xl mb-7 z-10 leading-relaxed font-semibold">
             {isAr
               ? 'لا تدع الزبائن يغادرون متجرك إلى غير رجعة. حوّل الزيارات اليومية إلى نمو متكرر ومضمون ابتداءً من اليوم.'
               : isFr

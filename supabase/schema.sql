@@ -53,6 +53,9 @@ create table if not exists public.customer_businesses (
     customer_id uuid not null references public.customers(id) on delete cascade,
     business_id uuid not null references public.businesses(id) on delete cascade,
     points_balance integer not null default 0 check (points_balance >= 0),
+    wallet_serial_number text,
+    wallet_share_url text,
+    wallet_google_url text,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now(),
     constraint uq_customer_business unique (customer_id, business_id)

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { X, Gift, AlertCircle } from 'lucide-react';
 import { createReward } from '@/actions/rewards';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { useToast } from '@/components/ui/ToastProvider';
 
 interface CreateRewardModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface CreateRewardModalProps {
 
 export function CreateRewardModal({ isOpen, onClose }: CreateRewardModalProps) {
   const { t } = useLanguage();
+  const { success: toastSuccess, error: toastError } = useToast();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [pointsRequired, setPointsRequired] = useState('50');
@@ -34,7 +36,9 @@ export function CreateRewardModal({ isOpen, onClose }: CreateRewardModalProps) {
       const res = await createReward(formData);
       if (res.error) {
         setError(res.error);
+        toastError(res.error);
       } else {
+        toastSuccess(t('common.saved'));
         setName('');
         setDescription('');
         setPointsRequired('50');
@@ -42,6 +46,7 @@ export function CreateRewardModal({ isOpen, onClose }: CreateRewardModalProps) {
       }
     } catch {
       setError(t('common.error'));
+      toastError(t('common.error'));
     } finally {
       setLoading(false);
     }

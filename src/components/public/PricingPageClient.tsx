@@ -13,10 +13,10 @@ export function PricingPageClient() {
     <div className="min-h-screen flex flex-col bg-[#FFDE59] font-rounded selection:bg-black selection:text-[#FFDE59]">
       <PublicNavbar />
 
-      <main className="flex-1 py-16 lg:py-24">
+      <main className="flex-1 py-10 sm:py-14 lg:py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
-          <div className="text-center space-y-4 mb-14">
+          <div className="text-center space-y-3 mb-8 sm:mb-10">
             <span className="inline-block px-4 py-1.5 rounded-full bg-black text-white font-black text-xs uppercase tracking-wider border-2 border-black shadow-[0_3px_0_#000]">
               {t('pricing.badge')}
             </span>
@@ -32,7 +32,7 @@ export function PricingPageClient() {
           <PricingCards />
 
           {/* FAQ snippet */}
-          <div className="mt-16 space-y-6">
+          <div className="mt-10 sm:mt-12 space-y-5">
             <h3 className="text-2xl font-black text-black text-center">
               {t('pricing.faqTitle')}
             </h3>

@@ -58,12 +58,19 @@ export async function recordPurchase(params: {
   const businessId = authBusiness?.business?.id || DEFAULT_BUSINESS.id;
 
   // Step 1: Verify customer belongs to the business
-  let customer: { id: string; business_id: string; points_balance: number; name: string } | null = null;
+  let customer: {
+    id: string;
+    business_id: string;
+    points_balance: number;
+    name: string;
+    phone?: string;
+    wallet_serial_number?: string | null;
+  } | null = null;
 
   try {
     const { data: dbCustomer } = await supabase
       .from('customers')
-      .select('id, business_id, points_balance, name')
+      .select('id, business_id, points_balance, name, phone, wallet_serial_number')
       .eq('id', customerId)
       .eq('business_id', businessId)
       .single();
@@ -83,6 +90,8 @@ export async function recordPurchase(params: {
         business_id: fallback.business_id,
         points_balance: fallback.points_balance,
         name: fallback.name,
+        phone: fallback.phone,
+        wallet_serial_number: fallback.wallet_serial_number,
       };
     }
   }
@@ -175,6 +184,24 @@ export async function recordPurchase(params: {
         updated_at: new Date().toISOString(),
       })
       .eq('id', customerId);
+
+    // Push live update to Apple & Google Wallet pass on customer's phone
+    if (customer.wallet_serial_number) {
+      const serial = customer.wallet_serial_number;
+      const bName = authBusiness?.business?.name || 'Hbibna';
+      const cPhone = customer.phone || '';
+      const cName = customer.name;
+      import('@/lib/walletwallet/service').then(({ updateWalletPass }) => {
+        const tierName = newBalance >= 500 ? 'Membre Gold' : newBalance >= 200 ? 'Membre Silver' : 'Membre Bronze';
+        updateWalletPass(serial, {
+          customerName: cName,
+          phone: cPhone,
+          businessName: bName,
+          points: newBalance,
+          tierName,
+        }).catch((e) => console.warn('Wallet pass push update notice:', e));
+      });
+    }
   } catch (err) {
     console.warn('DB customer update handled:', err);
   }

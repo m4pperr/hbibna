@@ -1,9 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Search, Receipt, Gift, ArrowUpRight } from 'lucide-react';
+import { Search, Receipt, Gift, ArrowUpRight, Download, Calendar } from 'lucide-react';
+import { Pagination } from '@/components/ui/Pagination';
+import { exportTransactionsToCsv } from '@/lib/export-csv';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import type { Transaction } from '@/types/database';
+
+const PAGE_SIZE = 10;
 
 export function TransactionTable({
   initialTransactions,
@@ -12,22 +16,46 @@ export function TransactionTable({
 }) {
   const { t, language } = useLanguage();
   const [filter, setFilter] = useState<'all' | 'earn' | 'redeem'>('all');
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const filtered = initialTransactions.filter((t) => {
-    if (filter !== 'all' && t.type !== filter) return false;
+  const filtered = initialTransactions.filter((tx) => {
+    // Type filter
+    if (filter !== 'all' && tx.type !== filter) return false;
+
+    // Date filter
+    if (dateFilter !== 'all') {
+      const txTime = new Date(tx.created_at).getTime();
+      const now = Date.now();
+      if (dateFilter === 'today') {
+        const todayStr = new Date().toDateString();
+        if (new Date(tx.created_at).toDateString() !== todayStr) return false;
+      } else if (dateFilter === 'week') {
+        if (now - txTime > 7 * 86400000) return false;
+      } else if (dateFilter === 'month') {
+        if (now - txTime > 30 * 86400000) return false;
+      }
+    }
+
+    // Search query
     if (!search) return true;
     const s = search.toLowerCase();
     return (
-      (t.customer?.name && t.customer.name.toLowerCase().includes(s)) ||
-      (t.customer?.phone && t.customer.phone.includes(s)) ||
-      (t.description && t.description.toLowerCase().includes(s))
+      (tx.customer?.name && tx.customer.name.toLowerCase().includes(s)) ||
+      (tx.customer?.phone && tx.customer.phone.includes(s)) ||
+      (tx.description && tx.description.toLowerCase().includes(s))
     );
   });
 
+  const paginatedTransactions = filtered.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
   return (
     <div className="space-y-4">
-      {/* Filters & search */}
+      {/* Search and Export Top Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="relative flex-1 max-w-md">
           <Search className="w-4 h-4 text-black/60 absolute ltr:left-3.5 rtl:right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -35,15 +63,33 @@ export function TransactionTable({
             type="text"
             placeholder={t('business.searchTransactions')}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
             className="w-full ltr:pl-10 ltr:pr-4 rtl:pr-10 rtl:pl-4 py-2.5 rounded-2xl border-2 border-black bg-[#FFF9D2] text-sm text-black font-bold placeholder:text-black/40 focus:bg-white focus:outline-none shadow-[0_4px_0_#000] transition-colors"
           />
         </div>
 
-        {/* Filter tabs */}
+        <button
+          onClick={() => exportTransactionsToCsv(filtered)}
+          title={language === 'ar' ? 'تصدير كملف إكسيل CSV' : 'Exporter au format Excel CSV'}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-white hover:bg-[#FFF9D2] text-black text-xs font-black border-2 border-black shadow-[0_4px_0_#000] hover:translate-x-0.5 active:translate-y-1 active:shadow-none transition-all cursor-pointer min-h-[42px] self-start sm:self-auto"
+        >
+          <Download className="w-4 h-4 stroke-[2.5]" />
+          <span>{language === 'ar' ? 'تصدير المعاملات (CSV)' : 'Exporter (CSV)'}</span>
+        </button>
+      </div>
+
+      {/* Filter Tabs (Type & Date) */}
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+        {/* Type tabs */}
         <div className="grid grid-cols-3 sm:flex sm:items-center p-1.5 bg-white rounded-2xl border-2 border-black gap-1.5 shadow-[0_4px_0_#000]">
           <button
-            onClick={() => setFilter('all')}
+            onClick={() => {
+              setFilter('all');
+              setCurrentPage(1);
+            }}
             className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-black text-center transition-all truncate min-h-[36px] flex items-center justify-center cursor-pointer ${
               filter === 'all'
                 ? 'bg-black text-[#FFE600] shadow-[0_2px_0_#000]'
@@ -53,7 +99,10 @@ export function TransactionTable({
             {t('common.all')}
           </button>
           <button
-            onClick={() => setFilter('earn')}
+            onClick={() => {
+              setFilter('earn');
+              setCurrentPage(1);
+            }}
             className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-black text-center transition-all truncate min-h-[36px] flex items-center justify-center cursor-pointer ${
               filter === 'earn'
                 ? 'bg-black text-[#FFE600] shadow-[0_2px_0_#000]'
@@ -63,7 +112,10 @@ export function TransactionTable({
             {t('customer.earnedPts')}
           </button>
           <button
-            onClick={() => setFilter('redeem')}
+            onClick={() => {
+              setFilter('redeem');
+              setCurrentPage(1);
+            }}
             className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-black text-center transition-all truncate min-h-[36px] flex items-center justify-center cursor-pointer ${
               filter === 'redeem'
                 ? 'bg-black text-[#FFE600] shadow-[0_2px_0_#000]'
@@ -71,6 +123,62 @@ export function TransactionTable({
             }`}
           >
             {t('customer.spentPts')}
+          </button>
+        </div>
+
+        {/* Date Filter Tabs */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:flex lg:items-center p-1.5 bg-[#FFF9D2] rounded-2xl border-2 border-black gap-1.5 shadow-[0_4px_0_#000]">
+          <button
+            onClick={() => {
+              setDateFilter('all');
+              setCurrentPage(1);
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black text-center transition-all truncate min-h-[36px] flex items-center justify-center cursor-pointer ${
+              dateFilter === 'all'
+                ? 'bg-black text-white shadow-[0_2px_0_#000]'
+                : 'text-black/70 hover:text-black hover:bg-black/5'
+            }`}
+          >
+            {language === 'ar' ? 'كل التواريخ' : 'Toutes dates'}
+          </button>
+          <button
+            onClick={() => {
+              setDateFilter('today');
+              setCurrentPage(1);
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black text-center transition-all truncate min-h-[36px] flex items-center justify-center cursor-pointer ${
+              dateFilter === 'today'
+                ? 'bg-black text-white shadow-[0_2px_0_#000]'
+                : 'text-black/70 hover:text-black hover:bg-black/5'
+            }`}
+          >
+            {language === 'ar' ? 'اليوم' : "Aujourd'hui"}
+          </button>
+          <button
+            onClick={() => {
+              setDateFilter('week');
+              setCurrentPage(1);
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black text-center transition-all truncate min-h-[36px] flex items-center justify-center cursor-pointer ${
+              dateFilter === 'week'
+                ? 'bg-black text-white shadow-[0_2px_0_#000]'
+                : 'text-black/70 hover:text-black hover:bg-black/5'
+            }`}
+          >
+            {language === 'ar' ? 'آخر 7 أيام' : '7 jours'}
+          </button>
+          <button
+            onClick={() => {
+              setDateFilter('month');
+              setCurrentPage(1);
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black text-center transition-all truncate min-h-[36px] flex items-center justify-center cursor-pointer ${
+              dateFilter === 'month'
+                ? 'bg-black text-white shadow-[0_2px_0_#000]'
+                : 'text-black/70 hover:text-black hover:bg-black/5'
+            }`}
+          >
+            {language === 'ar' ? 'آخر 30 يوم' : '30 jours'}
           </button>
         </div>
       </div>
@@ -97,7 +205,7 @@ export function TransactionTable({
                   </td>
                 </tr>
               ) : (
-                filtered.map((tx) => {
+                paginatedTransactions.map((tx) => {
                   const isEarn = tx.points > 0;
                   return (
                     <tr key={tx.id} className="hover:bg-[#FFF9D2]/40 transition-colors">
@@ -177,7 +285,7 @@ export function TransactionTable({
             {t('customer.noActivity')}
           </div>
         ) : (
-          filtered.map((tx) => {
+          paginatedTransactions.map((tx) => {
             const isEarn = tx.points > 0;
             return (
               <div
@@ -247,6 +355,14 @@ export function TransactionTable({
           })
         )}
       </div>
+
+      {/* Pagination Controls */}
+      <Pagination
+        currentPage={currentPage}
+        totalItems={filtered.length}
+        pageSize={PAGE_SIZE}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import {
@@ -15,8 +15,12 @@ import {
   Smartphone,
   Check,
   Gift,
+  RefreshCw,
+  Lock,
 } from 'lucide-react';
+import { generateDynamicQrToken, QR_ROTATION_INTERVAL_SECONDS } from '@/lib/qr-security';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { getOrCreateCustomerWallet } from '@/actions/wallet';
 import type { Customer, Business, CustomerBusinessMembership } from '@/types/database';
 
 interface CustomerLoyaltyCardProps {
@@ -44,6 +48,12 @@ export function CustomerLoyaltyCard({
   const [isHovered, setIsHovered] = useState(false);
   const [walletAdded, setWalletAdded] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
+  const [walletLoading, setWalletLoading] = useState(false);
+  const [walletData, setWalletData] = useState<{
+    shareUrl?: string;
+    googleSaveUrl?: string;
+    applePassUrl?: string;
+  } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const customerName = customer?.name || (isAr ? 'العميل' : 'Client');
@@ -106,12 +116,38 @@ export function CustomerLoyaltyCard({
       ? 'Remise 20% sur la commande'
       : '20% Off Next Order';
 
-  // Secure token for counter QR code
-  const secureQrToken = customer?.id
-    ? `hbibna:c:${customer.id}`
-    : typeof window !== 'undefined'
-    ? `${window.location.origin}/customers/demo`
-    : 'hbibna:c:demo_user';
+  // Dynamic Ephemeral Anti-Fraud QR Token (Rotates every 60s)
+  const [dynamicQrToken, setDynamicQrToken] = useState<string>(() => {
+    return customer?.id
+      ? `hbibna:c:${customer.id}`
+      : 'hbibna:c:demo_user';
+  });
+  const [secondsLeft, setSecondsLeft] = useState<number>(QR_ROTATION_INTERVAL_SECONDS);
+
+  const renewToken = () => {
+    if (!customer?.id) return;
+    const generated = generateDynamicQrToken(customer.id);
+    setDynamicQrToken(generated.token);
+    setSecondsLeft(QR_ROTATION_INTERVAL_SECONDS);
+  };
+
+  useEffect(() => {
+    if (!customer?.id) return;
+
+    renewToken();
+
+    const interval = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          renewToken();
+          return QR_ROTATION_INTERVAL_SECONDS;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [customer?.id]);
 
   const customerIdDisplay = customer?.id
     ? `HB-${customer.id.slice(0, 4).toUpperCase()}-DZ`
@@ -136,16 +172,25 @@ export function CustomerLoyaltyCard({
 
   const handleAddToWallet = async () => {
     setShowWalletModal(true);
-    if (typeof navigator !== 'undefined' && navigator.share) {
+    setWalletAdded(true);
+    if (!walletData && customer?.phone) {
+      setWalletLoading(true);
       try {
-        await navigator.share({
-          title: `${activeBusinessName} — Pass Fidélité`,
-          text: `Mon Pass Fidélité ${activeBusinessName}`,
-          url: window.location.href,
-        });
-        setWalletAdded(true);
-      } catch {
-        // Modal remains open with step-by-step instructions
+        const res = await getOrCreateCustomerWallet(
+          customer.phone,
+          membership?.business_id || business?.id
+        );
+        if (res?.configured && (res.shareUrl || res.applePassUrl)) {
+          setWalletData({
+            shareUrl: res.shareUrl,
+            googleSaveUrl: res.googleSaveUrl,
+            applePassUrl: res.applePassUrl,
+          });
+        }
+      } catch (err) {
+        console.warn('Wallet fetch error:', err);
+      } finally {
+        setWalletLoading(false);
       }
     }
   };
@@ -185,6 +230,16 @@ export function CustomerLoyaltyCard({
             SURFACE INTÉRIEURE DE LA CARTE (SMARTPASS INSERT)
             ============================================================== */}
         <div className="relative w-full rounded-[1.6rem] bg-[#FAF8F5] border-[2.5px] border-[#111111] p-4 sm:p-5 flex flex-col justify-between overflow-hidden shadow-inner text-[#111111] text-start">
+          {/* Dynamic Holographic Foil Overlay */}
+          <div
+            className="absolute inset-0 pointer-events-none rounded-[1.6rem] transition-opacity duration-300 mix-blend-color-dodge overflow-hidden"
+            style={{
+              opacity: isHovered ? 0.65 : 0.2,
+              background: `linear-gradient(${115 + tilt.y * 3.5}deg, rgba(255,255,255,0) 0%, rgba(255,230,0,0.2) 30%, rgba(226,91,108,0.25) 50%, rgba(56,189,248,0.25) 70%, rgba(255,255,255,0) 100%)`,
+              backgroundPosition: `${50 + tilt.y * 2}% ${50 + tilt.x * 2}%`,
+            }}
+          />
+
           {/* Reflet shimmer iridescent */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full duration-1000 transition-transform pointer-events-none" />
 
@@ -340,30 +395,70 @@ export function CustomerLoyaltyCard({
           </div>
 
           {/* QR Code Container */}
-          <div className="p-3.5 bg-white border-2 border-[#111111] rounded-2xl inline-flex items-center justify-center shadow-[0_3px_0_#111111] mx-auto">
-            <QRCodeSVG
-              value={secureQrToken}
-              size={160}
-              level="M"
-              bgColor="#FFFFFF"
-              fgColor="#111111"
-              aria-label={t('customer.myQr')}
-              className="w-36 h-36 sm:w-40 sm:h-40"
-            />
+          <div className="flex flex-col items-center gap-3">
+            <div className="p-3.5 bg-white border-2 border-[#111111] rounded-2xl inline-flex items-center justify-center shadow-[0_3px_0_#111111] mx-auto relative group">
+              <QRCodeSVG
+                value={dynamicQrToken}
+                size={160}
+                level="M"
+                bgColor="#FFFFFF"
+                fgColor="#111111"
+                aria-label={t('customer.myQr')}
+                className="w-36 h-36 sm:w-40 sm:h-40"
+              />
+            </div>
+
+            {/* Rotating Anti-Fraud Countdown Bar */}
+            <div className="w-full max-w-[220px] space-y-1.5">
+              <div className="w-full bg-zinc-200 h-2 rounded-full overflow-hidden border border-black/20 p-0.5">
+                <div
+                  className="bg-emerald-500 h-full rounded-full transition-all duration-1000 ease-linear shadow-xs"
+                  style={{
+                    width: `${Math.max(4, (secondsLeft / QR_ROTATION_INTERVAL_SECONDS) * 100)}%`,
+                  }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] font-black text-black/80 px-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>
+                    {isAr
+                      ? `يتجدد خلال ${secondsLeft} ثانية`
+                      : isFr
+                      ? `Renouvelé dans ${secondsLeft}s`
+                      : `Refreshes in ${secondsLeft}s`}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={renewToken}
+                  className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-black/60 hover:text-black p-1 hover:bg-black/5 rounded-lg transition-colors cursor-pointer"
+                  title={isAr ? 'تحديث الرمز فوراً' : 'Actualiser maintenant'}
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  <span>{isAr ? 'تحديث' : 'Actualiser'}</span>
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div className="text-center space-y-1">
+          <div className="text-center space-y-1.5">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#111111] text-[#FFE600] text-[10px] font-mono font-black shadow-xs">
               <ShieldCheck className="w-3.5 h-3.5 stroke-[2.5]" />
               <span>{customerIdDisplay}</span>
             </div>
-            <p className="text-[10px] text-zinc-500 font-bold max-w-xs mx-auto">
-              {isAr
-                ? 'رمز مشفر وآمن مخصص حصرياً لنقاطك ومكافآتك'
-                : isFr
-                ? 'Code chiffré et sécurisé dédié exclusivement à vos points'
-                : 'Encrypted code scoped strictly to your store rewards'}
-            </p>
+            <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 text-[10px] font-bold block mx-auto">
+              <Lock className="w-3 h-3 stroke-[2.5]" />
+              <span>
+                {isAr
+                  ? 'حماية ضد لقطات الشاشة والاحتيال (رمز ديناميكي)'
+                  : isFr
+                  ? 'Protection anti-capture d\'écran active (Jeton dynamique)'
+                  : 'Active anti-screenshot protection (Dynamic token)'}
+              </span>
+            </div>
           </div>
 
           {/* 4. ACTIONS : ENREGISTRER LE PASS SUR LE TÉLÉPHONE */}
@@ -428,49 +523,118 @@ export function CustomerLoyaltyCard({
               </div>
             </div>
 
-            {/* Note d'explication Apple Wallet vs PWA */}
+            {/* 1. SECTIONS NATIVES APPLE & GOOGLE WALLET */}
+            <div className="space-y-2.5">
+              <p className="text-xs font-black text-[#111111] uppercase tracking-wider">
+                {isAr ? '⚡ الإضافة المباشرة إلى المحفظة :' : isFr ? '⚡ Intégration Native Wallet :' : '⚡ Native Wallet Pass :'}
+              </p>
+
+              {walletLoading ? (
+                <div className="p-4 rounded-2xl bg-white border-2 border-black flex items-center justify-center gap-3">
+                  <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                  <span className="text-xs font-black text-black">
+                    {isAr ? 'جاري تحضير بطاقتك الرقمية...' : isFr ? 'Génération de votre Pass Wallet...' : 'Generating your Wallet pass...'}
+                  </span>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {/* BOUTON APPLE WALLET (iOS .pkpass) */}
+                  <a
+                    href={
+                      walletData?.applePassUrl ||
+                      `/api/wallet/pass?phone=${encodeURIComponent(customer?.phone || '')}`
+                    }
+                    download
+                    className="w-full py-3 px-4 rounded-2xl bg-black hover:bg-neutral-900 text-white font-black text-xs border-2 border-black shadow-[0_3px_0_#000] active:translate-y-0.5 flex items-center justify-between transition-all group"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-base">🍏</span>
+                      <div className="text-start leading-tight">
+                        <p className="font-black text-xs text-white">
+                          {isAr ? 'إضافة إلى Apple Wallet' : isFr ? 'Ajouter à Apple Wallet' : 'Add to Apple Wallet'}
+                        </p>
+                        <p className="text-[10px] text-white/60 font-medium">Pass officiel .pkpass</p>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-[#FFE600] group-hover:translate-x-0.5 transition-transform rtl:rotate-180" />
+                  </a>
+
+                  {/* BOUTON GOOGLE WALLET (Android) */}
+                  {walletData?.googleSaveUrl && (
+                    <a
+                      href={walletData.googleSaveUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-3 px-4 rounded-2xl bg-white hover:bg-zinc-50 text-black font-black text-xs border-2 border-black shadow-[0_3px_0_#000] active:translate-y-0.5 flex items-center justify-between transition-all group"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-base">🤖</span>
+                        <div className="text-start leading-tight">
+                          <p className="font-black text-xs text-black">
+                            {isAr ? 'حفظ في Google Wallet' : isFr ? 'Ajouter à Google Wallet' : 'Save to Google Wallet'}
+                          </p>
+                          <p className="text-[10px] text-zinc-500 font-medium">Google Pay & Wallet</p>
+                        </div>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-black group-hover:translate-x-0.5 transition-transform rtl:rotate-180" />
+                    </a>
+                  )}
+
+                  {/* LIEN UNIVERSEL WALLET (WalletWallet Host) */}
+                  {walletData?.shareUrl && (
+                    <a
+                      href={walletData.shareUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-2.5 px-3 rounded-xl bg-[#FFE600] hover:bg-[#ffe01b] text-black font-black text-[11px] border-2 border-black shadow-[0_2px_0_#000] active:translate-y-0.5 flex items-center justify-between transition-all"
+                    >
+                      <span>
+                        {isAr
+                          ? '📲 فتح رابط التثبيت الذكي (كافة الهواتف)'
+                          : isFr
+                          ? '📲 Ouvrir le lien intelligent (Tous téléphones)'
+                          : '📲 Open Universal Pass Link (All devices)'}
+                      </span>
+                      <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Note d'explication PWA / Écran d'accueil */}
             <div className="p-3 rounded-xl bg-amber-50 border border-amber-300/80 text-[11px] text-amber-900 leading-snug space-y-1">
               <p className="font-black flex items-center gap-1.5 text-amber-950">
-                <span>🍏 Sur iPhone (Safari) :</span>
+                <span>📲 Alternative : Écran d’accueil (PWA) :</span>
               </p>
               <p className="text-[10.5px]">
                 {isFr
-                  ? 'Pour garder votre pass toujours sous la main en 1 clic sans installer d’application :'
+                  ? 'Pour ajouter ce pass directement sous forme d’icône sur votre écran d’accueil :'
                   : isAr
-                  ? 'لحفظ بطاقتك دائماً في متناول يدك بضغطة واحدة وبدون أي تطبيق :'
-                  : 'To keep your pass accessible in 1 tap without installing any App Store app:'}
+                  ? 'لحفظ بطاقتك كأيقونة تطبيق على الشاشة الرئيسية :'
+                  : 'To save this pass as an icon on your home screen:'}
               </p>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-white border-2 border-[#111111] space-y-3 shadow-2xs">
-              <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-[#FFE600] border border-black/30 text-black text-[11px] font-black flex items-center justify-center shrink-0">1</span>
-                <p className="text-xs font-bold leading-snug">
+            <div className="p-3.5 rounded-2xl bg-white border-2 border-[#111111] space-y-2.5 shadow-2xs text-[11px]">
+              <div className="flex items-start gap-2">
+                <span className="w-4 h-4 rounded-full bg-[#FFE600] border border-black/30 text-black text-[10px] font-black flex items-center justify-center shrink-0">1</span>
+                <p className="font-bold leading-tight">
                   {isAr
-                    ? 'في Safari، اضغط على زر المشاركة (⎋) في الأسفل'
+                    ? 'في متصفحك (Safari أو Chrome)، اضغط على زر المشاركة ⎋ أو القائمة ⋮'
                     : isFr
-                    ? 'Dans Safari, touchez l’icône Partager ⎋ (ou le menu ⋮ sur Chrome)'
-                    : 'In Safari, tap the Share icon ⎋ (or ⋮ on Chrome)'}
+                    ? 'Dans Safari ou Chrome, touchez Partager ⎋ (ou ⋮)'
+                    : 'In Safari or Chrome, tap Share ⎋ (or ⋮)'}
                 </p>
               </div>
-              <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-[#FFE600] border border-black/30 text-black text-[11px] font-black flex items-center justify-center shrink-0">2</span>
-                <p className="text-xs font-bold leading-snug">
+              <div className="flex items-start gap-2">
+                <span className="w-4 h-4 rounded-full bg-[#FFE600] border border-black/30 text-black text-[10px] font-black flex items-center justify-center shrink-0">2</span>
+                <p className="font-bold leading-tight">
                   {isAr
-                    ? 'مرر للأسفل واختر "إضافة إلى الشاشة الرئيسية" 📲'
+                    ? 'اختر "إضافة إلى الشاشة الرئيسية" 📲'
                     : isFr
-                    ? 'Faites défiler et choisissez « Sur l’écran d’accueil » 📲'
-                    : 'Scroll and tap “Add to Home Screen” 📲'}
-                </p>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-[#FFE600] border border-black/30 text-black text-[11px] font-black flex items-center justify-center shrink-0">3</span>
-                <p className="text-xs font-bold leading-snug">
-                  {isAr
-                    ? 'البطاقة الآن على شاشة هاتفك جاهزة دائماً للدفع والمسح حتى بدون إنترنت!'
-                    : isFr
-                    ? 'Votre Pass s’installe instantanément, accessible en plein écran et même hors-ligne en caisse !'
-                    : 'Your pass is instantly saved and available offline for quick counter scanning!'}
+                    ? 'Choisissez « Sur l’écran d’accueil » 📲'
+                    : 'Tap “Add to Home Screen” 📲'}
                 </p>
               </div>
             </div>

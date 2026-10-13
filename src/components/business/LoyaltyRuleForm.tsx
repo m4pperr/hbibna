@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { updateLoyaltyProgram, type UpdateLoyaltyResult } from '@/actions/loyalty';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { useToast } from '@/components/ui/ToastProvider';
 import type { LoyaltyProgram, LoyaltyRuleType } from '@/types/database';
 
 interface LoyaltyRuleFormProps {
@@ -23,6 +24,7 @@ interface LoyaltyRuleFormProps {
 
 export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
   const { t, language } = useLanguage();
+  const { success: toastSuccess, error: toastError } = useToast();
   const [ruleType, setRuleType] = useState<LoyaltyRuleType>(
     initialLoyalty?.rule_type || 'per_currency'
   );
@@ -152,16 +154,19 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
         const res: UpdateLoyaltyResult = await updateLoyaltyProgram(formData);
         if (res?.error) {
           setFeedback({ type: 'error', message: res.error });
+          toastError(res.error);
         } else {
+          const successMsg =
+            language === 'ar'
+              ? 'تم حفظ قواعد برنامج الولاء بنجاح.'
+              : language === 'fr'
+              ? 'Les règles de votre programme de fidélité ont été enregistrées avec succès.'
+              : 'Your loyalty points rule has been saved successfully in Supabase.';
           setFeedback({
             type: 'success',
-            message:
-              language === 'ar'
-                ? 'تم حفظ قواعد برنامج الولاء بنجاح.'
-                : language === 'fr'
-                ? 'Les règles de votre programme de fidélité ont été enregistrées avec succès.'
-                : 'Your loyalty points rule has been saved successfully in Supabase.',
+            message: successMsg,
           });
+          toastSuccess(successMsg);
           setTimeout(() => setFeedback(null), 4000);
         }
       } catch {
@@ -169,6 +174,7 @@ export function LoyaltyRuleForm({ initialLoyalty }: LoyaltyRuleFormProps) {
           type: 'error',
           message: t('common.error'),
         });
+        toastError(t('common.error'));
       }
     });
   };

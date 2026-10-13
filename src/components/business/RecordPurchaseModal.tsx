@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import confetti from 'canvas-confetti';
 import { X, Receipt, CheckCircle2, AlertCircle, Sparkles, User, CloudOff } from 'lucide-react';
 import { recordPurchase, type RecordPurchaseResult } from '@/actions/transactions';
 import { calculateLoyaltyPoints } from '@/lib/loyalty-engine';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { useToast } from '@/components/ui/ToastProvider';
 import type { Customer, LoyaltyProgram } from '@/types/database';
 import {
   enqueueOfflineTransaction,
@@ -30,6 +32,7 @@ export function RecordPurchaseModal({
   loyaltyRule,
 }: RecordPurchaseModalProps) {
   const { t, language } = useLanguage();
+  const { success: toastSuccess, error: toastError, info: toastInfo } = useToast();
   const [selectedCustomerId, setSelectedCustomerId] = useState(
     defaultCustomerId || (customers[0]?.id ?? '')
   );
@@ -125,17 +128,25 @@ export function RecordPurchaseModal({
           customerName: selectedCustomer?.name || 'Customer',
           isOffline: true,
         });
+        toastInfo(
+          language === 'ar'
+            ? `تم الحفظ دون اتصال (+${pointsToAward} نقطة)`
+            : language === 'fr'
+            ? `Enregistré hors ligne (+${pointsToAward} pts)`
+            : `Saved offline (+${pointsToAward} pts)`
+        );
         setLoading(false);
         return;
       } catch (err) {
         console.error('Failed to save offline purchase:', err);
-        setError(
+        const errMsg =
           language === 'ar'
             ? 'خطأ أثناء الحفظ المحلي بدون إنترنت.'
             : language === 'fr'
             ? 'Erreur lors de la sauvegarde locale hors ligne.'
-            : 'Error saving local offline purchase.'
-        );
+            : 'Error saving local offline purchase.';
+        setError(errMsg);
+        toastError(errMsg);
         setLoading(false);
         return;
       }
@@ -152,6 +163,7 @@ export function RecordPurchaseModal({
 
       if (res.error) {
         setError(res.error);
+        toastError(res.error);
         setLoading(false);
       } else if (res.success && res.pointsAwarded !== undefined) {
         const finalBalance = res.newBalance || ((selectedCustomer?.points_balance || 0) + res.pointsAwarded);
@@ -163,6 +175,24 @@ export function RecordPurchaseModal({
           customerName: res.customerName || selectedCustomer?.name || 'Customer',
           isOffline: false,
         });
+
+        // Festive confetti burst for awarded points
+        try {
+          confetti({
+            particleCount: 75,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#FFE600', '#000000', '#FFDE59', '#10B981'],
+          });
+        } catch {}
+
+        toastSuccess(
+          language === 'ar'
+            ? `+${res.pointsAwarded} نقطة منحت بنجاح!`
+            : language === 'fr'
+            ? `+${res.pointsAwarded} points attribués avec succès !`
+            : `+${res.pointsAwarded} points awarded successfully!`
+        );
         setLoading(false);
       }
     } catch {
@@ -190,17 +220,25 @@ export function RecordPurchaseModal({
           customerName: selectedCustomer?.name || 'Customer',
           isOffline: true,
         });
+        toastInfo(
+          language === 'ar'
+            ? `تم الحفظ دون اتصال (+${pointsToAward} نقطة)`
+            : language === 'fr'
+            ? `Enregistré hors ligne (+${pointsToAward} pts)`
+            : `Saved offline (+${pointsToAward} pts)`
+        );
         setLoading(false);
       } catch {
         setError(t('common.error'));
+        toastError(t('common.error'));
         setLoading(false);
       }
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150 font-rounded">
-      <div className="bg-white border-2 border-black rounded-[2.5rem] w-full max-w-md max-h-[92vh] flex flex-col overflow-hidden shadow-[0_12px_0_#000]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 font-rounded">
+      <div className="bg-white border-2 border-black rounded-[2.5rem] w-full max-w-md max-h-[92vh] flex flex-col overflow-hidden shadow-[0_16px_0_#000] animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="px-4 sm:px-6 py-4 border-b-2 border-black flex items-center justify-between bg-[#FFE600]">
           <div className="flex items-center gap-2.5 min-w-0">

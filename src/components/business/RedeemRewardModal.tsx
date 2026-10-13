@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import confetti from 'canvas-confetti';
 import { X, Gift, CheckCircle2, AlertCircle, ArrowRight, User } from 'lucide-react';
 import { redeemRewardAction, type RedemptionActionResult } from '@/actions/rewards';
 import type { Customer, Reward } from '@/types/database';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { useToast } from '@/components/ui/ToastProvider';
 
 interface RedeemRewardModalProps {
   isOpen: boolean;
@@ -24,6 +26,7 @@ export function RedeemRewardModal({
   rewards = [],
 }: RedeemRewardModalProps) {
   const { t, language } = useLanguage();
+  const { success: toastSuccess, error: toastError } = useToast();
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>(
     initialCustomer?.id || (customers[0]?.id ?? '')
   );
@@ -86,20 +89,40 @@ export function RedeemRewardModal({
 
       if (res.error) {
         setError(res.error);
+        toastError(res.error);
         setLoading(false);
       } else if (res.success) {
         setResult(res);
+
+        // Grand confetti explosion for reward redemption!
+        try {
+          confetti({
+            particleCount: 110,
+            spread: 90,
+            origin: { y: 0.5 },
+            colors: ['#FFE600', '#000000', '#10B981', '#FFDE59', '#E25B6C'],
+          });
+        } catch {}
+
+        toastSuccess(
+          language === 'ar'
+            ? `تم استبدال المكافأة (${rewardName}) بنجاح!`
+            : language === 'fr'
+            ? `Récompense (${rewardName}) débloquée avec succès !`
+            : `Reward (${rewardName}) redeemed successfully!`
+        );
         setLoading(false);
       }
     } catch {
       setError(t('common.error'));
+      toastError(t('common.error'));
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150 font-rounded">
-      <div className="bg-white border-2 border-black rounded-[2.5rem] w-full max-w-md max-h-[92vh] flex flex-col overflow-hidden shadow-[0_12px_0_#000]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 font-rounded">
+      <div className="bg-white border-2 border-black rounded-[2.5rem] w-full max-w-md max-h-[92vh] flex flex-col overflow-hidden shadow-[0_16px_0_#000] animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="px-4 sm:px-6 py-4 border-b-2 border-black flex items-center justify-between bg-[#FFE600]">
           <div className="flex items-center gap-2.5 min-w-0">

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { X, Gift, AlertCircle, Trash2 } from 'lucide-react';
 import { updateReward, deleteReward, type RewardActionResult } from '@/actions/rewards';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { useToast } from '@/components/ui/ToastProvider';
 import type { Reward } from '@/types/database';
 
 interface EditRewardModalProps {
@@ -14,6 +15,7 @@ interface EditRewardModalProps {
 
 export function EditRewardModal({ isOpen, onClose, reward }: EditRewardModalProps) {
   const { t, language } = useLanguage();
+  const { success: toastSuccess, error: toastError } = useToast();
   const [name, setName] = useState(reward.name);
   const [description, setDescription] = useState(reward.description || '');
   const [pointsRequired, setPointsRequired] = useState(String(reward.points_required));
@@ -37,12 +39,15 @@ export function EditRewardModal({ isOpen, onClose, reward }: EditRewardModalProp
       const res: RewardActionResult = await updateReward(reward.id, formData);
       if (res?.error) {
         setError(res.error);
+        toastError(res.error);
         setLoading(false);
       } else {
+        toastSuccess(t('common.saved'));
         onClose();
       }
     } catch {
       setError(t('common.error'));
+      toastError(t('common.error'));
       setLoading(false);
     }
   };
@@ -55,12 +60,21 @@ export function EditRewardModal({ isOpen, onClose, reward }: EditRewardModalProp
       const res: RewardActionResult = await deleteReward(reward.id);
       if (res?.error) {
         setError(res.error);
+        toastError(res.error);
         setLoading(false);
       } else {
+        toastSuccess(
+          language === 'ar'
+            ? 'تم حذف المكافأة بنجاح'
+            : language === 'fr'
+            ? 'Récompense supprimée avec succès'
+            : 'Reward deleted successfully'
+        );
         onClose();
       }
     } catch {
       setError(t('common.error'));
+      toastError(t('common.error'));
       setLoading(false);
     }
   };

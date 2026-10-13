@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Cairo } from "next/font/google";
 import { cookies } from "next/headers";
 import { LanguageProvider, type Language } from "@/lib/i18n/LanguageContext";
 import { ServiceWorkerRegister } from "@/components/common/ServiceWorkerRegister";
+import { ToastProvider } from "@/components/ui/ToastProvider";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -64,8 +65,10 @@ export default async function RootLayout({
       </head>
       <body className="min-h-screen bg-[var(--background)] text-[var(--foreground)] font-rounded flex flex-col selection:bg-black selection:text-[#FFDE59]">
         <LanguageProvider initialLanguage={initialLang}>
-          <ServiceWorkerRegister />
-          {children}
+          <ToastProvider>
+            <ServiceWorkerRegister />
+            {children}
+          </ToastProvider>
         </LanguageProvider>
       </body>
     </html>

@@ -7,7 +7,7 @@
  * - Stores loyalty rules for offline point calculation.
  * - Manages the pending offline transaction queue with client idempotency keys.
  */
-
+import { verifyDynamicQrToken } from '@/lib/qr-security';
 export interface CachedCustomer {
   id: string;
   business_id: string;
@@ -251,9 +251,15 @@ export async function findCachedCustomerByQr(
   const trimmed = (token || '').trim();
   if (!trimmed) return null;
 
-  // Extract raw ID from format "hbibna:c:<id>"
+  // Extract customer ID from dynamic or legacy QR format
   let rawId = trimmed;
-  if (rawId.startsWith('hbibna:c:')) {
+  if (rawId.startsWith('hbibna:d:')) {
+    const verification = verifyDynamicQrToken(trimmed);
+    if (!verification.valid || !verification.customerId) {
+      return null;
+    }
+    rawId = verification.customerId;
+  } else if (rawId.startsWith('hbibna:c:')) {
     rawId = rawId.slice('hbibna:c:'.length).trim();
   }
 

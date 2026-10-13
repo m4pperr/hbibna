@@ -110,14 +110,14 @@ export function FaqSection({ variant = 'default' }: FaqSectionProps) {
   return (
     <section
       id="faq"
-      className={`py-20 lg:py-28 ${
+      className={`py-10 sm:py-14 lg:py-16 ${
         isFriendly
           ? 'bg-transparent font-rounded border-t border-black/10'
           : 'bg-white border-b border-black/[0.06]'
       }`}
     >
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center space-y-3 mb-14">
+        <div className="text-center space-y-2 mb-8 sm:mb-10">
           <span
             className={`text-xs uppercase font-black tracking-widest px-4 py-1.5 rounded-full inline-block ${
               isFriendly

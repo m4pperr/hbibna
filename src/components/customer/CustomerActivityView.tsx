@@ -31,7 +31,7 @@ export function CustomerActivityView({
   const displayTransactions = transactions;
 
   return (
-    <div className="space-y-6 font-rounded">
+    <div className="space-y-4 sm:space-y-5 font-rounded">
       {/* Page Header */}
       <div className="space-y-1 pb-4 border-b-2 border-black/15">
         <div className="flex items-center gap-2">

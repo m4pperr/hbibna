@@ -35,6 +35,9 @@ export interface Customer {
   points_balance: number;
   referral_code?: string | null;
   referred_by_customer_id?: string | null;
+  wallet_serial_number?: string | null;
+  wallet_share_url?: string | null;
+  wallet_google_url?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -44,6 +47,9 @@ export interface CustomerBusinessMembership {
   customer_id: string;
   business_id: string;
   points_balance: number;
+  wallet_serial_number?: string | null;
+  wallet_share_url?: string | null;
+  wallet_google_url?: string | null;
   created_at: string;
   updated_at: string;
   business?: Business;

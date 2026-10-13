@@ -46,13 +46,13 @@ export function OfflineFeatureSection() {
 
   return (
     <section
-      className="w-full py-20 lg:py-28 border-b-2 border-black"
+      className="w-full py-10 sm:py-14 lg:py-16 border-b-2 border-black"
       style={{ backgroundColor: '#F2F7FF' }}
       id="mode-hors-ligne"
     >
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 font-rounded">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-14">
+        <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border-2 border-black text-xs font-black shadow-[0_3px_0_#000] mb-4">
             <span
               className="w-2.5 h-2.5 rounded-full"

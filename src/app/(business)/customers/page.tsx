@@ -4,7 +4,7 @@ import { fetchBusinessData } from '@/lib/data-service';
 export const dynamic = 'force-dynamic';
 
 export default async function CustomersPage() {
-  const { customers, loyalty } = await fetchBusinessData();
+  const { customers, loyalty, transactions } = await fetchBusinessData();
 
-  return <CustomersView customers={customers} loyalty={loyalty} />;
+  return <CustomersView customers={customers} loyalty={loyalty} transactions={transactions} />;
 }

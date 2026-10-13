@@ -53,6 +53,8 @@ export async function middleware(request: NextRequest) {
     console.warn('Middleware auth verification error or timeout:', err);
   }
 
+  const isCustomer = user?.user_metadata?.role === 'customer';
+
   const isBusinessRoute =
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/customers') ||
@@ -61,21 +63,45 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/loyalty') ||
     pathname.startsWith('/settings');
 
-  // If attempting to access business management without auth, redirect to login
-  if (isBusinessRoute && !user) {
-    if (pathname !== '/login') {
+  // If attempting to access business management:
+  if (isBusinessRoute) {
+    if (!user) {
+      if (pathname !== '/login') {
+        const url = request.nextUrl.clone();
+        url.pathname = '/login';
+        url.searchParams.set('redirect', pathname);
+        return NextResponse.redirect(url);
+      }
+    } else if (isCustomer) {
+      // Customer trying to access business management -> redirect to customer portal
       const url = request.nextUrl.clone();
-      url.pathname = '/login';
-      url.searchParams.set('redirect', pathname);
+      url.pathname = '/customer';
+      const phone = user.user_metadata?.phone;
+      if (phone) url.searchParams.set('phone', phone);
       return NextResponse.redirect(url);
     }
   }
 
-  // If authenticated and visiting login or signup, redirect to dashboard
+  // If authenticated and visiting login or signup:
   if ((pathname === '/login' || pathname === '/signup') && user) {
+    // If redirected due to error or unauthorized, allow staying on login page
+    if (
+      request.nextUrl.searchParams.has('error') ||
+      request.nextUrl.searchParams.has('unauthorized')
+    ) {
+      return response;
+    }
+
     const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
-    return NextResponse.redirect(url);
+    if (isCustomer) {
+      url.pathname = '/customer';
+      const phone = user.user_metadata?.phone;
+      if (phone) url.searchParams.set('phone', phone);
+      return NextResponse.redirect(url);
+    } else {
+      url.pathname = '/dashboard';
+      return NextResponse.redirect(url);
+    }
   }
 
   return response;
