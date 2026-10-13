@@ -89,7 +89,12 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const tierName = points >= 500 ? 'Membre Gold' : points >= 200 ? 'Membre Silver' : 'Membre Bronze';
+    const tierName =
+      points >= 1500
+        ? '⚡ Membre Élite VIP'
+        : points >= 500
+        ? '💎 Membre Privilège'
+        : '👑 Membre VIP Gold';
 
     const pass = await generateWalletPass({
       customerName,

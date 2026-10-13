@@ -101,7 +101,12 @@ export async function getOrCreateCustomerWallet(
 
     // Otherwise generate a fresh pass via WalletWallet
     const points = existingMembership?.points_balance ?? customer?.points_balance ?? 0;
-    const tierName = points >= 500 ? 'Membre Gold' : points >= 200 ? 'Membre Silver' : 'Membre Bronze';
+    const tierName =
+      points >= 1500
+        ? '⚡ Membre Élite VIP'
+        : points >= 500
+        ? '💎 Membre Privilège'
+        : '👑 Membre VIP Gold';
 
     const pass = await generateWalletPass({
       customerName,

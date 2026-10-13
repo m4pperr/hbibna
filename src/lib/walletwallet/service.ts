@@ -54,45 +54,57 @@ export async function generateWalletPass(
       barcodeValue: params.phone,
       barcodeFormat: 'QR',
       barcodeAltText: params.phone,
-      logoText: params.businessName || 'Hbibna',
-      organizationName: params.businessName || 'Hbibna',
+      logoText: 'HBIBNA',
+      organizationName: params.businessName || 'Hbibna Loyalty',
       description: `Pass Fidélité ${params.businessName || 'Hbibna'}`,
       primaryFields: [
         {
-          label: 'POINTS',
-          value: `${params.points} PTS`,
-          changeMessage: 'Solde de points mis à jour : %@',
+          label: 'POINTS CUMULÉS',
+          value: `${params.points.toLocaleString()} PTS`,
+          changeMessage: 'Solde Hbibna mis à jour : %@ PTS',
         },
       ],
       secondaryFields: [
         {
-          label: 'CLIENT',
-          value: params.customerName || 'Client Fidèle',
+          label: 'TITULAIRE',
+          value: params.customerName || 'Client Membre',
         },
         {
           label: 'STATUT',
-          value: params.tierName || 'Membre VIP',
+          value: params.tierName || '👑 VIP GOLD',
         },
       ],
       headerFields: [
         {
-          label: 'CARTE',
-          value: 'HBIBNA',
+          label: 'FIDÉLITÉ',
+          value: params.businessName ? params.businessName.toUpperCase().slice(0, 16) : 'HBIBNA',
         },
       ],
       backFields: [
         {
-          label: 'Commerce',
-          value: params.businessName,
+          label: 'Commerce Partenaire',
+          value: params.businessName || 'Réseau Partenaire Hbibna',
         },
         {
-          label: 'Comment ça marche',
+          label: 'Avantages du Pass',
           value:
-            'Présentez ce QR code au comptoir lors de chaque passage pour cumuler des points et obtenir vos récompenses exclusives.',
+            'Présentez ce QR code à la caisse lors de chaque passage pour cumuler des points, grimper de statut et débloquer des cadeaux exclusifs.',
+        },
+        {
+          label: 'Niveau & Points',
+          value: `${params.tierName || 'Membre VIP'} • ${params.points.toLocaleString()} points disponibles.`,
+        },
+        {
+          label: 'Numéro de Compte Client',
+          value: params.phone,
+        },
+        {
+          label: 'Portail Client en Ligne',
+          value: `https://hbibna-phi.vercel.app/customer?phone=${encodeURIComponent(params.phone)}`,
         },
         {
           label: 'Propulsé par',
-          value: 'Hbibna • Plateforme de fidélisation digitale',
+          value: 'Hbibna • La fidélité phygitale nouvelle génération en Algérie (https://hbibna-phi.vercel.app)',
         },
       ],
       colorPreset: 'dark',
@@ -143,41 +155,57 @@ export async function updateWalletPass(
       barcodeValue: params.phone,
       barcodeFormat: 'QR',
       barcodeAltText: params.phone,
-      logoText: params.businessName || 'Hbibna',
-      organizationName: params.businessName || 'Hbibna',
+      logoText: 'HBIBNA',
+      organizationName: params.businessName || 'Hbibna Loyalty',
       description: `Pass Fidélité ${params.businessName || 'Hbibna'}`,
       primaryFields: [
         {
-          label: 'POINTS',
-          value: `${params.points} PTS`,
-          changeMessage: 'Nouveau solde : %@',
+          label: 'POINTS CUMULÉS',
+          value: `${params.points.toLocaleString()} PTS`,
+          changeMessage: 'Solde Hbibna mis à jour : %@ PTS',
         },
       ],
       secondaryFields: [
         {
-          label: 'CLIENT',
-          value: params.customerName || 'Client Fidèle',
+          label: 'TITULAIRE',
+          value: params.customerName || 'Client Membre',
         },
         {
           label: 'STATUT',
-          value: params.tierName || 'Membre VIP',
+          value: params.tierName || '👑 VIP GOLD',
         },
       ],
       headerFields: [
         {
-          label: 'CARTE',
-          value: 'HBIBNA',
+          label: 'FIDÉLITÉ',
+          value: params.businessName ? params.businessName.toUpperCase().slice(0, 16) : 'HBIBNA',
         },
       ],
       backFields: [
         {
-          label: 'Commerce',
-          value: params.businessName,
+          label: 'Commerce Partenaire',
+          value: params.businessName || 'Réseau Partenaire Hbibna',
         },
         {
-          label: 'Comment ça marche',
+          label: 'Avantages du Pass',
           value:
-            'Présentez ce QR code au comptoir lors de chaque passage pour cumuler des points et obtenir vos récompenses exclusives.',
+            'Présentez ce QR code à la caisse lors de chaque passage pour cumuler des points, grimper de statut et débloquer des cadeaux exclusifs.',
+        },
+        {
+          label: 'Niveau & Points',
+          value: `${params.tierName || 'Membre VIP'} • ${params.points.toLocaleString()} points disponibles.`,
+        },
+        {
+          label: 'Numéro de Compte Client',
+          value: params.phone,
+        },
+        {
+          label: 'Portail Client en Ligne',
+          value: `https://hbibna-phi.vercel.app/customer?phone=${encodeURIComponent(params.phone)}`,
+        },
+        {
+          label: 'Propulsé par',
+          value: 'Hbibna • La fidélité phygitale nouvelle génération en Algérie (https://hbibna-phi.vercel.app)',
         },
       ],
       colorPreset: 'dark',
