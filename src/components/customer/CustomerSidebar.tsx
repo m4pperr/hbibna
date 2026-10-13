@@ -20,6 +20,8 @@ import {
   X,
   Sparkles,
   Users,
+  CreditCard,
+  User,
 } from 'lucide-react';
 
 interface CustomerSidebarProps {
@@ -115,16 +117,17 @@ export function CustomerSidebar({
   };
 
   const navItems = [
-    { name: t('customer.dashboard'), path: '/customer', icon: LayoutDashboard },
+    { name: t('customer.pass'), path: '/customer/pass', altPath: '/customer', icon: CreditCard },
+    { name: t('customer.rewards'), path: '/customer/rewards', altPath: '', icon: Gift },
+    { name: t('customer.activity'), path: '/customer/activity', altPath: '', icon: Clock },
     {
       name: language === 'ar' ? 'الإحالة والمكافآت' : language === 'fr' ? 'Parrainage' : 'Referrals',
       path: '/customer/referral',
+      altPath: '',
       icon: Users,
       badge: language === 'ar' ? 'مكافأة' : language === 'fr' ? '+Bonus' : '+Bonus',
     },
-    { name: t('customer.rewards'), path: '/customer/rewards', icon: Gift },
-    { name: t('customer.activity'), path: '/customer/activity', icon: Clock },
-    { name: t('customer.myQr'), path: '/customer/qr', icon: QrCode },
+    { name: t('customer.account'), path: '/customer/account', altPath: '', icon: User },
   ];
 
   return (
@@ -308,7 +311,7 @@ export function CustomerSidebar({
       {/* 4. Sidebar Navigation Links */}
       <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
         {navItems.map((item) => {
-          const isActive = pathname === item.path;
+          const isActive = pathname === item.path || (!!item.altPath && pathname === item.altPath);
           const Icon = item.icon;
 
           return (

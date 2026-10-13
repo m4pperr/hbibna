@@ -8,7 +8,7 @@ import { CustomerSidebar } from '@/components/customer/CustomerSidebar';
 import { LanguageSelector } from '@/components/common/LanguageSelector';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import type { CustomerBusinessMembership } from '@/types/database';
-import { Menu, LayoutDashboard, Gift, Clock, QrCode, Store } from 'lucide-react';
+import { Menu, LayoutDashboard, Gift, Clock, QrCode, Store, CreditCard, User } from 'lucide-react';
 
 interface CustomerPortalLayoutClientProps {
   memberships: CustomerBusinessMembership[];
@@ -53,10 +53,10 @@ export function CustomerPortalLayoutClient({
   };
 
   const navItems = [
-    { name: t('customer.dashboard'), path: '/customer', icon: LayoutDashboard },
-    { name: t('customer.rewards'), path: '/customer/rewards', icon: Gift },
-    { name: t('customer.activity'), path: '/customer/activity', icon: Clock },
-    { name: t('customer.myQr'), path: '/customer/qr', icon: QrCode },
+    { name: t('customer.pass'), path: '/customer/pass', altPath: '/customer', icon: CreditCard },
+    { name: t('customer.rewards'), path: '/customer/rewards', altPath: '', icon: Gift },
+    { name: t('customer.activity'), path: '/customer/activity', altPath: '', icon: Clock },
+    { name: t('customer.account'), path: '/customer/account', altPath: '', icon: User },
   ];
 
   return (
@@ -146,7 +146,7 @@ export function CustomerPortalLayoutClient({
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t-2 border-black shadow-[0_-4px_0_#000]">
           <div className="flex items-center justify-around h-16 px-2 max-w-md mx-auto">
             {navItems.map((item) => {
-              const isActive = pathname === item.path;
+              const isActive = pathname === item.path || (!!item.altPath && pathname === item.altPath);
               const Icon = item.icon;
 
               return (

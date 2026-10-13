@@ -687,3 +687,60 @@ export async function resolveCustomerFromQr(token: string): Promise<ResolveCusto
     message: `Client existant affilié automatiquement à ${businessName} !`,
   };
 }
+
+/**
+ * Updates an authenticated customer's profile details (name, phone, email).
+ */
+export async function updateCustomerProfile(formData: FormData): Promise<{ success?: boolean; error?: string }> {
+  const customerId = formData.get('customerId') as string;
+  const name = (formData.get('name') as string)?.trim();
+  const phone = (formData.get('phone') as string)?.trim();
+  const email = (formData.get('email') as string)?.trim();
+
+  if (!name) {
+    return { error: 'Le nom est obligatoire.' };
+  }
+  if (!phone) {
+    return { error: 'Le numéro de téléphone est obligatoire.' };
+  }
+
+  const cleanPhone = normalizePhoneNumber(phone);
+  if (!isValidPhoneNumber(cleanPhone)) {
+    return { error: 'Numéro de téléphone invalide.' };
+  }
+
+  const { isSupabaseConfigured } = await import('@/lib/supabase/config');
+  if (!isSupabaseConfigured()) {
+    return { success: true };
+  }
+
+  try {
+    const admin = createAdminClient();
+    const updatePayload: Record<string, unknown> = {
+      name,
+      phone: cleanPhone,
+      email: email || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (customerId) {
+      const { error } = await admin
+        .from('customers')
+        .update(updatePayload)
+        .eq('id', customerId);
+
+      if (error) {
+        console.error('Error updating customer:', error);
+        return { error: error.message };
+      }
+    }
+
+    revalidatePath('/customer');
+    revalidatePath('/customer/account');
+    return { success: true };
+  } catch (err: unknown) {
+    console.error('Error in updateCustomerProfile:', err);
+    return { error: 'Une erreur inattendue est survenue.' };
+  }
+}
+
