@@ -96,12 +96,26 @@ export async function GET(request: NextRequest) {
         ? '💎 Membre Privilège'
         : '👑 Membre VIP Gold';
 
+    let rewardsCatalog: { title: string; points: number }[] = [];
+    if (targetBusinessId) {
+      const { data: dbRewards } = await adminClient
+        .from('rewards')
+        .select('name, points_required')
+        .eq('business_id', targetBusinessId)
+        .eq('is_active', true)
+        .order('points_required', { ascending: true });
+      if (dbRewards && dbRewards.length > 0) {
+        rewardsCatalog = dbRewards.map((r) => ({ title: r.name, points: r.points_required }));
+      }
+    }
+
     const pass = await generateWalletPass({
       customerName,
       phone: effectivePhone,
       businessName,
       points,
       tierName,
+      rewardsCatalog,
     });
 
     if (!pass) {

@@ -19,6 +19,9 @@ export interface CreatePassParams {
   points: number;
   tierName?: string;
   serialNumber?: string;
+  nextRewardTitle?: string;
+  pointsRemaining?: number;
+  rewardsCatalog?: { title: string; points: number }[];
 }
 
 const DEFAULT_WALLET_API_KEY = 'ww_live_aa77cb8f6ab767677d98eaaa0c1fc63d';
@@ -49,6 +52,26 @@ export async function generateWalletPass(
     return null;
   }
 
+  const points = params.points || 0;
+  const nextTarget = points >= 1500 ? 2500 : points >= 500 ? 1500 : 500;
+  const remaining =
+    params.pointsRemaining !== undefined
+      ? params.pointsRemaining
+      : Math.max(0, nextTarget - points);
+
+  const nextReward =
+    params.nextRewardTitle ||
+    (points >= 1500
+      ? 'Expérience VIP Élite & Boisson'
+      : points >= 500
+      ? 'Cadeau Privilège ou Boisson'
+      : 'Remise 20% sur la commande');
+
+  const rewardsListText =
+    params.rewardsCatalog && params.rewardsCatalog.length > 0
+      ? params.rewardsCatalog.map((r) => `• ${r.points} PTS : ${r.title}`).join('\n')
+      : '• 100 PTS : Café ou Boisson offerte ☕\n• 200 PTS : Remise -20% sur la commande 🏷️\n• 500 PTS : Cadeau Privilège ou Box gourmande 🍰\n• 1500 PTS : Expérience VIP Élite exclusive ⭐';
+
   try {
     const payload = {
       barcodeValue: params.phone,
@@ -59,8 +82,8 @@ export async function generateWalletPass(
       description: `Pass Fidélité ${params.businessName || 'Hbibna'}`,
       primaryFields: [
         {
-          label: 'POINTS CUMULÉS',
-          value: `${params.points.toLocaleString()} PTS`,
+          label: 'SOLDE DE POINTS',
+          value: `${points.toLocaleString()} PTS`,
           changeMessage: 'Solde Hbibna mis à jour : %@ PTS',
         },
       ],
@@ -71,7 +94,11 @@ export async function generateWalletPass(
         },
         {
           label: 'STATUT',
-          value: params.tierName || '👑 VIP GOLD',
+          value: params.tierName || (points >= 1500 ? '⚡ ÉLITE VIP' : points >= 500 ? '💎 PRIVILÈGE' : '👑 VIP GOLD'),
+        },
+        {
+          label: 'PROCHAIN CADEAU',
+          value: remaining === 0 ? '🎁 Débloqué en caisse !' : `${nextReward}`,
         },
       ],
       headerFields: [
@@ -82,24 +109,27 @@ export async function generateWalletPass(
       ],
       backFields: [
         {
+          label: '🎁 Catalogue des Récompenses',
+          value: rewardsListText,
+        },
+        {
+          label: '🎯 Progression vers votre Cadeau',
+          value:
+            remaining === 0
+              ? `✨ Félicitations ! Votre récompense (${nextReward}) est 100% prête à être utilisée en caisse.`
+              : `Vous avez ${points} PTS. Plus que ${remaining} PTS pour débloquer votre cadeau (${nextReward}) !`,
+        },
+        {
+          label: '💡 Comment échanger vos points',
+          value:
+            'Présentez simplement ce pass lors de votre passage en caisse et indiquez au commerçant le cadeau que vous souhaitez utiliser. Vos points seront déduits en temps réel.',
+        },
+        {
           label: 'Commerce Partenaire',
           value: params.businessName || 'Réseau Partenaire Hbibna',
         },
         {
-          label: 'Avantages du Pass',
-          value:
-            'Présentez ce QR code à la caisse lors de chaque passage pour cumuler des points, grimper de statut et débloquer des cadeaux exclusifs.',
-        },
-        {
-          label: 'Niveau & Points',
-          value: `${params.tierName || 'Membre VIP'} • ${params.points.toLocaleString()} points disponibles.`,
-        },
-        {
-          label: 'Numéro de Compte Client',
-          value: params.phone,
-        },
-        {
-          label: 'Portail Client en Ligne',
+          label: 'Portail Client & QR Écran',
           value: `https://hbibna-phi.vercel.app/customer?phone=${encodeURIComponent(params.phone)}`,
         },
         {
@@ -150,6 +180,26 @@ export async function updateWalletPass(
   const apiKey = getApiKey();
   if (!apiKey || !serialNumber) return false;
 
+  const points = params.points || 0;
+  const nextTarget = points >= 1500 ? 2500 : points >= 500 ? 1500 : 500;
+  const remaining =
+    params.pointsRemaining !== undefined
+      ? params.pointsRemaining
+      : Math.max(0, nextTarget - points);
+
+  const nextReward =
+    params.nextRewardTitle ||
+    (points >= 1500
+      ? 'Expérience VIP Élite & Boisson'
+      : points >= 500
+      ? 'Cadeau Privilège ou Boisson'
+      : 'Remise 20% sur la commande');
+
+  const rewardsListText =
+    params.rewardsCatalog && params.rewardsCatalog.length > 0
+      ? params.rewardsCatalog.map((r) => `• ${r.points} PTS : ${r.title}`).join('\n')
+      : '• 100 PTS : Café ou Boisson offerte ☕\n• 200 PTS : Remise -20% sur la commande 🏷️\n• 500 PTS : Cadeau Privilège ou Box gourmande 🍰\n• 1500 PTS : Expérience VIP Élite exclusive ⭐';
+
   try {
     const payload = {
       barcodeValue: params.phone,
@@ -160,8 +210,8 @@ export async function updateWalletPass(
       description: `Pass Fidélité ${params.businessName || 'Hbibna'}`,
       primaryFields: [
         {
-          label: 'POINTS CUMULÉS',
-          value: `${params.points.toLocaleString()} PTS`,
+          label: 'SOLDE DE POINTS',
+          value: `${points.toLocaleString()} PTS`,
           changeMessage: 'Solde Hbibna mis à jour : %@ PTS',
         },
       ],
@@ -172,7 +222,11 @@ export async function updateWalletPass(
         },
         {
           label: 'STATUT',
-          value: params.tierName || '👑 VIP GOLD',
+          value: params.tierName || (points >= 1500 ? '⚡ ÉLITE VIP' : points >= 500 ? '💎 PRIVILÈGE' : '👑 VIP GOLD'),
+        },
+        {
+          label: 'PROCHAIN CADEAU',
+          value: remaining === 0 ? '🎁 Débloqué en caisse !' : `${nextReward}`,
         },
       ],
       headerFields: [
@@ -183,24 +237,27 @@ export async function updateWalletPass(
       ],
       backFields: [
         {
+          label: '🎁 Catalogue des Récompenses',
+          value: rewardsListText,
+        },
+        {
+          label: '🎯 Progression vers votre Cadeau',
+          value:
+            remaining === 0
+              ? `✨ Félicitations ! Votre récompense (${nextReward}) est 100% prête à être utilisée en caisse.`
+              : `Vous avez ${points} PTS. Plus que ${remaining} PTS pour débloquer votre cadeau (${nextReward}) !`,
+        },
+        {
+          label: '💡 Comment échanger vos points',
+          value:
+            'Présentez simplement ce pass lors de votre passage en caisse et indiquez au commerçant le cadeau que vous souhaitez utiliser. Vos points seront déduits en temps réel.',
+        },
+        {
           label: 'Commerce Partenaire',
           value: params.businessName || 'Réseau Partenaire Hbibna',
         },
         {
-          label: 'Avantages du Pass',
-          value:
-            'Présentez ce QR code à la caisse lors de chaque passage pour cumuler des points, grimper de statut et débloquer des cadeaux exclusifs.',
-        },
-        {
-          label: 'Niveau & Points',
-          value: `${params.tierName || 'Membre VIP'} • ${params.points.toLocaleString()} points disponibles.`,
-        },
-        {
-          label: 'Numéro de Compte Client',
-          value: params.phone,
-        },
-        {
-          label: 'Portail Client en Ligne',
+          label: 'Portail Client & QR Écran',
           value: `https://hbibna-phi.vercel.app/customer?phone=${encodeURIComponent(params.phone)}`,
         },
         {
