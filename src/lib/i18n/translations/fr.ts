@@ -256,6 +256,8 @@ export const fr = {
     phoneHelper: 'Saisissez votre numéro de mobile pour afficher votre carte, vos récompenses et votre QR code.',
     accessPassButton: 'Ouvrir mon pass',
     dontHaveAccount: "Vous n'avez pas de compte commerçant ?",
+    dontHavePass: "Vous n'avez pas encore de pass fidélité ?",
+    getPassNow: 'Obtenez votre pass',
     alreadyHaveAccount: 'Vous avez déjà un compte ?',
     signIn: 'Se connecter',
     signUpTitle: 'Créer votre compte commerçant',

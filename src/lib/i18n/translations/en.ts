@@ -256,6 +256,8 @@ export const en = {
     phoneHelper: 'Enter your mobile number to view your card, rewards, and QR code.',
     accessPassButton: 'Open My Pass',
     dontHaveAccount: "Don't have a business account?",
+    dontHavePass: "Don't have a digital loyalty pass?",
+    getPassNow: 'Get your pass',
     alreadyHaveAccount: 'Already have an account?',
     signIn: 'Sign in',
     signUpTitle: 'Create your business account',

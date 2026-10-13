@@ -246,14 +246,28 @@ function LoginContent() {
       )}
 
       {/* Footer note */}
-      <div className="pt-4 border-t-2 border-black/10 text-center text-xs font-bold text-black/80">
-        {t('auth.dontHaveAccount')}{' '}
-        <Link
-          href={activeTab === 'customer' ? '/signup?tab=customer' : '/signup'}
-          className="font-black text-black underline hover:text-zinc-800"
-        >
-          {t('auth.registerNow')}
-        </Link>
+      <div className="pt-4 border-t-2 border-black/10 text-center text-xs font-bold text-black/80 min-h-[44px] flex items-center justify-center">
+        {activeTab === 'customer' ? (
+          <p className="transition-opacity duration-150">
+            {t('auth.dontHavePass')}{' '}
+            <Link
+              href="/signup?tab=customer"
+              className="font-black text-black underline hover:text-zinc-800"
+            >
+              {t('auth.getPassNow')}
+            </Link>
+          </p>
+        ) : (
+          <p className="transition-opacity duration-150">
+            {t('auth.dontHaveAccount')}{' '}
+            <Link
+              href="/signup"
+              className="font-black text-black underline hover:text-zinc-800"
+            >
+              {t('auth.registerNow')}
+            </Link>
+          </p>
+        )}
       </div>
     </div>
   );

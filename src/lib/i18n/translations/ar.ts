@@ -256,6 +256,8 @@ export const ar = {
     phoneHelper: 'أدخل رقم هاتفك لعرض بطاقتك ونقاطك والمكافآت المتاحة ورمز QR.',
     accessPassButton: 'عرض بطاقتي',
     dontHaveAccount: 'ليس لديك حساب لنشاطك التجاري؟',
+    dontHavePass: 'ليس لديك بطاقة ولاء رقمية حتى الآن؟',
+    getPassNow: 'احصل على بطاقتك',
     alreadyHaveAccount: 'هل لديك حساب بالفعل؟',
     signIn: 'تسجيل الدخول',
     signUpTitle: 'إنشاء حساب نشاط تجاري',
