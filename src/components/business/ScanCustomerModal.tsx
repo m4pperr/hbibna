@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   ArrowRight,
   User,
+  UserPlus,
   RotateCcw,
   Receipt,
   Keyboard,
@@ -19,7 +20,7 @@ import {
   Wifi,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { resolveCustomerFromQr, type ResolveCustomerResult } from '@/actions/customers';
+import { resolveCustomerFromQr, createCustomer, type ResolveCustomerResult } from '@/actions/customers';
 import { recordPurchase, type RecordPurchaseResult } from '@/actions/transactions';
 import { calculateLoyaltyPoints } from '@/lib/loyalty-engine';
 import type { Customer, LoyaltyProgram } from '@/types/database';
@@ -47,14 +48,33 @@ export function ScanCustomerModal({
   loyaltyRule,
 }: ScanCustomerModalProps) {
   const { t, isRtl, language } = useLanguage();
-  // Modal stages: 'scan' | 'manual' | 'identified' | 'success'
-  const [stage, setStage] = useState<'scan' | 'manual' | 'identified' | 'success'>('scan');
+  // Modal stages: 'scan' | 'manual' | 'identified' | 'success' | 'unregistered' | 'register'
+  const [stage, setStage] = useState<'scan' | 'manual' | 'identified' | 'success' | 'unregistered' | 'register'>('scan');
   const [activeTab, setActiveTab] = useState<'qr' | 'manual'>('qr');
 
   // Scanner & token states
   const [scannerTokenInput, setScannerTokenInput] = useState('');
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+
+  // Auto-enrolled notice state (Case B)
+  const [autoEnrolledInfo, setAutoEnrolledInfo] = useState<{
+    welcomePoints: number;
+    businessName: string;
+    message: string;
+  } | null>(null);
+
+  // Unregistered pass state (Case C)
+  const [unregisteredPass, setUnregisteredPass] = useState<{
+    token: string;
+    suggestedPhone?: string;
+  } | null>(null);
+
+  // Quick register form states
+  const [regName, setRegName] = useState('');
+  const [regPhone, setRegPhone] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regSubmitting, setRegSubmitting] = useState(false);
 
   // Identified customer state
   const [identifiedCustomer, setIdentifiedCustomer] = useState<{
@@ -236,6 +256,17 @@ export function ScanCustomerModal({
     try {
       const result: ResolveCustomerResult = await resolveCustomerFromQr(rawToken);
 
+      // Case C: Unregistered / New Pass -> Fallback to registration flow
+      if (result.notFound || result.isNew) {
+        setUnregisteredPass({
+          token: rawToken,
+          suggestedPhone: result.suggestedPhone,
+        });
+        setStage('unregistered');
+        setResolving(false);
+        return;
+      }
+
       if (result.error) {
         // Prioritize security/expiration rejection over offline fallback
         const isSecurityError =
@@ -258,6 +289,7 @@ export function ScanCustomerModal({
             points_balance: cached.points_balance,
             phone: cached.phone,
           });
+          setAutoEnrolledInfo(null);
           setStage('identified');
           setResolving(false);
           return;
@@ -266,6 +298,25 @@ export function ScanCustomerModal({
         setResolving(false);
       } else if (result.success && result.customer) {
         setIdentifiedCustomer(result.customer);
+        if (result.autoEnrolled) {
+          // Case B: Existing Global Hbibna User, First Time at this Merchant
+          setAutoEnrolledInfo({
+            welcomePoints: result.welcomePoints ?? 0,
+            businessName: result.businessName || '',
+            message: result.message || 'Client Hbibna affilié automatiquement !',
+          });
+          try {
+            confetti({
+              particleCount: 50,
+              spread: 75,
+              origin: { y: 0.5 },
+              colors: ['#10B981', '#FFE600', '#000000', '#3B82F6'],
+            });
+          } catch {}
+        } else {
+          // Case A: Returning regular customer of this business
+          setAutoEnrolledInfo(null);
+        }
         setStage('identified');
         setResolving(false);
       }
@@ -457,13 +508,55 @@ export function ScanCustomerModal({
   // Reset scanner for next customer
   const handleScanNext = () => {
     setIdentifiedCustomer(null);
+    setAutoEnrolledInfo(null);
+    setUnregisteredPass(null);
     setPurchaseAmount('');
     setDescription('');
     setScannerTokenInput('');
     setSuccessResult(null);
     setError(null);
+    setRegName('');
+    setRegPhone('');
+    setRegEmail('');
     setStage('scan');
     setActiveTab('qr');
+  };
+
+  // Quick customer registration handler (Case C fallback)
+  const handleQuickRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!regName.trim() || !regPhone.trim()) {
+      setError(language === 'ar' ? 'يرجى إدخال الاسم ورقم الهاتف.' : 'Veuillez saisir le nom et le numéro de téléphone.');
+      return;
+    }
+    setRegSubmitting(true);
+    setError(null);
+
+    const fd = new FormData();
+    fd.append('name', regName.trim());
+    fd.append('phone', regPhone.trim());
+    if (regEmail.trim()) fd.append('email', regEmail.trim());
+
+    try {
+      const res = await createCustomer(fd);
+      setRegSubmitting(false);
+      if (res.error) {
+        setError(res.error);
+      } else if (res.customer) {
+        setIdentifiedCustomer({
+          id: res.customer.id,
+          name: res.customer.name,
+          points_balance: res.customer.points_balance || 0,
+          phone: res.customer.phone,
+        });
+        setAutoEnrolledInfo(null);
+        setUnregisteredPass(null);
+        setStage('identified');
+      }
+    } catch {
+      setRegSubmitting(false);
+      setError(t('common.error'));
+    }
   };
 
   return (
@@ -697,13 +790,38 @@ export function ScanCustomerModal({
 
           {/* STAGE 2: CUSTOMER IDENTIFIED -> RECORD PURCHASE */}
           {stage === 'identified' && identifiedCustomer && (
-            <form onSubmit={handleConfirmPurchase} className="space-y-5 animate-in fade-in">
+            <form onSubmit={handleConfirmPurchase} className="space-y-4 animate-in fade-in">
+              {/* Instant Auto-Enrollment Visual Feedback Banner (Case B) */}
+              {autoEnrolledInfo && (
+                <div className="p-4 rounded-3xl bg-[#10B981] border-2 border-black text-black shadow-[0_4px_0_#000] space-y-1.5 animate-in zoom-in-95">
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-black">
+                      <Sparkles className="w-4 h-4 stroke-[2.5]" />
+                      ✨ Client Hbibna existant affilié automatiquement !
+                    </span>
+                    <span className="px-2.5 py-0.5 bg-black text-[#FFE600] rounded-full text-[10px] font-black uppercase tracking-wider border border-black shadow-[0_1px_0_#000]">
+                      Auto-Enrolled
+                    </span>
+                  </div>
+                  <p className="text-xs font-bold text-black/90">
+                    Bienvenue chez <span className="font-black text-black">{autoEnrolledInfo.businessName || 'votre établissement'}</span> !
+                    {autoEnrolledInfo.welcomePoints > 0
+                      ? ` Compte fidélité lié avec +${autoEnrolledInfo.welcomePoints} pts de bienvenue offerts.`
+                      : ' Compte fidélité lié instantanément au commerce (0 clic supplémentaire requis).'}
+                  </p>
+                </div>
+              )}
+
               {/* Verified Customer Card */}
               <div className="p-5 rounded-3xl bg-black text-white shadow-[0_6px_0_#000] space-y-3 relative overflow-hidden border-2 border-black">
                 <div className="flex items-center justify-between relative z-10">
-                  <span className="inline-flex items-center gap-1 text-[10px] uppercase font-black tracking-wider px-2.5 py-0.5 rounded-full bg-[#FFE600] text-black border-2 border-black shadow-[0_2px_0_#000]">
+                  <span className={`inline-flex items-center gap-1 text-[10px] uppercase font-black tracking-wider px-2.5 py-0.5 rounded-full border-2 border-black shadow-[0_2px_0_#000] ${
+                    autoEnrolledInfo ? 'bg-[#10B981] text-black' : 'bg-[#FFE600] text-black'
+                  }`}>
                     <ShieldCheck className="w-3 h-3 stroke-[2.5]" />
-                    <span>{t('modals.customerIdentified')}</span>
+                    <span>
+                      {autoEnrolledInfo ? '⚡ Auto-Affilié Réseau' : t('modals.customerIdentified')}
+                    </span>
                   </span>
 
                   <button
@@ -815,6 +933,135 @@ export function ScanCustomerModal({
                   className="px-6 py-2.5 text-xs font-black text-[#FFE600] bg-black hover:bg-neutral-900 border-2 border-black rounded-2xl shadow-[0_4px_0_#000] disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[44px] active:translate-y-0.5 active:shadow-[0_2px_0_#000]"
                 >
                   <span>{confirming ? t('modals.recording') : t('common.confirm')}</span>
+                  <ArrowRight className="w-4 h-4 shrink-0 rtl:rotate-180 stroke-[2.5]" />
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* STAGE 4: UNREGISTERED PASS (CASE C FALLBACK) */}
+          {stage === 'unregistered' && unregisteredPass && (
+            <div className="p-6 rounded-3xl bg-white border-2 border-black shadow-[0_6px_0_#000] space-y-4 text-center animate-in zoom-in-95">
+              <div className="w-16 h-16 rounded-2xl bg-[#FFF9D2] border-2 border-black flex items-center justify-center mx-auto text-black shadow-[0_3px_0_#000]">
+                <AlertCircle className="w-8 h-8 stroke-[2.5] text-amber-600" />
+              </div>
+              <div className="space-y-1.5">
+                <span className="inline-block px-3 py-1 bg-amber-100 text-amber-950 border-2 border-black rounded-full text-[11px] font-black uppercase tracking-wider shadow-[0_2px_0_#000]">
+                  Nouveau Pass / Client Inconnu
+                </span>
+                <h4 className="font-black text-black text-xl">
+                  Client non inscrit à Hbibna
+                </h4>
+                <p className="text-xs text-black/70 font-bold max-w-sm mx-auto">
+                  {unregisteredPass.suggestedPhone
+                    ? `Le numéro ${unregisteredPass.suggestedPhone} n'est pas encore enregistré dans le registre national Hbibna.`
+                    : `Ce pass n'est pas encore associé à un compte client Hbibna.`}
+                </p>
+              </div>
+
+              <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRegName('');
+                    setRegPhone(unregisteredPass.suggestedPhone || '');
+                    setRegEmail('');
+                    setStage('register');
+                  }}
+                  className="flex-1 py-3 px-4 rounded-2xl bg-black hover:bg-neutral-900 text-[#FFE600] text-xs font-black border-2 border-black shadow-[0_4px_0_#000] cursor-pointer flex items-center justify-center gap-2 active:translate-y-0.5 active:shadow-[0_2px_0_#000]"
+                >
+                  <UserPlus className="w-4 h-4 stroke-[2.5]" />
+                  <span>Inscrire ce client</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleScanNext}
+                  className="py-3 px-4 rounded-2xl bg-white hover:bg-[#FFF9D2] text-black text-xs font-black border-2 border-black shadow-[0_4px_0_#000] cursor-pointer active:translate-y-0.5 active:shadow-[0_2px_0_#000]"
+                >
+                  <span>Scanner un autre pass</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STAGE 5: QUICK CUSTOMER REGISTRATION FORM */}
+          {stage === 'register' && (
+            <form onSubmit={handleQuickRegister} className="space-y-4 animate-in fade-in">
+              <div className="p-4 rounded-2xl bg-[#FFF9D2] border-2 border-black shadow-[0_3px_0_#000] flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <UserPlus className="w-5 h-5 stroke-[2.5] text-black" />
+                  <div>
+                    <h4 className="font-black text-sm text-black">Nouvelle Inscription Express</h4>
+                    <p className="text-[11px] text-black/70 font-bold">Créez le profil et ouvrez la caisse immédiatement.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setStage('unregistered')}
+                  className="text-xs font-bold text-black underline cursor-pointer"
+                >
+                  Retour
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-black text-black uppercase tracking-wide mb-1">
+                    Nom & Prénom <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Amine Benali"
+                    value={regName}
+                    onChange={(e) => setRegName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border-2 border-black bg-white font-bold text-black focus:outline-none"
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black text-black uppercase tracking-wide mb-1">
+                    Numéro de Téléphone <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="e.g. 0550 12 34 56"
+                    value={regPhone}
+                    onChange={(e) => setRegPhone(e.target.value)}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border-2 border-black bg-white font-bold text-black focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black text-black uppercase tracking-wide mb-1">
+                    Email (optionnel)
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="e.g. amine@example.com"
+                    value={regEmail}
+                    onChange={(e) => setRegEmail(e.target.value)}
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border-2 border-black bg-white font-bold text-black focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleScanNext}
+                  className="px-4 py-2.5 text-xs font-black text-black bg-white hover:bg-[#FFF9D2] rounded-2xl border-2 border-black shadow-[0_2px_0_#000] transition-colors cursor-pointer"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  type="submit"
+                  disabled={regSubmitting || !regName.trim() || !regPhone.trim()}
+                  className="px-6 py-2.5 text-xs font-black text-[#FFE600] bg-black hover:bg-neutral-900 border-2 border-black rounded-2xl shadow-[0_4px_0_#000] disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>{regSubmitting ? 'Création en cours...' : 'Créer et Ouvrir la Caisse'}</span>
                   <ArrowRight className="w-4 h-4 shrink-0 rtl:rotate-180 stroke-[2.5]" />
                 </button>
               </div>

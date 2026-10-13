@@ -61,6 +61,20 @@ create table if not exists public.customer_businesses (
     constraint uq_customer_business unique (customer_id, business_id)
 );
 
+-- View alias for merchant_customers / enrollments
+create or replace view public.merchant_customers as
+select 
+    id,
+    customer_id,
+    business_id,
+    points_balance,
+    wallet_serial_number,
+    wallet_share_url,
+    wallet_google_url,
+    created_at,
+    updated_at
+from public.customer_businesses;
+
 -- 4. LOYALTY PROGRAMS (RULES CONFIGURATION)
 create table if not exists public.loyalty_programs (
     id uuid primary key default gen_random_uuid(),

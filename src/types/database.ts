@@ -56,6 +56,8 @@ export interface CustomerBusinessMembership {
   customer?: Customer;
 }
 
+export type MerchantCustomer = CustomerBusinessMembership;
+
 export interface LoyaltyProgram {
   id: string;
   business_id: string;

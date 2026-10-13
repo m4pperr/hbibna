@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { getAuthenticatedBusiness } from '@/actions/auth';
 import { calculateLoyaltyPoints } from '@/lib/loyalty-engine';
 import { revalidatePath } from 'next/cache';
@@ -24,11 +24,11 @@ const IDEMPOTENT_TRANSACTION_CACHE = new Map<string, RecordPurchaseResult>();
  * 
  * Strict Server Execution Pipeline:
  * 1. Check idempotency key: if transaction with this clientTxId was already processed, return existing result without re-awarding.
- * 2. Verify customer belongs to the business.
+ * 2. Verify customer belongs to or is enrolled in the business (via customer_businesses).
  * 3. Retrieve the business loyalty rules from Supabase.
  * 4. Calculate points server-side (frontend points value is never accepted).
  * 5. Create transaction record with idempotency metadata.
- * 6. Update customer balance atomically.
+ * 6. Update customer balance atomically in customer_businesses.
  */
 export async function recordPurchase(params: {
   customerId: string;
@@ -53,11 +53,12 @@ export async function recordPurchase(params: {
   }
 
   const supabase = await createClient();
+  const admin = createAdminClient();
   const authBusiness = await getAuthenticatedBusiness();
   const { DEFAULT_BUSINESS, DEFAULT_CUSTOMERS } = await import('@/lib/data-service');
   const businessId = authBusiness?.business?.id || DEFAULT_BUSINESS.id;
 
-  // Step 1: Verify customer belongs to the business
+  // Step 1: Verify customer is enrolled in this business (via customer_businesses OR direct)
   let customer: {
     id: string;
     business_id: string;
@@ -68,15 +69,44 @@ export async function recordPurchase(params: {
   } | null = null;
 
   try {
-    const { data: dbCustomer } = await supabase
+    // 1. Check customer_businesses membership
+    const { data: mem } = await admin
+      .from('customer_businesses')
+      .select('id, points_balance, wallet_serial_number')
+      .eq('customer_id', customerId)
+      .eq('business_id', businessId)
+      .maybeSingle();
+
+    // 2. Fetch customer identity
+    const { data: dbCustomer } = await admin
       .from('customers')
       .select('id, business_id, points_balance, name, phone, wallet_serial_number')
       .eq('id', customerId)
-      .eq('business_id', businessId)
-      .single();
+      .maybeSingle();
 
     if (dbCustomer) {
-      customer = dbCustomer;
+      if (mem) {
+        customer = {
+          ...dbCustomer,
+          points_balance: mem.points_balance,
+          wallet_serial_number: mem.wallet_serial_number || dbCustomer.wallet_serial_number,
+        };
+      } else if (dbCustomer.business_id === businessId) {
+        customer = dbCustomer;
+        // Sync to customer_businesses
+        try {
+          await admin.from('customer_businesses').upsert(
+            {
+              customer_id: dbCustomer.id,
+              business_id: businessId,
+              points_balance: dbCustomer.points_balance || 0,
+              wallet_serial_number: dbCustomer.wallet_serial_number || null,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'customer_id,business_id' }
+          );
+        } catch {}
+      }
     }
   } catch (err) {
     console.warn('Customer lookup in DB failed, checking fallback:', err);
@@ -97,14 +127,14 @@ export async function recordPurchase(params: {
   }
 
   if (!customer) {
-    return { error: 'Customer not found or does not belong to your business.' };
+    return { error: 'Customer not found or not enrolled in your loyalty program.' };
   }
 
   // Idempotency check 2: Database check via idempotency tag
   if (clientTxId) {
     try {
       const idempotencyTag = `[idempotency:${clientTxId}]`;
-      const { data: existingTx } = await supabase
+      const { data: existingTx } = await admin
         .from('transactions')
         .select('id, points, description')
         .eq('business_id', businessId)
@@ -130,11 +160,15 @@ export async function recordPurchase(params: {
   }
 
   // Step 2: Retrieve the business loyalty rules
-  const { data: loyaltyRule } = await supabase
-    .from('loyalty_programs')
-    .select('*')
-    .eq('business_id', businessId)
-    .single();
+  let loyaltyRule: any = null;
+  try {
+    const { data: lr } = await admin
+      .from('loyalty_programs')
+      .select('*')
+      .eq('business_id', businessId)
+      .maybeSingle();
+    loyaltyRule = lr;
+  } catch {}
 
   const rule: Pick<LoyaltyProgram, 'rule_type' | 'points_per_purchase' | 'points_per_currency' | 'currency_unit'> =
     loyaltyRule || {
@@ -152,7 +186,7 @@ export async function recordPurchase(params: {
   // Step 4: Create transaction
   let txId = clientTxId || ('tx_' + Date.now());
   try {
-    const { data: newTx } = await supabase
+    const { data: newTx } = await admin
       .from('transactions')
       .insert({
         business_id: businessId,
@@ -172,18 +206,32 @@ export async function recordPurchase(params: {
     console.warn('DB transaction insert handled:', err);
   }
 
-  // Step 5: Update customer balance atomically
+  // Step 5: Update customer balance atomically in customer_businesses & customers
   const currentBalance = customer.points_balance || 0;
   const newBalance = currentBalance + points;
 
   try {
-    await supabase
-      .from('customers')
-      .update({
-        points_balance: newBalance,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', customerId);
+    await admin
+      .from('customer_businesses')
+      .upsert(
+        {
+          customer_id: customerId,
+          business_id: businessId,
+          points_balance: newBalance,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'customer_id,business_id' }
+      );
+
+    if (customer.business_id === businessId) {
+      await admin
+        .from('customers')
+        .update({
+          points_balance: newBalance,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', customerId);
+    }
 
     // Push live update to Apple & Google Wallet pass on customer's phone
     if (customer.wallet_serial_number) {
@@ -244,11 +292,11 @@ export async function getTransactions(limit = 50): Promise<Transaction[]> {
   }
 
   try {
-    const supabase = await createClient();
+    const admin = createAdminClient();
     const authBusiness = await getAuthenticatedBusiness();
     const businessId = authBusiness?.business.id;
 
-    let query = supabase
+    let query = admin
       .from('transactions')
       .select('*, customers(name, phone)')
       .order('created_at', { ascending: false })

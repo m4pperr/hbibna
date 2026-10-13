@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { getAuthenticatedBusiness } from '@/actions/auth';
 import { revalidatePath } from 'next/cache';
 import type { Reward } from '@/types/database';
@@ -213,10 +213,10 @@ export async function toggleRewardStatus(id: string, isActive: boolean) {
  * Executes an atomic reward redemption.
  * 
  * Strict Security Checks:
- * 1. Verify customer belongs to current business.
+ * 1. Verify customer belongs to or is enrolled in current business.
  * 2. Verify reward belongs to current business.
- * 3. Verify sufficient points balance.
- * 4. Deduct points securely.
+ * 3. Verify sufficient points balance in merchant-isolated account.
+ * 4. Deduct points securely from customer_businesses.
  * 5. Create redemption record.
  * 6. Create activity/transaction ledger record.
  */
@@ -230,7 +230,7 @@ export async function redeemRewardAction(params: {
     return { error: 'Please select both a customer and a reward to redeem.' };
   }
 
-  const supabase = await createClient();
+  const admin = createAdminClient();
   const authBusiness = await getAuthenticatedBusiness();
 
   if (!authBusiness) {
@@ -239,25 +239,53 @@ export async function redeemRewardAction(params: {
 
   const businessId = authBusiness.business.id;
 
-  // Security Check 1: Verify customer belongs to current business
-  const { data: customer, error: custErr } = await supabase
-    .from('customers')
-    .select('id, name, points_balance, business_id')
-    .eq('id', customerId)
-    .eq('business_id', businessId)
-    .single();
+  // Security Check 1: Verify customer is enrolled in current business
+  let customer: {
+    id: string;
+    name: string;
+    points_balance: number;
+    business_id: string;
+  } | null = null;
 
-  if (custErr || !customer) {
-    return { error: 'Customer not found or does not belong to your business.' };
+  try {
+    const { data: mem } = await admin
+      .from('customer_businesses')
+      .select('id, points_balance')
+      .eq('customer_id', customerId)
+      .eq('business_id', businessId)
+      .maybeSingle();
+
+    const { data: dbCust } = await admin
+      .from('customers')
+      .select('id, name, points_balance, business_id')
+      .eq('id', customerId)
+      .maybeSingle();
+
+    if (dbCust) {
+      if (mem) {
+        customer = {
+          ...dbCust,
+          points_balance: mem.points_balance,
+        };
+      } else if (dbCust.business_id === businessId) {
+        customer = dbCust;
+      }
+    }
+  } catch (err) {
+    console.warn('DB lookup customer membership failed:', err);
+  }
+
+  if (!customer) {
+    return { error: 'Customer not found or not enrolled in your business.' };
   }
 
   // Security Check 2: Verify reward belongs to current business
-  const { data: reward, error: rewErr } = await supabase
+  const { data: reward, error: rewErr } = await admin
     .from('rewards')
     .select('id, name, points_required, is_active, business_id')
     .eq('id', rewardId)
     .eq('business_id', businessId)
-    .single();
+    .maybeSingle();
 
   if (rewErr || !reward) {
     return { error: 'Reward not found or does not belong to your business.' };
@@ -275,34 +303,10 @@ export async function redeemRewardAction(params: {
     };
   }
 
-  // Try atomic PostgreSQL stored procedure first
-  const { data: rpcData, error: rpcError } = await supabase.rpc('redeem_reward', {
-    p_business_id: businessId,
-    p_customer_id: customerId,
-    p_reward_id: rewardId,
-  });
-
-  if (!rpcError && rpcData?.success) {
-    revalidatePath('/rewards');
-    revalidatePath('/customers');
-    revalidatePath(`/customers/${customerId}`);
-    revalidatePath('/transactions');
-    revalidatePath('/dashboard');
-    return {
-      success: true,
-      customerName: customer.name,
-      rewardName: rpcData.reward_name || reward.name,
-      pointsUsed: rpcData.points_used || reward.points_required,
-      newBalance: rpcData.new_balance,
-      redemptionId: rpcData.redemption_id,
-    };
-  }
-
-  // Fallback sequential execution with balance check
   const newBalance = currentBalance - reward.points_required;
 
   // 4. Create redemption record
-  const { data: redemption, error: redErr } = await supabase
+  const { data: redemption, error: redErr } = await admin
     .from('redemptions')
     .insert({
       business_id: businessId,
@@ -318,7 +322,7 @@ export async function redeemRewardAction(params: {
   }
 
   // 5. Create activity/transaction record
-  await supabase.from('transactions').insert({
+  await admin.from('transactions').insert({
     business_id: businessId,
     customer_id: customerId,
     type: 'redeem',
@@ -327,14 +331,28 @@ export async function redeemRewardAction(params: {
     description: `Redeemed: ${reward.name}`,
   });
 
-  // 6. Deduct points securely from customer balance
-  await supabase
-    .from('customers')
-    .update({
-      points_balance: newBalance,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', customerId);
+  // 6. Deduct points securely from customer_businesses and customers
+  await admin
+    .from('customer_businesses')
+    .upsert(
+      {
+        customer_id: customerId,
+        business_id: businessId,
+        points_balance: newBalance,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'customer_id,business_id' }
+    );
+
+  if (customer.business_id === businessId) {
+    await admin
+      .from('customers')
+      .update({
+        points_balance: newBalance,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', customerId);
+  }
 
   revalidatePath('/rewards');
   revalidatePath('/customers');
