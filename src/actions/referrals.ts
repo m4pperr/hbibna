@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import type { Customer, Referral, LoyaltyProgram } from '@/types/database';
+import { normalizePhoneNumber, isValidPhoneNumber } from '@/lib/phone';
 
 export interface JoinWithReferralResult {
   success?: boolean;
@@ -19,7 +20,8 @@ export interface JoinWithReferralResult {
  */
 export async function joinWithReferral(formData: FormData): Promise<JoinWithReferralResult> {
   const name = (formData.get('name') as string)?.trim();
-  const phone = (formData.get('phone') as string)?.trim();
+  const rawPhone = (formData.get('phone') as string)?.trim();
+  const phone = rawPhone ? normalizePhoneNumber(rawPhone) : '';
   const rawEmail = (formData.get('email') as string)?.trim();
   const email = rawEmail && rawEmail.length > 0 ? rawEmail.toLowerCase() : null;
   const businessId = (formData.get('businessId') as string)?.trim();
@@ -28,6 +30,10 @@ export async function joinWithReferral(formData: FormData): Promise<JoinWithRefe
 
   if (!name || !phone) {
     return { error: 'Veuillez saisir votre nom et numéro de téléphone.' };
+  }
+
+  if (!isValidPhoneNumber(phone)) {
+    return { error: 'Veuillez saisir un numéro de téléphone valide.' };
   }
 
   if (!businessId) {

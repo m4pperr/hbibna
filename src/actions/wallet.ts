@@ -23,14 +23,13 @@ export async function getOrCreateCustomerWallet(
     return { configured: false };
   }
 
-  const cleanPhone = phone ? phone.replace(/[\s-]/g, '') : '';
+  const { normalizePhoneNumber } = await import('@/lib/phone');
+  const cleanPhone = phone ? normalizePhoneNumber(phone) : '';
   if (!cleanPhone) {
     return { configured: true, error: 'Numéro de téléphone requis.' };
   }
 
-  const altPhone = cleanPhone.startsWith('0')
-    ? `+213${cleanPhone.slice(1)}`
-    : cleanPhone.startsWith('+213')
+  const altPhone = cleanPhone.startsWith('+213')
     ? `0${cleanPhone.slice(4)}`
     : cleanPhone;
 

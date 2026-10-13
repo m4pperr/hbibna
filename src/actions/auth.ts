@@ -4,6 +4,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import type { Business, UserProfile } from '@/types/database';
+import { normalizePhoneNumber, isValidPhoneNumber } from '@/lib/phone';
 
 export interface AuthActionResult {
   success?: boolean;
@@ -21,7 +22,8 @@ export async function signUpBusiness(formData: FormData): Promise<AuthActionResu
   const password = formData.get('password') as string;
   const businessName = (formData.get('businessName') as string)?.trim();
   const ownerName = (formData.get('ownerName') as string)?.trim();
-  const phone = (formData.get('phone') as string)?.trim() || null;
+  const rawPhone = (formData.get('phone') as string)?.trim() || null;
+  const phone = rawPhone ? normalizePhoneNumber(rawPhone) : null;
 
   if (!email || !password || !businessName || !ownerName) {
     return { error: 'Please provide all required fields (Business name, Owner name, Email, Password).' };
@@ -167,10 +169,10 @@ export async function signUpCustomer(formData: FormData): Promise<AuthActionResu
     return { error: 'Password must be at least 6 characters long.' };
   }
 
-  // Clean phone: digits and optional leading plus
-  const cleanPhone = phone.replace(/[\s-]/g, '');
-  if (cleanPhone.length < 8) {
-    return { error: 'Please provide a valid phone number (at least 8 digits).' };
+  // Clean and normalize phone to E.164 standard (+213XXXXXXXXX)
+  const cleanPhone = normalizePhoneNumber(phone);
+  if (!isValidPhoneNumber(cleanPhone)) {
+    return { error: 'Veuillez fournir un numéro de téléphone valide.' };
   }
 
   const supabase = await createClient();
@@ -286,9 +288,9 @@ export async function signInCustomer(formData: FormData): Promise<AuthActionResu
     return { error: 'Veuillez saisir votre numéro de téléphone et votre mot de passe.' };
   }
 
-  const cleanPhone = phone.replace(/[\s-]/g, '');
+  const cleanPhone = normalizePhoneNumber(phone);
 
-  if (cleanPhone.length < 8) {
+  if (!isValidPhoneNumber(cleanPhone)) {
     return { error: 'Veuillez saisir un numéro de téléphone valide.' };
   }
 
@@ -299,12 +301,23 @@ export async function signInCustomer(formData: FormData): Promise<AuthActionResu
   const supabase = await createClient();
   const adminClient = createAdminClient();
 
-  // 1. Check if customer exists in database
+  const altPhone = cleanPhone.startsWith('+213')
+    ? `0${cleanPhone.slice(4)}`
+    : cleanPhone;
+
+  // 1. Check if customer exists in database (support E.164 or legacy local format)
   const { data: customer } = await adminClient
     .from('customers')
-    .select('id, email, auth_user_id')
-    .eq('phone', cleanPhone)
+    .select('id, email, auth_user_id, phone')
+    .or(`phone.eq.${cleanPhone},phone.eq.${altPhone}`)
     .maybeSingle();
+
+  // If customer was in legacy format, gracefully migrate to E.164
+  if (customer && customer.phone !== cleanPhone) {
+    try {
+      await adminClient.from('customers').update({ phone: cleanPhone }).eq('id', customer.id);
+    } catch {}
+  }
 
   // 2. Identify the corresponding Supabase Auth email (registered or synthetic)
   const authEmail = customer?.email || `${cleanPhone.replace(/\+/g, '')}@customer.hbibna.local`;
@@ -407,8 +420,8 @@ export async function resetCustomerPassword(formData: FormData): Promise<AuthAct
     return { error: 'Les mots de passe ne correspondent pas.' };
   }
 
-  const cleanPhone = phone.replace(/[\s-]/g, '');
-  if (cleanPhone.length < 8) {
+  const cleanPhone = normalizePhoneNumber(phone);
+  if (!isValidPhoneNumber(cleanPhone)) {
     return { error: 'Veuillez fournir un numéro de téléphone valide.' };
   }
 
@@ -418,13 +431,16 @@ export async function resetCustomerPassword(formData: FormData): Promise<AuthAct
   }
 
   const adminClient = createAdminClient();
+  const altPhone = cleanPhone.startsWith('+213')
+    ? `0${cleanPhone.slice(4)}`
+    : cleanPhone;
 
   try {
-    // 1. Look up customer in database
+    // 1. Look up customer in database (E.164 or legacy local)
     const { data: customer, error: fetchErr } = await adminClient
       .from('customers')
       .select('*')
-      .eq('phone', cleanPhone)
+      .or(`phone.eq.${cleanPhone},phone.eq.${altPhone}`)
       .maybeSingle();
 
     if (fetchErr) {

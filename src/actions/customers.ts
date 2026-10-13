@@ -4,6 +4,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { getAuthenticatedBusiness } from '@/actions/auth';
 import { revalidatePath } from 'next/cache';
 import { verifyDynamicQrToken } from '@/lib/qr-security';
+import { normalizePhoneNumber, isValidPhoneNumber } from '@/lib/phone';
 import type { Customer, Transaction, Reward } from '@/types/database';
 
 export interface CreateCustomerResult {
@@ -176,7 +177,8 @@ export async function getCustomerById(id: string): Promise<{
  */
 export async function createCustomer(formData: FormData): Promise<CreateCustomerResult> {
   const name = (formData.get('name') as string)?.trim();
-  const phone = (formData.get('phone') as string)?.trim();
+  const rawPhone = (formData.get('phone') as string)?.trim();
+  const phone = rawPhone ? normalizePhoneNumber(rawPhone) : '';
   const rawEmail = (formData.get('email') as string)?.trim();
   const email = rawEmail && rawEmail.length > 0 ? rawEmail.toLowerCase() : null;
   const rawRefCode = (formData.get('referral_code') as string)?.trim();
@@ -184,6 +186,10 @@ export async function createCustomer(formData: FormData): Promise<CreateCustomer
 
   if (!name || !phone) {
     return { error: 'Please enter both the customer name and phone number.' };
+  }
+
+  if (!isValidPhoneNumber(phone)) {
+    return { error: 'Veuillez saisir un numéro de téléphone valide.' };
   }
 
   const supabase = await createClient();
@@ -315,12 +321,17 @@ export async function createCustomer(formData: FormData): Promise<CreateCustomer
  */
 export async function updateCustomer(id: string, formData: FormData) {
   const name = (formData.get('name') as string)?.trim();
-  const phone = (formData.get('phone') as string)?.trim();
+  const rawPhone = (formData.get('phone') as string)?.trim();
+  const phone = rawPhone ? normalizePhoneNumber(rawPhone) : '';
   const rawEmail = (formData.get('email') as string)?.trim();
   const email = rawEmail && rawEmail.length > 0 ? rawEmail.toLowerCase() : null;
 
   if (!name || !phone) {
     return { error: 'Name and phone are required.' };
+  }
+
+  if (!isValidPhoneNumber(phone)) {
+    return { error: 'Veuillez saisir un numéro de téléphone valide.' };
   }
 
   const supabase = await createClient();

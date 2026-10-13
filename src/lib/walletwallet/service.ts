@@ -3,6 +3,8 @@
  * Docs: https://www.walletwallet.dev/llms.txt
  */
 
+import { normalizePhoneNumber, formatPhoneNumber } from '@/lib/phone';
+
 const WALLETWALLET_API_URL = 'https://api.walletwallet.dev';
 
 export interface WalletPassResult {
@@ -72,11 +74,14 @@ export async function generateWalletPass(
       ? params.rewardsCatalog.map((r) => `• ${r.points} PTS : ${r.title}`).join('\n')
       : '• 100 PTS : Café ou Boisson offerte ☕\n• 200 PTS : Remise -20% sur la commande 🏷️\n• 500 PTS : Cadeau Privilège ou Box gourmande 🍰\n• 1500 PTS : Expérience VIP Élite exclusive ⭐';
 
+  const normalizedPhone = normalizePhoneNumber(params.phone);
+  const displayPhone = formatPhoneNumber(params.phone);
+
   try {
     const payload = {
-      barcodeValue: params.phone,
+      barcodeValue: normalizedPhone,
       barcodeFormat: 'QR',
-      barcodeAltText: params.phone,
+      barcodeAltText: displayPhone,
       logoText: 'HBIBNA',
       organizationName: params.businessName || 'Hbibna Loyalty',
       description: `Pass Fidélité ${params.businessName || 'Hbibna'}`,
@@ -130,7 +135,7 @@ export async function generateWalletPass(
         },
         {
           label: 'Portail Client & QR Écran',
-          value: `https://hbibna-phi.vercel.app/customer?phone=${encodeURIComponent(params.phone)}`,
+          value: `https://hbibna-phi.vercel.app/customer?phone=${encodeURIComponent(normalizedPhone)}`,
         },
         {
           label: 'Propulsé par',
@@ -203,11 +208,14 @@ export async function updateWalletPass(
       ? params.rewardsCatalog.map((r) => `• ${r.points} PTS : ${r.title}`).join('\n')
       : '• 100 PTS : Café ou Boisson offerte ☕\n• 200 PTS : Remise -20% sur la commande 🏷️\n• 500 PTS : Cadeau Privilège ou Box gourmande 🍰\n• 1500 PTS : Expérience VIP Élite exclusive ⭐';
 
+  const normalizedPhone = normalizePhoneNumber(params.phone);
+  const displayPhone = formatPhoneNumber(params.phone);
+
   try {
     const payload = {
-      barcodeValue: params.phone,
+      barcodeValue: normalizedPhone,
       barcodeFormat: 'QR',
-      barcodeAltText: params.phone,
+      barcodeAltText: displayPhone,
       logoText: 'HBIBNA',
       organizationName: params.businessName || 'Hbibna Loyalty',
       description: `Pass Fidélité ${params.businessName || 'Hbibna'}`,
@@ -261,7 +269,7 @@ export async function updateWalletPass(
         },
         {
           label: 'Portail Client & QR Écran',
-          value: `https://hbibna-phi.vercel.app/customer?phone=${encodeURIComponent(params.phone)}`,
+          value: `https://hbibna-phi.vercel.app/customer?phone=${encodeURIComponent(normalizedPhone)}`,
         },
         {
           label: 'Propulsé par',

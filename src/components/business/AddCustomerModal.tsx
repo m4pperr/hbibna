@@ -5,6 +5,8 @@ import { X, UserPlus, AlertCircle, CheckCircle2, Phone, Mail, User, Tag } from '
 import { createCustomer, type CreateCustomerResult } from '@/actions/customers';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { useToast } from '@/components/ui/ToastProvider';
+import { PhoneInput } from '@/components/common/PhoneInput';
+import { formatPhoneNumber } from '@/lib/phone';
 
 interface AddCustomerModalProps {
   isOpen: boolean;
@@ -97,6 +99,9 @@ export function AddCustomerModal({ isOpen, onClose }: AddCustomerModalProps) {
             </h4>
             <p className="text-sm text-black/70 font-bold">
               <span className="font-black text-black">{successCustomer.name}</span>{' '}
+              <span className="font-mono text-xs bg-[#FFF9D2] px-2 py-0.5 rounded-lg border border-black text-black">
+                {formatPhoneNumber(successCustomer.phone)}
+              </span>{' '}
               {language === 'ar'
                 ? 'تمت إضافته إلى برنامج الولاء برصيد 0 نقطة.'
                 : language === 'fr'
@@ -136,23 +141,18 @@ export function AddCustomerModal({ isOpen, onClose }: AddCustomerModalProps) {
               <label className="block text-xs font-black text-black mb-1.5 uppercase tracking-wide">
                 {t('modals.phoneNumber')} <span className="text-red-600">*</span>
               </label>
-              <div className="relative">
-                <Phone className="w-4 h-4 text-black/50 absolute ltr:left-3.5 rtl:right-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="tel"
-                  placeholder="0550 12 34 56"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full ltr:pl-10 ltr:pr-3.5 rtl:pr-10 rtl:pl-3.5 py-3 rounded-2xl border-2 border-black bg-[#FFF9D2] text-sm text-black font-black placeholder:text-black/40 focus:bg-white focus:outline-none shadow-[0_3px_0_#000] dir-ltr text-start"
-                  required
-                />
-              </div>
+              <PhoneInput
+                value={phone}
+                onChange={setPhone}
+                required
+                placeholder="550 12 34 56"
+              />
               <p className="text-[11px] text-black/60 mt-1 font-semibold">
                 {language === 'ar'
                   ? 'يُستخدم للتعرف على العميل وبطاقتهم الرقمية.'
                   : language === 'fr'
-                  ? 'Utilisé pour identifier le client et retrouver sa carte de fidélité.'
-                  : 'Used to identify the customer and look up their loyalty card.'}
+                  ? 'Format international (+213) utilisé pour identifier le client et sa carte.'
+                  : 'International format (+213) used to identify customer loyalty card.'}
               </p>
             </div>
 

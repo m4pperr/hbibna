@@ -43,6 +43,7 @@ import { updateBusinessSettings } from '@/actions/business';
 import { changePasswordAction } from '@/actions/auth';
 import { useToast } from '@/components/ui/ToastProvider';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { PhoneInput } from '@/components/common/PhoneInput';
 import type { Business } from '@/types/database';
 
 interface SettingsViewProps {
@@ -300,15 +301,12 @@ export function SettingsView({ business }: SettingsViewProps) {
             <label className="block text-xs font-black text-black mb-1.5 uppercase tracking-wide">
               Numéro de Contact (Mobile / Caisse)
             </label>
-            <div className="relative">
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="0550 12 34 56"
-                className="w-full px-4 py-3 rounded-2xl border-2 border-black bg-[#FFF9D2] focus:bg-white text-sm text-black font-extrabold shadow-[0_3px_0_#000] focus:outline-none transition-colors"
-              />
-            </div>
+            <PhoneInput
+              name="phone"
+              value={phone}
+              onChange={setPhone}
+              placeholder="550 12 34 56"
+            />
           </div>
 
           {/* Email */}
@@ -374,12 +372,11 @@ export function SettingsView({ business }: SettingsViewProps) {
               <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
               Numéro WhatsApp Professionnel
             </label>
-            <input
-              type="tel"
+            <PhoneInput
+              name="whatsapp"
               value={whatsapp}
-              onChange={(e) => setWhatsapp(e.target.value)}
-              placeholder="+213 550 12 34 56"
-              className="w-full px-4 py-3 rounded-2xl border-2 border-black bg-[#FFF9D2] focus:bg-white text-sm text-black font-extrabold shadow-[0_3px_0_#000] focus:outline-none transition-colors"
+              onChange={setWhatsapp}
+              placeholder="550 12 34 56"
             />
           </div>
         </div>

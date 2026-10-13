@@ -8,6 +8,7 @@ import { signInBusiness, signInCustomer, type AuthActionResult } from '@/actions
 import { HbibnaLogo } from '@/components/brand/HbibnaLogo';
 import { LanguageSelector } from '@/components/common/LanguageSelector';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { PhoneInput } from '@/components/common/PhoneInput';
 
 function LoginContent() {
   const searchParams = useSearchParams();
@@ -198,16 +199,11 @@ function LoginContent() {
             <label className="block text-xs font-black text-black mb-1.5 text-start">
               {t('auth.clientPhone')} <span className="text-rose-500 font-black">*</span>
             </label>
-            <div className="relative">
-              <Phone className="w-4 h-4 text-black/60 absolute ltr:left-3.5 rtl:right-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="tel"
-                name="phone"
-                required
-                placeholder="0550 12 34 56"
-                className="w-full ltr:pl-10 ltr:pr-3.5 rtl:pr-10 rtl:pl-3.5 py-3 rounded-2xl border-2 border-black bg-[#FFF9D2] text-sm font-bold text-black placeholder-black/50 focus:outline-none focus:ring-2 focus:ring-black shadow-inner"
-              />
-            </div>
+            <PhoneInput
+              name="phone"
+              required
+              placeholder="550 12 34 56"
+            />
           </div>
 
           <div>

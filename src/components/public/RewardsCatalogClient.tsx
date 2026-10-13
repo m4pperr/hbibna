@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Search, Gift, Store, Tag, Sparkles, ArrowRight, CheckCircle2 } from 'lucide-react';
 import type { PublicBusinessCatalogItem } from '@/lib/data-service';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { formatPhoneNumber } from '@/lib/phone';
 
 interface RewardsCatalogClientProps {
   initialItems: PublicBusinessCatalogItem[];
@@ -184,7 +185,7 @@ export function RewardsCatalogClient({ initialItems }: RewardsCatalogClientProps
                         {biz.name}
                       </h3>
                       {biz.phone && (
-                        <p className="text-xs text-black/60 font-semibold mt-0.5">{biz.phone}</p>
+                        <p className="text-xs text-black/60 font-semibold mt-0.5 dir-ltr">{formatPhoneNumber(biz.phone)}</p>
                       )}
                     </div>
                   </div>

@@ -19,6 +19,7 @@ import {
 import { HbibnaLogo } from '@/components/brand/HbibnaLogo';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { joinWithReferral, type JoinWithReferralResult } from '@/actions/referrals';
+import { PhoneInput } from '@/components/common/PhoneInput';
 import type { Business, LoyaltyProgram, Customer } from '@/types/database';
 
 interface CustomerJoinViewProps {
@@ -232,17 +233,12 @@ export function CustomerJoinView({
                 <label className="block text-xs font-black text-black uppercase tracking-wide">
                   {isAr ? 'رقم الهاتف :' : isFr ? 'Numéro de téléphone :' : 'Phone Number:'}
                 </label>
-                <div className="relative">
-                  <Phone className="w-4 h-4 text-black/50 absolute ltr:left-3.5 rtl:right-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="tel"
-                    required
-                    placeholder="0555 12 34 56"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full ltr:pl-10 ltr:pr-4 rtl:pr-10 rtl:pl-4 py-3 rounded-2xl border-2 border-black bg-[#FFF9D2]/60 focus:bg-white text-sm font-mono font-black text-black placeholder-black/40 shadow-inner focus:outline-none focus:ring-2 focus:ring-black"
-                  />
-                </div>
+                <PhoneInput
+                  value={phone}
+                  onChange={setPhone}
+                  required
+                  placeholder="550 12 34 56"
+                />
               </div>
 
               {/* Referral Code (Prefilled / Optional) */}

@@ -25,6 +25,8 @@ import { recordPurchase, type RecordPurchaseResult } from '@/actions/transaction
 import { calculateLoyaltyPoints } from '@/lib/loyalty-engine';
 import type { Customer, LoyaltyProgram } from '@/types/database';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { PhoneInput } from '@/components/common/PhoneInput';
+import { formatPhoneNumber } from '@/lib/phone';
 import {
   findCachedCustomerByQr,
   enqueueOfflineTransaction,
@@ -769,7 +771,7 @@ export function ScanCustomerModal({
                         >
                           <div>
                             <p className="text-xs font-black text-black">{cust.name}</p>
-                            <p className="text-[11px] text-black/60 font-mono font-semibold" dir="ltr">{cust.phone}</p>
+                            <p className="text-[11px] text-black/60 font-mono font-semibold" dir="ltr">{formatPhoneNumber(cust.phone)}</p>
                           </div>
                           <div className={isRtl ? 'text-left' : 'text-right'}>
                             <span className="text-xs font-black font-mono text-black bg-[#FFE600] px-2 py-0.5 rounded-lg border border-black">
@@ -843,6 +845,9 @@ export function ScanCustomerModal({
                     <h4 className="text-xl font-black text-white tracking-tight">
                       {identifiedCustomer.name}
                     </h4>
+                    <p className="text-xs font-mono text-[#FFE600] font-black" dir="ltr">
+                      {formatPhoneNumber(identifiedCustomer.phone)}
+                    </p>
                   </div>
 
                   <div className={isRtl ? 'text-left' : 'text-right'}>
@@ -954,7 +959,7 @@ export function ScanCustomerModal({
                 </h4>
                 <p className="text-xs text-black/70 font-bold max-w-sm mx-auto">
                   {unregisteredPass.suggestedPhone
-                    ? `Le numéro ${unregisteredPass.suggestedPhone} n'est pas encore enregistré dans le registre national Hbibna.`
+                    ? `Le numéro ${formatPhoneNumber(unregisteredPass.suggestedPhone)} n'est pas encore enregistré dans le registre national Hbibna.`
                     : `Ce pass n'est pas encore associé à un compte client Hbibna.`}
                 </p>
               </div>
@@ -1024,13 +1029,11 @@ export function ScanCustomerModal({
                   <label className="block text-xs font-black text-black uppercase tracking-wide mb-1">
                     Numéro de Téléphone <span className="text-red-600">*</span>
                   </label>
-                  <input
-                    type="tel"
-                    required
-                    placeholder="e.g. 0550 12 34 56"
+                  <PhoneInput
                     value={regPhone}
-                    onChange={(e) => setRegPhone(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border-2 border-black bg-white font-bold text-black focus:outline-none"
+                    onChange={setRegPhone}
+                    required
+                    placeholder="550 12 34 56"
                   />
                 </div>
 

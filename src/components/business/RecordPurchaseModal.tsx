@@ -7,6 +7,7 @@ import { recordPurchase, type RecordPurchaseResult } from '@/actions/transaction
 import { calculateLoyaltyPoints } from '@/lib/loyalty-engine';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { useToast } from '@/components/ui/ToastProvider';
+import { formatPhoneNumber } from '@/lib/phone';
 import type { Customer, LoyaltyProgram } from '@/types/database';
 import {
   enqueueOfflineTransaction,
@@ -366,7 +367,7 @@ export function RecordPurchaseModal({
               >
                 {customers.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name} ({c.phone}) — {c.points_balance} {t('common.pts')}
+                    {c.name} ({formatPhoneNumber(c.phone)}) — {c.points_balance} {t('common.pts')}
                   </option>
                 ))}
               </select>

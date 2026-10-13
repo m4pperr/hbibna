@@ -5,6 +5,7 @@ import { Search, Receipt, Gift, ArrowUpRight, Download, Calendar } from 'lucide-
 import { Pagination } from '@/components/ui/Pagination';
 import { exportTransactionsToCsv } from '@/lib/export-csv';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { formatPhoneNumber } from '@/lib/phone';
 import type { Transaction } from '@/types/database';
 
 const PAGE_SIZE = 10;
@@ -41,9 +42,13 @@ export function TransactionTable({
     // Search query
     if (!search) return true;
     const s = search.toLowerCase();
+    const sNoSpace = s.replace(/[\s-+]/g, '');
+    const cPhoneNoSpace = tx.customer?.phone?.replace(/[\s-+]/g, '') || '';
+    const formattedPhone = tx.customer?.phone ? formatPhoneNumber(tx.customer.phone).toLowerCase() : '';
     return (
       (tx.customer?.name && tx.customer.name.toLowerCase().includes(s)) ||
-      (tx.customer?.phone && tx.customer.phone.includes(s)) ||
+      (tx.customer?.phone && (tx.customer.phone.toLowerCase().includes(s) || formattedPhone.includes(s))) ||
+      (sNoSpace.length > 2 && cPhoneNoSpace && (cPhoneNoSpace.includes(sNoSpace) || sNoSpace.includes(cPhoneNoSpace))) ||
       (tx.description && tx.description.toLowerCase().includes(s))
     );
   });
@@ -234,7 +239,7 @@ export function TransactionTable({
                             {tx.customer?.name || (language === 'ar' ? 'زبون' : language === 'fr' ? 'Client' : 'Customer')}
                           </p>
                           {tx.customer?.phone && (
-                            <p className="text-xs text-black/60 font-mono dir-ltr text-start font-semibold">{tx.customer.phone}</p>
+                            <p className="text-xs text-black/60 font-mono dir-ltr text-start font-semibold">{formatPhoneNumber(tx.customer.phone)}</p>
                           )}
                         </div>
                       </td>
@@ -325,7 +330,7 @@ export function TransactionTable({
                       {tx.customer?.name || (language === 'ar' ? 'زبون' : language === 'fr' ? 'Client' : 'Customer')}
                     </p>
                     {tx.customer?.phone && (
-                      <p className="text-xs text-black/60 font-mono dir-ltr text-start font-semibold">{tx.customer.phone}</p>
+                      <p className="text-xs text-black/60 font-mono dir-ltr text-start font-semibold">{formatPhoneNumber(tx.customer.phone)}</p>
                     )}
                   </div>
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { generateWalletPass, isWalletWalletConfigured } from '@/lib/walletwallet/service';
+import { normalizePhoneNumber } from '@/lib/phone';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,10 +16,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/customer', request.url));
   }
 
-  const cleanPhone = phone ? phone.replace(/[\s-]/g, '') : '';
-  const altPhone = cleanPhone.startsWith('0')
-    ? `+213${cleanPhone.slice(1)}`
-    : cleanPhone.startsWith('+213')
+  const cleanPhone = phone ? normalizePhoneNumber(phone) : '';
+  const altPhone = cleanPhone.startsWith('+213')
     ? `0${cleanPhone.slice(4)}`
     : cleanPhone;
 
@@ -43,7 +42,7 @@ export async function GET(request: NextRequest) {
       customer = data;
     }
 
-    const effectivePhone = cleanPhone || customer?.phone || '0550000000';
+    const effectivePhone = cleanPhone || (customer?.phone ? normalizePhoneNumber(customer.phone) : '+213550000000');
     const customerName = customer?.name || 'Client Fidèle';
 
     // If customer already has an active Apple Pass serial number, redirect directly to Apple pkpass

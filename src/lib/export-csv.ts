@@ -7,6 +7,7 @@
  */
 
 import type { Customer, Transaction } from '@/types/database';
+import { formatPhoneNumber } from '@/lib/phone';
 
 function downloadCsvFile(content: string, filename: string) {
   // UTF-8 BOM (\uFEFF) ensures Excel properly renders accented and Arabic text
@@ -45,7 +46,7 @@ export function exportCustomersToCsv(customers: Customer[], businessName = 'Hbib
   const rows = customers.map((c) => [
     escapeCsvField(c.id),
     escapeCsvField(c.name),
-    escapeCsvField(c.phone),
+    escapeCsvField(formatPhoneNumber(c.phone)),
     escapeCsvField(c.email || ''),
     escapeCsvField(c.points_balance),
     escapeCsvField(c.referral_code || ''),
@@ -78,7 +79,7 @@ export function exportTransactionsToCsv(transactions: Transaction[], businessNam
     escapeCsvField(new Date(t.created_at).toLocaleString('fr-DZ')),
     escapeCsvField(t.type === 'earn' ? 'Attribution Points' : 'Utilisation Récompense'),
     escapeCsvField(t.customer?.name || 'Client'),
-    escapeCsvField(t.customer?.phone || ''),
+    escapeCsvField(t.customer?.phone ? formatPhoneNumber(t.customer.phone) : ''),
     escapeCsvField(t.amount || 0),
     escapeCsvField(t.points),
     escapeCsvField(t.description || ''),

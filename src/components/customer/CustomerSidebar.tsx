@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { HbibnaLogo } from '@/components/brand/HbibnaLogo';
 import { LanguageSelector } from '@/components/common/LanguageSelector';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { formatPhoneNumber } from '@/lib/phone';
 import type { CustomerBusinessMembership } from '@/types/database';
 import {
   Store,
@@ -334,8 +335,8 @@ export function CustomerSidebar({
             <p className="font-black text-black truncate leading-tight text-xs">
               {customerName}
             </p>
-            <p className="text-[10px] text-black/60 truncate mt-0.5 font-bold" dir="ltr">
-              {customerPhone || 'Loyalty Member'}
+            <p className="text-[10px] text-black/60 truncate mt-0.5 font-bold font-mono" dir="ltr">
+              {customerPhone ? formatPhoneNumber(customerPhone) : 'Loyalty Member'}
             </p>
           </div>
         </div>

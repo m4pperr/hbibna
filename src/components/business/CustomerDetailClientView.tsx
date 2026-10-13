@@ -16,6 +16,7 @@ import {
   Tag,
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { formatPhoneNumber } from '@/lib/phone';
 import type { Customer, Transaction, Reward, LoyaltyProgram, Business } from '@/types/database';
 
 interface CustomerDetailClientViewProps {
@@ -65,7 +66,7 @@ export function CustomerDetailClientView({
           <div className="flex flex-wrap items-center gap-5 text-xs text-black/70 font-bold">
             <div className="flex items-center gap-1.5 font-mono text-black dir-ltr">
               <Phone className="w-4 h-4 text-black stroke-[2.5]" />
-              <span>{customer.phone}</span>
+              <span>{formatPhoneNumber(customer.phone)}</span>
             </div>
 
             <div className="flex items-center gap-1.5">

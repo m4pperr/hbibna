@@ -14,6 +14,7 @@ import {
   computeSegmentCounts,
 } from '@/lib/customer-segmentation';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { formatPhoneNumber } from '@/lib/phone';
 import type { Customer, LoyaltyProgram, Transaction } from '@/types/database';
 
 const PAGE_SIZE = 10;
@@ -46,9 +47,14 @@ export function CustomerTable({
     // Search query match
     if (search) {
       const s = search.toLowerCase();
+      const sNoSpace = s.replace(/[\s-+]/g, '');
+      const phoneNoSpace = c.phone.replace(/[\s-+]/g, '');
+      const formattedPhone = formatPhoneNumber(c.phone).toLowerCase();
       const matchesSearch =
         c.name.toLowerCase().includes(s) ||
-        c.phone.includes(s) ||
+        c.phone.toLowerCase().includes(s) ||
+        formattedPhone.includes(s) ||
+        (sNoSpace.length > 2 && (phoneNoSpace.includes(sNoSpace) || sNoSpace.includes(phoneNoSpace))) ||
         (c.email && c.email.toLowerCase().includes(s));
       if (!matchesSearch) return false;
     }
@@ -277,7 +283,7 @@ export function CustomerTable({
 
                     {/* Phone */}
                     <td className="px-6 py-4 font-mono text-xs font-bold text-black/80 dir-ltr text-start">
-                      {customer.phone}
+                      {formatPhoneNumber(customer.phone)}
                     </td>
 
                     {/* Email */}
@@ -370,7 +376,7 @@ export function CustomerTable({
                         <span>{isAr ? analysis.meta.labelAr : analysis.meta.labelFr}</span>
                       </span>
                     </div>
-                    <p className="font-mono text-xs font-bold text-black/70 mt-0.5 dir-ltr text-start">{customer.phone}</p>
+                    <p className="font-mono text-xs font-bold text-black/70 mt-0.5 dir-ltr text-start">{formatPhoneNumber(customer.phone)}</p>
                     {customer.email && (
                       <p className="text-xs text-black/60 truncate mt-0.5">{customer.email}</p>
                     )}

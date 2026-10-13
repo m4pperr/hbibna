@@ -21,6 +21,8 @@ import {
 import { generateDynamicQrToken, QR_ROTATION_INTERVAL_SECONDS } from '@/lib/qr-security';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { getOrCreateCustomerWallet } from '@/actions/wallet';
+import { PhoneInput } from '@/components/common/PhoneInput';
+import { normalizePhoneNumber } from '@/lib/phone';
 import type { Customer, Business, CustomerBusinessMembership } from '@/types/database';
 
 interface CustomerLoyaltyCardProps {
@@ -197,7 +199,8 @@ export function CustomerLoyaltyCard({
   const handleAddToWallet = async (phoneOverride?: string | React.MouseEvent) => {
     setShowWalletModal(true);
     setWalletAdded(true);
-    const phoneToUse = (typeof phoneOverride === 'string' ? phoneOverride : null) || effectivePhone;
+    const rawPhone = (typeof phoneOverride === 'string' ? phoneOverride : null) || effectivePhone;
+    const phoneToUse = rawPhone ? normalizePhoneNumber(rawPhone) : '';
     if (!walletData && phoneToUse) {
       setWalletLoading(true);
       try {
@@ -564,14 +567,14 @@ export function CustomerLoyaltyCard({
                         : 'Entrez votre numéro pour générer le Pass Wallet :'}
                     </p>
                   </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="tel"
-                      value={phoneInput}
-                      onChange={(e) => setPhoneInput(e.target.value)}
-                      placeholder="ex: 0554126311"
-                      className="flex-1 px-3 py-2 rounded-xl border-2 border-black text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#FFE600] bg-zinc-50"
-                    />
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="flex-1">
+                      <PhoneInput
+                        value={phoneInput}
+                        onChange={setPhoneInput}
+                        placeholder="550 12 34 56"
+                      />
+                    </div>
                     <button
                       type="button"
                       onClick={() => {
@@ -579,7 +582,7 @@ export function CustomerLoyaltyCard({
                           handleAddToWallet(phoneInput.trim());
                         }
                       }}
-                      className="px-4 py-2 rounded-xl bg-black text-[#FFE600] text-xs font-black cursor-pointer border-2 border-black shadow-[0_2px_0_#000] active:translate-y-0.5"
+                      className="px-5 py-3 rounded-2xl bg-black text-[#FFE600] text-xs font-black cursor-pointer border-2 border-black shadow-[0_3px_0_#000] active:translate-y-0.5 hover:bg-black/90 shrink-0"
                     >
                       {isAr ? 'تأكيد' : 'Valider'}
                     </button>
