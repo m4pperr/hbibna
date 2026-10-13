@@ -537,23 +537,26 @@ export function CustomerLoyaltyCard({
                   </span>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {/* BOUTON APPLE WALLET (iOS .pkpass) */}
+                <div className="space-y-2.5">
+                  {/* BOUTON APPLE WALLET (iOS Safari .pkpass - SANS ATTRIBUT DOWNLOAD POUR DÉCLENCHER PASSKIT DIRECTEMENT) */}
                   <a
                     href={
                       walletData?.applePassUrl ||
-                      `/api/wallet/pass?phone=${encodeURIComponent(customer?.phone || '')}`
+                      (walletData?.shareUrl ?? `/api/wallet/pass?phone=${encodeURIComponent(customer?.phone || '')}`)
                     }
-                    download
-                    className="w-full py-3 px-4 rounded-2xl bg-black hover:bg-neutral-900 text-white font-black text-xs border-2 border-black shadow-[0_3px_0_#000] active:translate-y-0.5 flex items-center justify-between transition-all group"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-3 px-4 rounded-2xl bg-black hover:bg-neutral-900 text-white font-black text-xs border-2 border-black shadow-[0_3px_0_#000] active:translate-y-0.5 flex items-center justify-between transition-all group cursor-pointer"
                   >
                     <div className="flex items-center gap-2.5">
-                      <span className="text-base">🍏</span>
+                      <span className="text-lg">🍏</span>
                       <div className="text-start leading-tight">
                         <p className="font-black text-xs text-white">
                           {isAr ? 'إضافة إلى Apple Wallet' : isFr ? 'Ajouter à Apple Wallet' : 'Add to Apple Wallet'}
                         </p>
-                        <p className="text-[10px] text-white/60 font-medium">Pass officiel .pkpass</p>
+                        <p className="text-[10px] text-white/70 font-medium">
+                          {isFr ? 'Ouvre directement l’app Cartes sur iPhone' : isAr ? 'يفتح تطبيق المحفظة على آيفون' : 'Opens Apple Wallet on iPhone'}
+                        </p>
                       </div>
                     </div>
                     <ArrowRight className="w-4 h-4 text-[#FFE600] group-hover:translate-x-0.5 transition-transform rtl:rotate-180" />
@@ -565,37 +568,37 @@ export function CustomerLoyaltyCard({
                       href={walletData.googleSaveUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full py-3 px-4 rounded-2xl bg-white hover:bg-zinc-50 text-black font-black text-xs border-2 border-black shadow-[0_3px_0_#000] active:translate-y-0.5 flex items-center justify-between transition-all group"
+                      className="w-full py-3 px-4 rounded-2xl bg-white hover:bg-zinc-50 text-black font-black text-xs border-2 border-black shadow-[0_3px_0_#000] active:translate-y-0.5 flex items-center justify-between transition-all group cursor-pointer"
                     >
                       <div className="flex items-center gap-2.5">
-                        <span className="text-base">🤖</span>
+                        <span className="text-lg">🤖</span>
                         <div className="text-start leading-tight">
                           <p className="font-black text-xs text-black">
                             {isAr ? 'حفظ في Google Wallet' : isFr ? 'Ajouter à Google Wallet' : 'Save to Google Wallet'}
                           </p>
-                          <p className="text-[10px] text-zinc-500 font-medium">Google Pay & Wallet</p>
+                          <p className="text-[10px] text-zinc-500 font-medium">Google Pay & Wallet pour Android</p>
                         </div>
                       </div>
                       <ArrowRight className="w-4 h-4 text-black group-hover:translate-x-0.5 transition-transform rtl:rotate-180" />
                     </a>
                   )}
 
-                  {/* LIEN UNIVERSEL WALLET (WalletWallet Host) */}
+                  {/* LIEN UNIVERSEL WALLET (Page intelligente avec QR code pour PC et détection mobile) */}
                   {walletData?.shareUrl && (
                     <a
                       href={walletData.shareUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full py-2.5 px-3 rounded-xl bg-[#FFE600] hover:bg-[#ffe01b] text-black font-black text-[11px] border-2 border-black shadow-[0_2px_0_#000] active:translate-y-0.5 flex items-center justify-between transition-all"
+                      className="w-full py-2.5 px-3.5 rounded-xl bg-[#FFE600] hover:bg-[#ffe01b] text-black font-black text-[11px] border-2 border-black shadow-[0_2px_0_#000] active:translate-y-0.5 flex items-center justify-between transition-all cursor-pointer"
                     >
-                      <span>
+                      <span className="text-start">
                         {isAr
-                          ? '📲 فتح رابط التثبيت الذكي (كافة الهواتف)'
+                          ? '📲 صفحة التثبيت الشاملة (كافة الأجهزة + QR للمكتب)'
                           : isFr
-                          ? '📲 Ouvrir le lien intelligent (Tous téléphones)'
-                          : '📲 Open Universal Pass Link (All devices)'}
+                          ? '📲 Page d’installation universelle (Tous appareils + QR)'
+                          : '📲 Universal Pass Page (All devices + Desktop QR)'}
                       </span>
-                      <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
+                      <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180 shrink-0 ms-2" />
                     </a>
                   )}
                 </div>

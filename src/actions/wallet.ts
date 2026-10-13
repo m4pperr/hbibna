@@ -80,7 +80,9 @@ export async function getOrCreateCustomerWallet(
         configured: true,
         shareUrl,
         googleSaveUrl,
-        applePassUrl: `/api/wallet/pass?phone=${encodeURIComponent(cleanPhone)}${targetBusinessId ? `&b=${targetBusinessId}` : ''}`,
+        applePassUrl: serialNumber
+          ? `https://api.walletwallet.dev/p/${serialNumber}/apple.pkpass`
+          : `/api/wallet/pass?phone=${encodeURIComponent(cleanPhone)}${targetBusinessId ? `&b=${targetBusinessId}` : ''}`,
         serialNumber,
       };
     }
@@ -130,7 +132,9 @@ export async function getOrCreateCustomerWallet(
       configured: true,
       shareUrl: pass.shareUrl,
       googleSaveUrl: pass.googleSaveUrl,
-      applePassUrl: `/api/wallet/pass?phone=${encodeURIComponent(cleanPhone)}${targetBusinessId ? `&b=${targetBusinessId}` : ''}`,
+      applePassUrl: pass.serialNumber
+        ? `https://api.walletwallet.dev/p/${pass.serialNumber}/apple.pkpass`
+        : `/api/wallet/pass?phone=${encodeURIComponent(cleanPhone)}${targetBusinessId ? `&b=${targetBusinessId}` : ''}`,
       serialNumber: pass.serialNumber,
     };
   } catch (err) {
