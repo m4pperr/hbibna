@@ -74,6 +74,7 @@ export const fr = {
     rewards: 'Récompenses',
     loyaltyProgram: 'Programme de fidélité',
     settings: 'Paramètres',
+    billing: 'Facturation & Abonnement',
     account: 'Compte',
     logout: 'Se déconnecter',
     myQr: 'Mon QR code',

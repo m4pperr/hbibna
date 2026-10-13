@@ -61,7 +61,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/transactions') ||
     pathname.startsWith('/rewards') ||
     pathname.startsWith('/loyalty') ||
-    pathname.startsWith('/settings');
+    pathname.startsWith('/settings') ||
+    pathname.startsWith('/billing');
 
   // If attempting to access business management:
   if (isBusinessRoute) {

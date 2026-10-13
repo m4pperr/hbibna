@@ -74,6 +74,7 @@ export const en = {
     rewards: 'Rewards',
     loyaltyProgram: 'Loyalty Program',
     settings: 'Settings',
+    billing: 'Billing & Plan',
     account: 'Account',
     logout: 'Log out',
     myQr: 'My QR',

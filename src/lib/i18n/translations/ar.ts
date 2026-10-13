@@ -74,6 +74,7 @@ export const ar = {
     rewards: 'المكافآت',
     loyaltyProgram: 'برنامج الولاء',
     settings: 'الإعدادات',
+    billing: 'الاشتراك والفواتير',
     account: 'الحساب',
     logout: 'تسجيل الخروج',
     myQr: 'رمز QR الخاص بي',

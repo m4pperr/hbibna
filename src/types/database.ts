@@ -1,4 +1,4 @@
-export type SubscriptionStatus = 'trial' | 'active' | 'past_due' | 'cancelled' | 'pending_payment';
+export type SubscriptionStatus = 'trial' | 'active' | 'past_due' | 'cancelled' | 'paused' | 'pending_payment';
 export type UserRole = 'owner' | 'manager' | 'cashier';
 export type LoyaltyRuleType = 'per_purchase' | 'per_currency';
 export type TransactionType = 'earn' | 'adjustment' | 'redeem';
@@ -13,6 +13,20 @@ export interface Business {
   plan_name: string;
   plan_price_da: number;
   currency: string;
+  category?: string | null;
+  address?: string | null;
+  city?: string | null;
+  instagram?: string | null;
+  whatsapp?: string | null;
+  brand_color?: string | null;
+  opening_hours?: string | null;
+  billing_name?: string | null;
+  billing_address?: string | null;
+  billing_email?: string | null;
+  tax_id_nif?: string | null;
+  nis?: string | null;
+  rc?: string | null;
+  payment_method?: string | null;
   created_at: string;
   updated_at: string;
 }

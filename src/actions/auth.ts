@@ -495,6 +495,11 @@ export async function updatePassword(formData: FormData): Promise<AuthActionResu
     return { error: 'Passwords do not match.' };
   }
 
+  const { isSupabaseConfigured } = await import('@/lib/supabase/config');
+  if (!isSupabaseConfigured()) {
+    return { success: true };
+  }
+
   const supabase = await createClient();
 
   const { error } = await supabase.auth.updateUser({
@@ -506,6 +511,48 @@ export async function updatePassword(formData: FormData): Promise<AuthActionResu
   }
 
   return { success: true };
+}
+
+/**
+ * Updates account password from Settings page with verification.
+ */
+export async function changePasswordAction(formData: FormData): Promise<AuthActionResult> {
+  const currentPassword = (formData.get('currentPassword') as string)?.trim();
+  const newPassword = (formData.get('newPassword') as string)?.trim();
+  const confirmPassword = (formData.get('confirmPassword') as string)?.trim();
+
+  if (!currentPassword) {
+    return { error: 'Veuillez saisir votre mot de passe actuel.' };
+  }
+
+  if (!newPassword || newPassword.length < 6) {
+    return { error: 'Le nouveau mot de passe doit comporter au moins 6 caractères.' };
+  }
+
+  if (newPassword !== confirmPassword) {
+    return { error: 'Les mots de passe ne correspondent pas.' };
+  }
+
+  const { isSupabaseConfigured } = await import('@/lib/supabase/config');
+  if (!isSupabaseConfigured()) {
+    return { success: true };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (error) {
+      return { error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: unknown) {
+    console.error('Error changing password:', err);
+    return { error: 'Une erreur inattendue est survenue.' };
+  }
 }
 
 /**

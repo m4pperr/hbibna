@@ -9,6 +9,7 @@ import {
   Gift,
   Sliders,
   Settings,
+  CreditCard,
   User,
   LogOut,
   X,
@@ -39,6 +40,7 @@ export function BusinessSidebar({
     { name: t('nav.rewards'), href: '/rewards', icon: Gift },
     { name: t('nav.loyaltyProgram'), href: '/loyalty', icon: Sliders },
     { name: t('nav.settings'), href: '/settings', icon: Settings },
+    { name: t('nav.billing'), href: '/billing', icon: CreditCard },
   ];
 
   const sidebarContent = (
@@ -71,7 +73,9 @@ export function BusinessSidebar({
           {NAV_ITEMS.map((item) => {
             const isActive =
               pathname === item.href ||
-              (item.href !== '/dashboard' && pathname.startsWith(item.href));
+              (item.href !== '/dashboard' && pathname.startsWith(item.href)) ||
+              (item.href === '/settings' && pathname.startsWith('/dashboard/settings')) ||
+              (item.href === '/billing' && pathname.startsWith('/dashboard/billing'));
             const Icon = item.icon;
 
             return (
@@ -109,7 +113,7 @@ export function BusinessSidebar({
             href="/settings"
             onClick={onClose}
             className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl text-sm font-bold transition-all ${
-              pathname === '/settings'
+              pathname === '/settings' || pathname.startsWith('/dashboard/settings')
                 ? 'bg-black text-[#FFE600] border-2 border-black shadow-[0_3px_0_#000]'
                 : 'text-black/75 hover:text-black hover:bg-[#FFF9D2]'
             }`}
