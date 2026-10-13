@@ -82,19 +82,30 @@ export function CustomerLoyaltyCard({
       : '') ||
     phoneInput;
 
+  const isGlobalPass = !business && (!membership || !membership.business_id || membership.business_id === 'default');
+
   const customerName = customer?.name || (isAr ? 'العميل' : 'Client');
-  const activeBusinessName =
-    business?.name || membership?.business?.name || (isAr ? 'المتجر الشريك' : 'Commerce Partenaire');
-  const points =
-    overridePoints !== undefined
-      ? overridePoints
-      : membership?.points_balance !== undefined
-      ? membership.points_balance
-      : customer?.points_balance || 0;
+  const activeBusinessName = isGlobalPass
+    ? (isAr ? 'حبيبنا • الجواز الموحد' : isFr ? 'Hbibna • Pass Universel' : 'Hbibna • Universal Pass')
+    : (business?.name || membership?.business?.name || (isAr ? 'المتجر الشريك' : 'Commerce Partenaire'));
+
+  const points = isGlobalPass
+    ? 0
+    : (overridePoints !== undefined
+        ? overridePoints
+        : membership?.points_balance !== undefined
+        ? membership.points_balance
+        : customer?.points_balance || 0);
 
   // Tier visual configuration
-  const tierConfig =
-    points >= 1500
+  const tierConfig = isGlobalPass
+    ? {
+        tier: isAr ? 'جواز حبيبنا الرقمي الموحد' : isFr ? 'Pass Hbibna Universel' : 'Universal Hbibna Pass',
+        badge: 'GLOBAL PASS',
+        frameBg: '#1A1A1A',
+        accentGrad: 'from-[#FFE600] via-[#FBBF24] to-[#F59E0B]',
+      }
+    : points >= 1500
       ? {
           tier: isAr ? 'بطاقة النخبة VIP' : isFr ? 'Pass Élite VIP' : 'VIP Elite Pass',
           badge: 'ELITE VIP',
@@ -176,8 +187,8 @@ export function CustomerLoyaltyCard({
   }, [customer?.id]);
 
   const customerIdDisplay = customer?.id
-    ? `HB-${customer.id.slice(0, 4).toUpperCase()}-DZ`
-    : 'HB-8821-DZ';
+    ? `HB-${customer.id.replace(/-/g, '').slice(0, 4).toUpperCase()}-DZ`
+    : 'HB-VIP-DZ';
 
   // 3D Tilt handler
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -289,7 +300,9 @@ export function CustomerLoyaltyCard({
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] uppercase font-black tracking-widest text-[#E25B6C]">
-                    PASS FIDÉLITÉ
+                    {isGlobalPass
+                      ? (isAr ? 'جواز موحد' : isFr ? 'PASS UNIVERSEL' : 'UNIVERSAL PASS')
+                      : (isAr ? 'جواز ولاء' : isFr ? 'PASS FIDÉLITÉ' : 'LOYALTY PASS')}
                   </span>
                   <span className="w-1.5 h-1.5 rounded-full bg-black/30" />
                   <span className="text-[9px] font-mono text-zinc-500 font-bold">LIVE</span>
@@ -311,22 +324,30 @@ export function CustomerLoyaltyCard({
             </div>
           </div>
 
-          {/* 2. CENTRE : PROCHAINE RÉCOMPENSE & JAUGE DE PROGRESSION BIEN VISIBLE */}
+          {/* 2. CENTRE : PROCHAINE RÉCOMPENSE OU ÉTAT GLOBAL */}
           <div className="relative z-10 my-3 py-2.5 px-3.5 rounded-2xl bg-white/90 backdrop-blur-xs border-2 border-[#111111] shadow-[0_3px_0_#111111] space-y-2">
-            {/* Ligne 1 : Prochaine récompense à gauche, Solde de points à droite */}
+            {/* Ligne 1 : Statut à gauche, Solde à droite */}
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0">
                 <div
                   className={`relative w-8 h-8 rounded-lg border border-[#111111] flex items-center justify-center bg-gradient-to-r ${tierConfig.accentGrad} shadow-xs shrink-0`}
                 >
-                  <Gift className="w-4 h-4 text-[#111111] stroke-[2.5]" />
+                  {isGlobalPass ? (
+                    <Sparkles className="w-4 h-4 text-[#111111] stroke-[2.5]" />
+                  ) : (
+                    <Gift className="w-4 h-4 text-[#111111] stroke-[2.5]" />
+                  )}
                 </div>
                 <div className="min-w-0 text-start">
                   <span className="text-[9px] uppercase font-black tracking-widest text-[#E25B6C] block leading-none">
-                    {isAr ? 'المكافأة القادمة' : isFr ? 'Prochaine récompense' : 'Next Reward'}
+                    {isGlobalPass
+                      ? (isAr ? 'حالة الجواز الموحد' : isFr ? 'Pass Phygital Universel' : 'Universal Phygital Pass')
+                      : (isAr ? 'المكافأة القادمة' : isFr ? 'Prochaine récompense' : 'Next Reward')}
                   </span>
                   <div className="text-xs sm:text-sm font-black text-[#111111] truncate mt-0.5 leading-tight">
-                    {nextRewardTitle}
+                    {isGlobalPass
+                      ? (isAr ? 'جاهز للمسح لدى جميع المتاجر الشريكة' : isFr ? 'Prêt à être scanné chez vos commerces' : 'Ready to scan at any partner store')
+                      : nextRewardTitle}
                   </div>
                 </div>
               </div>
@@ -342,21 +363,30 @@ export function CustomerLoyaltyCard({
               </div>
             </div>
 
-            {/* Ligne 2 : Jauge de progression bien visible pour le client */}
+            {/* Ligne 2 : Jauge de progression bien visible */}
             <div className="space-y-1 pt-0.5">
               <div className="w-full h-2.5 rounded-full bg-zinc-200 border border-[#111111] p-0.5 overflow-hidden shadow-inner">
                 <div
                   className="h-full rounded-full transition-all duration-700 shadow-xs"
                   style={{
-                    width: `${progressPercent}%`,
-                    backgroundColor:
-                      tierConfig.frameBg === '#1A1A1A' ? '#111111' : tierConfig.frameBg,
+                    width: isGlobalPass ? '100%' : `${progressPercent}%`,
+                    backgroundColor: isGlobalPass
+                      ? '#FFE600'
+                      : tierConfig.frameBg === '#1A1A1A'
+                      ? '#111111'
+                      : tierConfig.frameBg,
                   }}
                 />
               </div>
               <div className="flex items-center justify-between text-[10px] font-mono font-bold text-zinc-600">
                 <span>
-                  {pointsRemaining > 0
+                  {isGlobalPass
+                    ? isAr
+                      ? '⚡ أظهر هذا الرمز عند الكاونتر لبدء جمع النقاط'
+                      : isFr
+                      ? '⚡ Présentez votre QR en caisse pour activer vos points'
+                      : '⚡ Show this QR at counter to activate points'
+                    : pointsRemaining > 0
                     ? isAr
                       ? `${progressPercent}% نحو المكافأة القادمة (${pointsRemaining} نقطة متبقية)`
                       : isFr
@@ -369,7 +399,7 @@ export function CustomerLoyaltyCard({
                     : '✨ 100% Ready to unlock!'}
                 </span>
                 <span className="font-black text-[#111111] px-1.5 py-0.5 rounded bg-black/5">
-                  {progressPercent}%
+                  {isGlobalPass ? 'READY' : `${progressPercent}%`}
                 </span>
               </div>
             </div>

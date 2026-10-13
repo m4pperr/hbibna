@@ -30,7 +30,7 @@ import type {
 
 interface CustomerReferralViewProps {
   customer: Customer | null;
-  activeMembership: CustomerBusinessMembership;
+  activeMembership: CustomerBusinessMembership | null;
   business?: Business | null;
   loyalty?: LoyaltyProgram | null;
   referrals?: Referral[];
@@ -59,14 +59,19 @@ export function CustomerReferralView({
     }
   }, []);
 
-  const businessName = business?.name || activeMembership.business?.name || 'Commerce Partenaire';
+  const businessName =
+    business?.name ||
+    activeMembership?.business?.name ||
+    (isAr ? 'برنامج هبيبنا' : 'Hbibna Pass');
   const referralBonus = loyalty?.referral_bonus_points ?? 50;
   const refereeWelcomeBonus = loyalty?.referee_welcome_points ?? 25;
   const referralCode =
     customer?.referral_code ||
     (customer?.id ? 'HB-' + customer.id.replace(/-/g, '').slice(0, 6).toUpperCase() : 'VIP100');
 
-  const referralUrl = `${origin || 'https://hbibna.dz'}/customer/join?ref=${referralCode}&b=${activeMembership.business_id}`;
+  const referralUrl = `${origin || 'https://hbibna.dz'}/customer/join?ref=${referralCode}${
+    activeMembership?.business_id ? `&b=${activeMembership.business_id}` : ''
+  }`;
 
   const handleCopyLink = () => {
     if (typeof navigator !== 'undefined') {

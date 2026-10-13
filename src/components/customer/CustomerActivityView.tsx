@@ -11,7 +11,7 @@ import type {
 
 interface CustomerActivityViewProps {
   customer: Customer | null;
-  activeMembership: CustomerBusinessMembership;
+  activeMembership: CustomerBusinessMembership | null;
   transactions: Transaction[];
   business?: Business | null;
 }
@@ -24,9 +24,14 @@ export function CustomerActivityView({
 }: CustomerActivityViewProps) {
   const { t, isRtl, language } = useLanguage();
   const isAr = language === 'ar';
+  const isFr = language === 'fr';
 
-  const activeBusinessName = business?.name || activeMembership.business?.name || 'Commerce Partenaire';
-  const pointsBalance = activeMembership.points_balance;
+  const isEnrolled = !!activeMembership && activeMembership.business_id !== 'default';
+  const activeBusinessName =
+    business?.name ||
+    activeMembership?.business?.name ||
+    (isAr ? 'بطاقة حبيبنا العامة' : 'Pass Hbibna Universel');
+  const pointsBalance = activeMembership?.points_balance ?? 0;
 
   const displayTransactions = transactions;
 
@@ -72,8 +77,26 @@ export function CustomerActivityView({
       {/* Activity List */}
       <div className="bg-white border-2 border-black rounded-3xl overflow-hidden shadow-[0_8px_0_#000] divide-y-2 divide-black/10 font-bold">
         {displayTransactions.length === 0 ? (
-          <div className="p-12 text-center text-sm text-black/60 font-bold">
-            {t('customer.noActivity')}
+          <div className="p-10 sm:p-14 text-center space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-[#FFF9D2] border-2 border-black flex items-center justify-center mx-auto shadow-[0_2px_0_#000]">
+              <Clock className="w-6 h-6 text-black stroke-[2.5]" />
+            </div>
+            <p className="font-black text-sm text-black">
+              {t('customer.noActivity')}
+            </p>
+            <p className="text-xs text-black/60 font-semibold max-w-sm mx-auto">
+              {!isEnrolled
+                ? isAr
+                  ? 'لم تقم بأي معاملة بعد. أظهر رمز الاستجابة السريعة (QR) الخاص بك في المتجر لكسب أولى نقاطك!'
+                  : isFr
+                  ? "Vous n'avez pas encore de transactions enregistrées. Présentez votre QR code en caisse pour cumuler vos premiers points !"
+                  : "You haven't made any transactions yet. Present your QR code at the counter to start earning points!"
+                : isAr
+                ? 'ستظهر هنا جميع المشتريات والنقاط المستبدلة فور تسجيلها.'
+                : isFr
+                ? 'Toutes vos opérations et vos gains de points chez ce commerçant apparaîtront ici.'
+                : 'All your purchases and rewards at this merchant will appear here.'}
+            </p>
           </div>
         ) : (
           displayTransactions.map((tx) => {

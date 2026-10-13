@@ -40,6 +40,8 @@ export function CustomerSidebar({
   onCloseMobile,
 }: CustomerSidebarProps) {
   const { t, isRtl, language } = useLanguage();
+  const isAr = language === 'ar';
+  const isFr = language === 'fr';
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -54,11 +56,8 @@ export function CustomerSidebar({
   const activeMembership = useMemo(() => {
     return (
       memberships.find((m) => m.business_id === activeBusinessId) ||
-      memberships[0] || {
-        business_id: 'default',
-        points_balance: 0,
-        business: { name: 'Commerce Partenaire', id: 'default' },
-      }
+      memberships[0] ||
+      null
     );
   }, [memberships, activeBusinessId]);
 
@@ -106,7 +105,11 @@ export function CustomerSidebar({
   // Helper to create link URL preserving the active business
   const getHref = (targetPath: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set('b', activeMembership.business_id);
+    if (activeMembership?.business_id && activeMembership.business_id !== 'default') {
+      params.set('b', activeMembership.business_id);
+    } else {
+      params.delete('b');
+    }
     const qs = params.toString();
     return qs ? `${targetPath}?${qs}` : targetPath;
   };
@@ -160,37 +163,55 @@ export function CustomerSidebar({
           </span>
         </div>
 
-        {/* Trigger Button: e.g. "Artisan Bakery Oran ▼" */}
-        <button
-          type="button"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className={`w-full flex items-center justify-between p-2.5 rounded-2xl border-2 border-black text-left transition-all ${
-            isMenuOpen
-              ? 'bg-[#FFE600] shadow-[0_4px_0_#000]'
-              : 'bg-[#FFF9D2] hover:bg-white shadow-[0_3px_0_#000]'
-          }`}
-          aria-expanded={isMenuOpen}
-          aria-haspopup="true"
-        >
-          <div className="flex items-center gap-2.5 min-w-0 pr-1">
-            <div className="w-8 h-8 rounded-xl bg-white border-2 border-black text-black flex items-center justify-center shrink-0 shadow-[0_2px_0_#000]">
-              <Store className="w-4 h-4 stroke-[2.5]" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-black text-xs text-black truncate leading-tight">
-                {activeMembership.business?.name || t('customer.switchBusiness')}
-              </p>
-              <p className="text-[11px] font-black text-black/80 mt-0.5 leading-none">
-                {activeMembership.points_balance.toLocaleString()} {t('common.pts')}
-              </p>
+        {/* Trigger Button or Universal Pass Banner when 0 enrollments */}
+        {memberships.length === 0 ? (
+          <div className="w-full flex items-center justify-between p-2.5 rounded-2xl border-2 border-black bg-[#FFF9D2] text-left shadow-[0_2px_0_#000]">
+            <div className="flex items-center gap-2.5 min-w-0 pr-1">
+              <div className="w-8 h-8 rounded-xl bg-white border-2 border-black text-black flex items-center justify-center shrink-0 shadow-[0_1px_0_#000]">
+                <Sparkles className="w-4 h-4 stroke-[2.5]" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-black text-xs text-black truncate leading-tight">
+                  {isAr ? 'جواز حبيبنا الموحد' : isFr ? 'Pass Hbibna Universel' : 'Universal Hbibna Pass'}
+                </p>
+                <p className="text-[10px] font-bold text-black/60 truncate mt-0.5">
+                  {isAr ? '0 متاجر منضمة' : isFr ? '0 commerce actif' : '0 active stores'}
+                </p>
+              </div>
             </div>
           </div>
-          <ChevronDown
-            className={`w-4 h-4 text-black shrink-0 transition-transform duration-200 stroke-[2.5] ${
-              isMenuOpen ? 'rotate-180' : ''
+        ) : (
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className={`w-full flex items-center justify-between p-2.5 rounded-2xl border-2 border-black text-left transition-all cursor-pointer ${
+              isMenuOpen
+                ? 'bg-[#FFE600] shadow-[0_4px_0_#000]'
+                : 'bg-[#FFF9D2] hover:bg-white shadow-[0_3px_0_#000]'
             }`}
-          />
-        </button>
+            aria-expanded={isMenuOpen}
+            aria-haspopup="true"
+          >
+            <div className="flex items-center gap-2.5 min-w-0 pr-1">
+              <div className="w-8 h-8 rounded-xl bg-white border-2 border-black text-black flex items-center justify-center shrink-0 shadow-[0_2px_0_#000]">
+                <Store className="w-4 h-4 stroke-[2.5]" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-black text-xs text-black truncate leading-tight">
+                  {activeMembership?.business?.name || t('customer.switchBusiness')}
+                </p>
+                <p className="text-[11px] font-black text-black/80 mt-0.5 leading-none">
+                  {(activeMembership?.points_balance || 0).toLocaleString()} {t('common.pts')}
+                </p>
+              </div>
+            </div>
+            <ChevronDown
+              className={`w-4 h-4 text-black shrink-0 transition-transform duration-200 stroke-[2.5] ${
+                isMenuOpen ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+        )}
 
         {/* 3. Dropdown Menu / Popover */}
         {isMenuOpen && (

@@ -9,6 +9,7 @@ import type {
   Referral,
 } from '@/types/database';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
+import { normalizePhoneNumber } from '@/lib/phone';
 
 // ---------------------------------------------------------------------------
 // 1. BUSINESS DEFINITIONS (Isolated Tenants)
@@ -347,13 +348,13 @@ export async function fetchBusinessData() {
 // Enables the customer to see every business they belong to and switch between them.
 // ---------------------------------------------------------------------------
 export interface CustomerPortalData {
-  customer: Customer;
+  customer: Customer | null;
   memberships: CustomerBusinessMembership[];
-  activeMembership: CustomerBusinessMembership;
+  activeMembership: CustomerBusinessMembership | null;
   rewards: Reward[];
   transactions: Transaction[];
-  business: Business;
-  loyalty: LoyaltyProgram;
+  business: Business | null;
+  loyalty: LoyaltyProgram | null;
   referrals: Referral[];
 }
 
@@ -380,16 +381,29 @@ export async function fetchCustomerPortalData(params?: {
           .select('*')
           .or(`auth_user_id.eq.${authData.user.id},id.eq.${authData.user.id}`)
           .maybeSingle();
-        if (c) dbCustomer = c as Customer;
+        if (c) {
+          dbCustomer = c as Customer;
+        } else if (authData.user.user_metadata?.phone) {
+          // Fallback by phone registered in auth metadata
+          const cleanUPhone = normalizePhoneNumber(authData.user.user_metadata.phone);
+          const altUPhone = cleanUPhone.startsWith('+213') ? '0' + cleanUPhone.slice(4) : cleanUPhone;
+          const { data: cByPhone } = await supabase
+            .from('customers')
+            .select('*')
+            .or(`phone.eq.${cleanUPhone},phone.eq.${altUPhone}`)
+            .maybeSingle();
+          if (cByPhone) dbCustomer = cByPhone as Customer;
+        }
       }
 
       // 2. By phone parameter
       if (!dbCustomer && phone) {
-        const cleanPhone = phone.trim();
+        const cleanPhone = normalizePhoneNumber(phone);
+        const altPhone = cleanPhone.startsWith('+213') ? '0' + cleanPhone.slice(4) : cleanPhone;
         const { data: c } = await supabase
           .from('customers')
           .select('*')
-          .eq('phone', cleanPhone)
+          .or(`phone.eq.${cleanPhone},phone.eq.${altPhone}`)
           .maybeSingle();
         if (c) dbCustomer = c as Customer;
       }
@@ -404,14 +418,38 @@ export async function fetchCustomerPortalData(params?: {
         if (c) dbCustomer = c as Customer;
       }
 
+      // 4. If logged in auth user exists but no customer row found yet in DB
+      if (!dbCustomer && authData?.user) {
+        const u = authData.user;
+        const uName = u.user_metadata?.name || u.email?.split('@')[0] || 'Client Hbibna';
+        const uPhone = u.user_metadata?.phone || (phone ? normalizePhoneNumber(phone) : '');
+        dbCustomer = {
+          id: u.id,
+          business_id: '',
+          name: uName,
+          phone: uPhone,
+          email: u.email || null,
+          points_balance: 0,
+          referral_code: 'HB-' + u.id.replace(/-/g, '').slice(0, 6).toUpperCase(),
+          created_at: u.created_at || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as unknown as Customer;
+      }
+
       if (dbCustomer) {
         // Guarantee referral code if missing
         if (!dbCustomer.referral_code) {
           const generatedCode = 'HB-' + (dbCustomer.id.replace(/-/g, '').slice(0, 6).toUpperCase() || 'AMIS01');
           dbCustomer.referral_code = generatedCode;
-          // Optionally update DB in background
           supabase.from('customers').update({ referral_code: generatedCode }).eq('id', dbCustomer.id).then();
         }
+
+        // Fetch referrals made by this customer
+        const { data: referralsData } = await supabase
+          .from('referrals')
+          .select('*, referred:customers!referrals_referred_id_fkey(name, phone)')
+          .eq('referrer_id', dbCustomer.id)
+          .order('created_at', { ascending: false });
 
         // Query isolated memberships for this customer across businesses
         const { data: membershipsData } = await supabase
@@ -428,7 +466,7 @@ export async function fetchCustomerPortalData(params?: {
             points_balance: m.points_balance || 0,
             created_at: m.created_at,
             updated_at: m.updated_at,
-            business: m.businesses || DEFAULT_BUSINESS,
+            business: m.businesses || null,
           }));
 
           const activeMembership =
@@ -450,13 +488,6 @@ export async function fetchCustomerPortalData(params?: {
             .eq('business_id', activeMembership.business_id)
             .maybeSingle();
 
-          // Fetch referrals made by this customer
-          const { data: referralsData } = await supabase
-            .from('referrals')
-            .select('*, referred:customers!referrals_referred_id_fkey(name, phone)')
-            .eq('referrer_id', dbCustomer.id)
-            .order('created_at', { ascending: false });
-
           // Fetch transaction activity for this customer at the selected business
           const { data: txData } = await supabase
             .from('transactions')
@@ -471,8 +502,20 @@ export async function fetchCustomerPortalData(params?: {
             activeMembership,
             rewards: (rewardsData as Reward[]) || [],
             transactions: (txData as Transaction[]) || [],
-            business: activeMembership.business || DEFAULT_BUSINESS,
-            loyalty: (loyaltyData as LoyaltyProgram) || DEFAULT_LOYALTY,
+            business: activeMembership.business || null,
+            loyalty: (loyaltyData as LoyaltyProgram) || null,
+            referrals: (referralsData as unknown as Referral[]) || [],
+          };
+        } else {
+          // Customer exists, but has 0 merchant enrollments yet!
+          return {
+            customer: dbCustomer,
+            memberships: [],
+            activeMembership: null,
+            rewards: [],
+            transactions: [],
+            business: null,
+            loyalty: null,
             referrals: (referralsData as unknown as Referral[]) || [],
           };
         }
@@ -482,38 +525,28 @@ export async function fetchCustomerPortalData(params?: {
     }
   }
 
-  // Clean fallback when no customer is found
+  // Clean fallback when no customer is found (Guest / 0 Enrollments)
   const cleanId = customerId || 'guest';
   const cleanCustomer: Customer = {
     id: cleanId,
-    business_id: businessId || DEFAULT_BUSINESS.id,
-    name: 'Nouveau Client',
-    phone: phone || '',
+    business_id: '',
+    name: 'Client Hbibna',
+    phone: phone ? normalizePhoneNumber(phone) : '',
     email: null,
     points_balance: 0,
-    referral_code: 'HB-' + (cleanId.replace(/-/g, '').slice(0, 6).toUpperCase() || 'AMIS01'),
+    referral_code: 'HB-' + (cleanId.replace(/-/g, '').slice(0, 6).toUpperCase() || 'VIP01'),
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-  };
-
-  const cleanMembership: CustomerBusinessMembership = {
-    id: 'mem-clean',
-    customer_id: cleanCustomer.id,
-    business_id: businessId || DEFAULT_BUSINESS.id,
-    points_balance: 0,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    business: DEFAULT_BUSINESS,
   };
 
   return {
     customer: cleanCustomer,
     memberships: [],
-    activeMembership: cleanMembership,
+    activeMembership: null,
     rewards: [],
     transactions: [],
-    business: DEFAULT_BUSINESS,
-    loyalty: DEFAULT_LOYALTY,
+    business: null,
+    loyalty: null,
     referrals: [],
   };
 }

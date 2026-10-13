@@ -8,7 +8,7 @@ import type { Customer, CustomerBusinessMembership, Business } from '@/types/dat
 
 interface CustomerQrViewProps {
   customer: Customer | null;
-  activeMembership: CustomerBusinessMembership;
+  activeMembership: CustomerBusinessMembership | null;
   business?: Business | null;
 }
 
@@ -21,7 +21,10 @@ export function CustomerQrView({
   const isAr = language === 'ar';
   const isFr = language === 'fr';
 
-  const activeBusinessName = business?.name || activeMembership.business?.name || (isAr ? 'المتجر الشريك' : 'Commerce Partenaire');
+  const isGlobalPass = !business && (!activeMembership || !activeMembership.business_id);
+  const activeBusinessName = isGlobalPass
+    ? (isAr ? 'حبيبنا • الجواز الموحد' : isFr ? 'Hbibna • Pass Universel' : 'Hbibna • Universal Pass')
+    : (business?.name || activeMembership?.business?.name || 'Commerce Partenaire');
   const activeQueryStr = business?.id ? `?b=${business.id}` : '';
 
   return (
@@ -37,7 +40,7 @@ export function CustomerQrView({
         </Link>
 
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFE600] border-2 border-black shadow-[0_2px_0_#000] text-xs font-black text-black">
-          <Store className="w-3.5 h-3.5 stroke-[2.5]" />
+          {isGlobalPass ? <Sparkles className="w-3.5 h-3.5 stroke-[2.5]" /> : <Store className="w-3.5 h-3.5 stroke-[2.5]" />}
           <span className="truncate max-w-[150px]">{activeBusinessName}</span>
         </div>
       </div>
@@ -45,13 +48,21 @@ export function CustomerQrView({
       {/* 2. Title & Scanning Prompt */}
       <div className="space-y-1">
         <span className="text-[10px] font-black uppercase tracking-widest text-[#E25B6C]">
-          {isAr ? 'بطاقة الولاء الرقمية الرسمية' : isFr ? 'Pass Phygital Officiel' : 'Official Phygital Pass'}
+          {isGlobalPass
+            ? (isAr ? 'جواز رقمي موحد' : isFr ? 'Pass Universel Phygital' : 'Universal Phygital Pass')
+            : (isAr ? 'بطاقة الولاء الرقمية الرسمية' : isFr ? 'Pass Phygital Officiel' : 'Official Phygital Pass')}
         </span>
         <h1 className="text-2xl sm:text-3xl font-black text-black tracking-tight">
           {t('customer.myQr')}
         </h1>
         <p className="text-xs text-black/70 font-bold max-w-xs mx-auto">
-          {t('customer.qrPresentInstruction')} ({activeBusinessName})
+          {isGlobalPass
+            ? (isAr
+                ? 'أظهر هذا الرمز عند الكاونتر لدى أي متجر شريك للانضمام وكسب النقاط'
+                : isFr
+                ? 'Présentez ce QR au comptoir de n’importe quel commerce partenaire pour activer vos points.'
+                : 'Show this QR code at any participating store counter to earn points.')
+            : `${t('customer.qrPresentInstruction')} (${activeBusinessName})`}
         </p>
       </div>
 

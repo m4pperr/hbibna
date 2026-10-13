@@ -9,7 +9,7 @@ interface CustomerHomePageProps {
 
 export default async function CustomerHomePage({ searchParams }: CustomerHomePageProps) {
   const { phone, c: customerId, b: businessId } = await searchParams;
-  const { customer, activeMembership, rewards, transactions, business, loyalty, referrals } =
+  const { customer, memberships, activeMembership, rewards, transactions, business, loyalty, referrals } =
     await fetchCustomerPortalData({ phone, customerId, businessId });
 
   // Build query string helper for links
@@ -17,7 +17,7 @@ export default async function CustomerHomePage({ searchParams }: CustomerHomePag
     const params = new URLSearchParams();
     if (customer?.phone) params.set('phone', customer.phone);
     else if (customer?.id) params.set('c', customer.id);
-    if (activeMembership.business_id) params.set('b', activeMembership.business_id);
+    if (activeMembership?.business_id) params.set('b', activeMembership.business_id);
     const qs = params.toString();
     return qs ? `?${qs}` : '';
   };
@@ -27,6 +27,7 @@ export default async function CustomerHomePage({ searchParams }: CustomerHomePag
   return (
     <CustomerHomeView
       customer={customer}
+      memberships={memberships}
       activeMembership={activeMembership}
       rewards={rewards}
       transactions={transactions}

@@ -35,17 +35,19 @@ export function CustomerPortalLayoutClient({
 
   const activeMembership =
     memberships.find((m) => m.business_id === targetId) ||
-    memberships[0] || {
-      business_id: 'default',
-      points_balance: 0,
-      business: { name: 'Commerce Partenaire' },
-    };
+    memberships[0] ||
+    null;
 
-  const activeBusinessName = activeMembership.business?.name || 'Commerce Partenaire';
+  const activeBusinessName =
+    activeMembership?.business?.name || (isRtl ? 'بطاقة حبيبنا العامة' : 'Pass Hbibna Universel');
 
   const getHref = (targetPath: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set('b', activeMembership.business_id);
+    if (activeMembership?.business_id) {
+      params.set('b', activeMembership.business_id);
+    } else {
+      params.delete('b');
+    }
     const qs = params.toString();
     return qs ? `${targetPath}?${qs}` : targetPath;
   };
@@ -63,7 +65,7 @@ export function CustomerPortalLayoutClient({
       <aside className={`hidden lg:block w-72 shrink-0 h-screen sticky top-0 z-30 ${isRtl ? 'border-l-2' : 'border-r-2'} border-black bg-white`}>
         <CustomerSidebar
           memberships={memberships}
-          activeBusinessId={activeMembership.business_id}
+          activeBusinessId={activeMembership?.business_id}
           customerName={customerName}
           customerPhone={customerPhone}
         />
@@ -82,7 +84,7 @@ export function CustomerPortalLayoutClient({
           <div className={`fixed inset-y-0 ${isRtl ? 'right-0 slide-in-from-right' : 'left-0 slide-in-from-left'} w-72 max-w-[85vw] shadow-2xl bg-white z-50 animate-in duration-200 border-2 border-black`}>
             <CustomerSidebar
               memberships={memberships}
-              activeBusinessId={activeMembership.business_id}
+              activeBusinessId={activeMembership?.business_id}
               customerName={customerName}
               customerPhone={customerPhone}
               isOpenMobile={true}

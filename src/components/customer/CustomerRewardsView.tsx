@@ -1,12 +1,11 @@
-'use client';
-
-import { Gift, CheckCircle2, Lock, Sparkles, Store } from 'lucide-react';
+import Link from 'next/link';
+import { Gift, CheckCircle2, Lock, Sparkles, Store, ArrowRight } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import type { Customer, CustomerBusinessMembership, Reward, Business } from '@/types/database';
 
 interface CustomerRewardsViewProps {
   customer: Customer | null;
-  activeMembership: CustomerBusinessMembership;
+  activeMembership: CustomerBusinessMembership | null;
   rewards: Reward[];
   business?: Business | null;
 }
@@ -19,9 +18,53 @@ export function CustomerRewardsView({
 }: CustomerRewardsViewProps) {
   const { t, isRtl, language } = useLanguage();
   const isAr = language === 'ar';
+  const isFr = language === 'fr';
 
-  const activeBusinessName = business?.name || activeMembership.business?.name || 'Commerce Partenaire';
-  const pointsBalance = activeMembership.points_balance;
+  const isEnrolled = !!activeMembership && !!activeMembership.business_id;
+  const activeBusinessName = isEnrolled
+    ? (business?.name || activeMembership?.business?.name || 'Commerce Partenaire')
+    : (isAr ? 'حبيبنا • الجواز الموحد' : isFr ? 'Hbibna • Pass Universel' : 'Hbibna • Universal Pass');
+  const pointsBalance = activeMembership?.points_balance || 0;
+
+  if (!isEnrolled) {
+    return (
+      <div className="space-y-6 font-rounded max-w-2xl mx-auto text-center py-6">
+        <div className="p-8 sm:p-10 rounded-3xl bg-white border-2 border-black shadow-[0_8px_0_#000] space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-[#FFE600] border-2 border-black flex items-center justify-center mx-auto shadow-[0_3px_0_#000]">
+            <Gift className="w-8 h-8 text-black stroke-[2.5]" />
+          </div>
+          <div className="space-y-1.5">
+            <h2 className="text-xl sm:text-2xl font-black text-black">
+              {isAr ? 'لا توجد مكافآت مفعلة بعد' : isFr ? 'Aucune récompense active' : 'No active perks yet'}
+            </h2>
+            <p className="text-xs sm:text-sm font-bold text-black/70 max-w-md mx-auto leading-relaxed">
+              {isAr
+                ? 'أنت لست منضماً إلى أي متجر بعد. تصفح دليل المتاجر الشريكة ومكافآتها، أو أظهر رمز QR عند الكاونتر لبدء كسب النقاط.'
+                : isFr
+                ? 'Vous n’avez pas encore rejoint de commerce partenaire. Découvrez notre catalogue public de récompenses ou présentez votre pass universel au comptoir !'
+                : 'You have not joined any partner stores yet. Explore our perks catalog or show your universal QR at counter!'}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <Link
+              href="/rewards-catalog"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-black text-[#FFE600] text-xs font-black border-2 border-black shadow-[0_3px_0_#000] hover:bg-neutral-900 transition-all cursor-pointer"
+            >
+              <Gift className="w-4 h-4 text-[#FFE600]" />
+              <span>{isAr ? 'دليل مكافآت المتاجر' : isFr ? 'Découvrir le catalogue public' : 'Explore Perks Catalog'}</span>
+              <ArrowRight className="w-4 h-4 rtl:rotate-180 stroke-[2.5]" />
+            </Link>
+            <Link
+              href="/customer"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-white text-black text-xs font-black border-2 border-black shadow-[0_3px_0_#000] hover:bg-neutral-50 transition-all cursor-pointer"
+            >
+              <span>{isAr ? 'عرض بطاقتي' : isFr ? 'Mon Pass' : 'My Pass'}</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 font-rounded">

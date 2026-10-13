@@ -17,7 +17,7 @@ export default async function CustomerReferralPage({ searchParams }: CustomerRef
     const params = new URLSearchParams();
     if (customer?.phone) params.set('phone', customer.phone);
     else if (customer?.id) params.set('c', customer.id);
-    if (activeMembership.business_id) params.set('b', activeMembership.business_id);
+    if (activeMembership?.business_id) params.set('b', activeMembership.business_id);
     const qs = params.toString();
     return qs ? `?${qs}` : '';
   };
