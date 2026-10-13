@@ -137,6 +137,9 @@ export async function generateWalletPass(
           value: 'Hbibna • La fidélité phygitale nouvelle génération en Algérie (https://hbibna-phi.vercel.app)',
         },
       ],
+      stripURL: 'https://hbibna-phi.vercel.app/assets/hbibna-wallet-banner.jpg',
+      logoURL: 'https://hbibna-phi.vercel.app/assets/hbibna-logo-clean.png',
+      color: '#18181B',
       colorPreset: 'dark',
       sharingProhibited: true,
     };
@@ -265,6 +268,9 @@ export async function updateWalletPass(
           value: 'Hbibna • La fidélité phygitale nouvelle génération en Algérie (https://hbibna-phi.vercel.app)',
         },
       ],
+      stripURL: 'https://hbibna-phi.vercel.app/assets/hbibna-wallet-banner.jpg',
+      logoURL: 'https://hbibna-phi.vercel.app/assets/hbibna-logo-clean.png',
+      color: '#18181B',
       colorPreset: 'dark',
       sharingProhibited: true,
     };
