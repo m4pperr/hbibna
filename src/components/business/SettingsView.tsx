@@ -21,6 +21,7 @@ import {
   Coins,
   Sparkles,
 } from 'lucide-react';
+import { PasswordInput } from '@/components/common/PasswordInput';
 
 function InstagramIcon({ className }: { className?: string }) {
   return (
@@ -458,13 +459,13 @@ export function SettingsView({ business }: SettingsViewProps) {
             <label className="block text-xs font-black text-black mb-1.5 uppercase tracking-wide">
               Mot de passe actuel <span className="text-red-500">*</span>
             </label>
-            <input
-              type="password"
+            <PasswordInput
               required
+              showLeftIcon={false}
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-3 rounded-2xl border-2 border-black bg-[#FFF9D2] focus:bg-white text-sm text-black font-extrabold shadow-[0_3px_0_#000] focus:outline-none transition-colors"
+              className="shadow-[0_3px_0_#000] font-extrabold"
             />
           </div>
 
@@ -473,13 +474,14 @@ export function SettingsView({ business }: SettingsViewProps) {
             <label className="block text-xs font-black text-black mb-1.5 uppercase tracking-wide">
               Nouveau mot de passe <span className="text-red-500">*</span>
             </label>
-            <input
-              type="password"
+            <PasswordInput
               required
+              showLeftIcon={false}
+              minLength={6}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="Min. 6 caractères"
-              className="w-full px-4 py-3 rounded-2xl border-2 border-black bg-[#FFF9D2] focus:bg-white text-sm text-black font-extrabold shadow-[0_3px_0_#000] focus:outline-none transition-colors"
+              className="shadow-[0_3px_0_#000] font-extrabold"
             />
           </div>
 
@@ -488,13 +490,14 @@ export function SettingsView({ business }: SettingsViewProps) {
             <label className="block text-xs font-black text-black mb-1.5 uppercase tracking-wide">
               Confirmer le nouveau mot de passe <span className="text-red-500">*</span>
             </label>
-            <input
-              type="password"
+            <PasswordInput
               required
+              showLeftIcon={false}
+              minLength={6}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-3 rounded-2xl border-2 border-black bg-[#FFF9D2] focus:bg-white text-sm text-black font-extrabold shadow-[0_3px_0_#000] focus:outline-none transition-colors"
+              className="shadow-[0_3px_0_#000] font-extrabold"
             />
           </div>
         </div>

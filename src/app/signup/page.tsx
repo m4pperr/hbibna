@@ -21,6 +21,7 @@ import { HbibnaLogo } from '@/components/brand/HbibnaLogo';
 import { LanguageSelector } from '@/components/common/LanguageSelector';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { PhoneInput } from '@/components/common/PhoneInput';
+import { PasswordInput } from '@/components/common/PasswordInput';
 
 function SignUpContent() {
   const searchParams = useSearchParams();
@@ -272,17 +273,12 @@ function SignUpContent() {
                 <label className="block text-xs font-black text-black mb-1.5 text-start">
                   {t('auth.password')} <span className="text-rose-500 font-black">*</span>
                 </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-black/60 absolute ltr:left-3.5 rtl:right-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="password"
-                    name="password"
-                    required
-                    minLength={6}
-                    placeholder="At least 6 characters"
-                    className="w-full ltr:pl-10 ltr:pr-3.5 rtl:pr-10 rtl:pl-3.5 py-3 rounded-2xl border-2 border-black bg-[#FFF9D2] text-sm font-bold text-black placeholder-black/50 focus:outline-none focus:ring-2 focus:ring-black shadow-inner"
-                  />
-                </div>
+                <PasswordInput
+                  name="password"
+                  required
+                  minLength={6}
+                  placeholder="At least 6 characters"
+                />
               </div>
 
               {/* Submit button */}
@@ -334,17 +330,12 @@ function SignUpContent() {
                 <label className="block text-xs font-black text-black mb-1.5 text-start">
                   {t('auth.clientPassword')} <span className="text-rose-500 font-black">*</span>
                 </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-black/60 absolute ltr:left-3.5 rtl:right-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="password"
-                    name="password"
-                    required
-                    minLength={6}
-                    placeholder={t('auth.clientPasswordPlaceholder')}
-                    className="w-full ltr:pl-10 ltr:pr-3.5 rtl:pr-10 rtl:pl-3.5 py-3 rounded-2xl border-2 border-black bg-[#FFF9D2] text-sm font-bold text-black placeholder-black/50 focus:outline-none focus:ring-2 focus:ring-black shadow-inner"
-                  />
-                </div>
+                <PasswordInput
+                  name="password"
+                  required
+                  minLength={6}
+                  placeholder={t('auth.clientPasswordPlaceholder')}
+                />
               </div>
 
               {/* Email Address (Optional - No star, no 'optional' label text) */}
