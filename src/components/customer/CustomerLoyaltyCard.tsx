@@ -153,23 +153,28 @@ export function CustomerLoyaltyCard({
       ? 'Remise 20% sur la commande'
       : '20% Off Next Order';
 
+  // Resolve genuine customer pass ID
+  const passId =
+    customer?.id ||
+    (customer as any)?.passId ||
+    (customer as any)?.global_pass_id ||
+    '';
+
   // Dynamic Ephemeral Anti-Fraud QR Token (Rotates every 60s)
   const [dynamicQrToken, setDynamicQrToken] = useState<string>(() => {
-    return customer?.id
-      ? `hbibna:c:${customer.id}`
-      : 'hbibna:c:demo_user';
+    return passId ? `hbibna:c:${passId}` : 'hbibna:c:guest';
   });
   const [secondsLeft, setSecondsLeft] = useState<number>(QR_ROTATION_INTERVAL_SECONDS);
 
   const renewToken = () => {
-    if (!customer?.id) return;
-    const generated = generateDynamicQrToken(customer.id);
+    if (!passId) return;
+    const generated = generateDynamicQrToken(passId);
     setDynamicQrToken(generated.token);
     setSecondsLeft(QR_ROTATION_INTERVAL_SECONDS);
   };
 
   useEffect(() => {
-    if (!customer?.id) return;
+    if (!passId) return;
 
     renewToken();
 
@@ -184,10 +189,10 @@ export function CustomerLoyaltyCard({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [customer?.id]);
+  }, [passId]);
 
-  const customerIdDisplay = customer?.id
-    ? `HB-${customer.id.replace(/-/g, '').slice(0, 4).toUpperCase()}-DZ`
+  const customerIdDisplay = passId
+    ? `HB-${passId.replace(/-/g, '').slice(0, 4).toUpperCase()}-DZ`
     : 'HB-VIP-DZ';
 
   // 3D Tilt handler

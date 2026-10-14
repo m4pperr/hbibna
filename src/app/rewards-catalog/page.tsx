@@ -11,6 +11,8 @@ export const metadata: Metadata = {
     'Discover partner businesses and exclusive loyalty rewards available across the Hbibna customer loyalty network.',
 };
 
+export const dynamic = 'force-dynamic';
+
 export default async function RewardsCatalogPage() {
   const catalogItems = await getPublicRewardsCatalog();
 

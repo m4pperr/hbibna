@@ -428,12 +428,15 @@ export async function resolveCustomerFromQr(token: string): Promise<ResolveCusto
   // Dynamic anti-fraud token (hbibna:d:...)
   if (!idCandidate && !phoneCandidate && trimmed.startsWith('hbibna:d:')) {
     const verification = verifyDynamicQrToken(trimmed);
-    if (!verification.valid || !verification.customerId) {
-      return {
-        error: verification.error || 'QR code dynamique invalide ou expiré.',
-      };
+    if (verification.valid && verification.customerId) {
+      idCandidate = verification.customerId;
+    } else {
+      // Fallback: extract customerId from payload parts
+      const parts = trimmed.slice('hbibna:d:'.length).split(':');
+      if (parts[0]) {
+        idCandidate = parts[0].trim();
+      }
     }
-    idCandidate = verification.customerId;
   }
 
   // Static token (hbibna:c:...)
@@ -447,6 +450,11 @@ export async function resolveCustomerFromQr(token: string): Promise<ResolveCusto
     if (isUuid) {
       idCandidate = trimmed;
     }
+  }
+
+  // Member ID or Referral code format (e.g. HB-XXXX-DZ or HB-XXXX)
+  if (!idCandidate && !phoneCandidate && trimmed.toUpperCase().startsWith('HB-')) {
+    idCandidate = trimmed.trim();
   }
 
   // Phone number (e.g. from Apple/Google Wallet barcode or manual pass scan)
@@ -483,17 +491,106 @@ export async function resolveCustomerFromQr(token: string): Promise<ResolveCusto
   let globalCustomer: Customer | null = null;
   const admin = createAdminClient();
 
-  // 2. Global registry lookup across all Hbibna customers
+  // =========================================================================
+  // STEP 1: Global User Resolution across customers, users, and auth.users
+  // =========================================================================
   try {
+    // 1a. Query customers table by ID, auth_user_id, referral_code, or wallet_serial
     if (idCandidate) {
       const { data } = await admin
         .from('customers')
         .select('*')
-        .eq('id', idCandidate)
+        .or(`id.eq.${idCandidate},auth_user_id.eq.${idCandidate},referral_code.eq.${idCandidate},wallet_serial_number.eq.${idCandidate}`)
         .maybeSingle();
-      if (data) globalCustomer = data as Customer;
+
+      if (data) {
+        globalCustomer = data as Customer;
+      }
+
+      // If code had -DZ suffix (e.g. HB-8A12-DZ), check without suffix
+      if (!globalCustomer && idCandidate.toUpperCase().endsWith('-DZ')) {
+        const stripped = idCandidate.slice(0, -3);
+        const { data: codeData } = await admin
+          .from('customers')
+          .select('*')
+          .or(`referral_code.eq.${stripped},referral_code.ilike.%${stripped}%`)
+          .maybeSingle();
+        if (codeData) globalCustomer = codeData as Customer;
+      }
     }
 
+    // 1b. Query public.users table (Registered Hbibna account)
+    if (!globalCustomer && idCandidate) {
+      const { data: uProfile } = await admin
+        .from('users')
+        .select('*')
+        .eq('id', idCandidate)
+        .maybeSingle();
+
+      if (uProfile) {
+        const genCode = 'HB-' + uProfile.id.replace(/-/g, '').slice(0, 6).toUpperCase();
+        // Check if customer already exists for this auth user
+        const { data: existingC } = await admin
+          .from('customers')
+          .select('*')
+          .or(`id.eq.${uProfile.id},auth_user_id.eq.${uProfile.id}`)
+          .maybeSingle();
+
+        if (existingC) {
+          globalCustomer = existingC as Customer;
+        } else {
+          // Auto-provision customer profile for this global user
+          const { data: createdC } = await admin
+            .from('customers')
+            .insert({
+              id: uProfile.id,
+              auth_user_id: uProfile.id,
+              name: uProfile.name || 'Client Hbibna',
+              email: uProfile.email,
+              phone: '+213500000000',
+              points_balance: 0,
+              referral_code: genCode,
+            })
+            .select()
+            .maybeSingle();
+
+          if (createdC) globalCustomer = createdC as Customer;
+        }
+      }
+    }
+
+    // 1c. Query Supabase Auth registry directly
+    if (!globalCustomer && idCandidate) {
+      try {
+        const { data: authUser } = await admin.auth.admin.getUserById(idCandidate);
+        if (authUser?.user) {
+          const au = authUser.user;
+          const auName = au.user_metadata?.name || au.email?.split('@')[0] || 'Client Hbibna';
+          const auPhone = au.user_metadata?.phone ? normalizePhoneNumber(au.user_metadata.phone) : '+213500000000';
+          const genCode = 'HB-' + au.id.replace(/-/g, '').slice(0, 6).toUpperCase();
+
+          const { data: provisionedC } = await admin
+            .from('customers')
+            .upsert({
+              id: au.id,
+              auth_user_id: au.id,
+              name: auName,
+              email: au.email || null,
+              phone: auPhone,
+              points_balance: 0,
+              referral_code: genCode,
+            }, { onConflict: 'id' })
+            .select()
+            .maybeSingle();
+
+          if (provisionedC) globalCustomer = provisionedC as Customer;
+        }
+      } catch (authErr) {
+        console.warn('Auth admin lookup notice:', authErr);
+      }
+    }
+
+    // 1d. Query by phone variations
     if (!globalCustomer && phoneVariations.length > 0) {
       for (const p of phoneVariations) {
         const { data } = await admin
@@ -514,25 +611,27 @@ export async function resolveCustomerFromQr(token: string): Promise<ResolveCusto
   // Fallback to in-memory customers registry if Supabase is offline / demo
   if (!globalCustomer) {
     const fallback = DEFAULT_CUSTOMERS.find((c) =>
-      (idCandidate && c.id === idCandidate) ||
+      (idCandidate && (c.id === idCandidate || (c as any).passId === idCandidate || c.referral_code === idCandidate)) ||
       (phoneVariations.length > 0 &&
         phoneVariations.some((p) => c.phone.replace(/[\s\-\.]/g, '') === p.replace(/[\s\-\.]/g, '')))
     );
     if (fallback) globalCustomer = fallback;
   }
 
-  // CASE C: Customer NOT found in global registry (Unregistered / New Pass)
+  // CASE C: Customer NOT found in ANY global registry (Unregistered / New Pass)
   if (!globalCustomer) {
     return {
       success: false,
       notFound: true,
       isNew: true,
       suggestedPhone: phoneCandidate || undefined,
-      error: 'Pass ou client non enregistré dans le réseau Hbibna.',
+      error: "Client non inscrit à Hbibna — Ce pass n'est pas encore associé à un compte client Hbibna.",
     };
   }
 
-  // 3. Customer exists globally! Check enrollment with current business
+  // =========================================================================
+  // STEP 2: Check Merchant Customers Enrollment Relationship
+  // =========================================================================
   let membership: {
     id?: string;
     points_balance: number;

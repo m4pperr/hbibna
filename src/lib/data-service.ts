@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import type {
   Customer,
   Transaction,
@@ -370,29 +370,71 @@ export async function fetchCustomerPortalData(params?: {
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
+      const adminClient = createAdminClient();
 
       let dbCustomer: Customer | null = null;
 
       // 1. By auth user session
       const { data: authData } = await supabase.auth.getUser();
       if (authData?.user) {
-        const { data: c } = await supabase
+        const u = authData.user;
+        const { data: c } = await adminClient
           .from('customers')
           .select('*')
-          .or(`auth_user_id.eq.${authData.user.id},id.eq.${authData.user.id}`)
+          .or(`auth_user_id.eq.${u.id},id.eq.${u.id}`)
           .maybeSingle();
+
         if (c) {
           dbCustomer = c as Customer;
-        } else if (authData.user.user_metadata?.phone) {
+        } else if (u.user_metadata?.phone) {
           // Fallback by phone registered in auth metadata
-          const cleanUPhone = normalizePhoneNumber(authData.user.user_metadata.phone);
+          const cleanUPhone = normalizePhoneNumber(u.user_metadata.phone);
           const altUPhone = cleanUPhone.startsWith('+213') ? '0' + cleanUPhone.slice(4) : cleanUPhone;
-          const { data: cByPhone } = await supabase
+          const { data: cByPhone } = await adminClient
             .from('customers')
             .select('*')
             .or(`phone.eq.${cleanUPhone},phone.eq.${altUPhone}`)
             .maybeSingle();
-          if (cByPhone) dbCustomer = cByPhone as Customer;
+
+          if (cByPhone) {
+            dbCustomer = cByPhone as Customer;
+            if (!dbCustomer.auth_user_id) {
+              await adminClient.from('customers').update({ auth_user_id: u.id }).eq('id', dbCustomer.id);
+              dbCustomer.auth_user_id = u.id;
+            }
+          }
+        }
+
+        // Also check if profile exists in public.users
+        if (!dbCustomer) {
+          const { data: uProfile } = await adminClient
+            .from('users')
+            .select('*')
+            .eq('id', u.id)
+            .maybeSingle();
+
+          if (uProfile) {
+            const cleanPhone = normalizePhoneNumber(u.user_metadata?.phone || '');
+            const generatedCode = 'HB-' + u.id.replace(/-/g, '').slice(0, 6).toUpperCase();
+            try {
+              const { data: createdC } = await adminClient
+                .from('customers')
+                .insert({
+                  id: u.id,
+                  auth_user_id: u.id,
+                  name: uProfile.name || u.user_metadata?.name || 'Client Hbibna',
+                  phone: cleanPhone || '+213500000000',
+                  email: uProfile.email || u.email,
+                  points_balance: 0,
+                  referral_code: generatedCode,
+                })
+                .select()
+                .maybeSingle();
+              if (createdC) dbCustomer = createdC as Customer;
+            } catch (err) {
+              console.warn('Auto-create customer from users table:', err);
+            }
+          }
         }
       }
 
@@ -400,7 +442,7 @@ export async function fetchCustomerPortalData(params?: {
       if (!dbCustomer && phone) {
         const cleanPhone = normalizePhoneNumber(phone);
         const altPhone = cleanPhone.startsWith('+213') ? '0' + cleanPhone.slice(4) : cleanPhone;
-        const { data: c } = await supabase
+        const { data: c } = await adminClient
           .from('customers')
           .select('*')
           .or(`phone.eq.${cleanPhone},phone.eq.${altPhone}`)
@@ -410,10 +452,10 @@ export async function fetchCustomerPortalData(params?: {
 
       // 3. By customerId parameter
       if (!dbCustomer && customerId) {
-        const { data: c } = await supabase
+        const { data: c } = await adminClient
           .from('customers')
           .select('*')
-          .eq('id', customerId)
+          .or(`id.eq.${customerId},auth_user_id.eq.${customerId}`)
           .maybeSingle();
         if (c) dbCustomer = c as Customer;
       }
@@ -422,37 +464,67 @@ export async function fetchCustomerPortalData(params?: {
       if (!dbCustomer && authData?.user) {
         const u = authData.user;
         const uName = u.user_metadata?.name || u.email?.split('@')[0] || 'Client Hbibna';
-        const uPhone = u.user_metadata?.phone || (phone ? normalizePhoneNumber(phone) : '');
-        dbCustomer = {
-          id: u.id,
-          business_id: '',
-          name: uName,
-          phone: uPhone,
-          email: u.email || null,
-          points_balance: 0,
-          referral_code: 'HB-' + u.id.replace(/-/g, '').slice(0, 6).toUpperCase(),
-          created_at: u.created_at || new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as unknown as Customer;
+        const uPhone = u.user_metadata?.phone ? normalizePhoneNumber(u.user_metadata.phone) : (phone ? normalizePhoneNumber(phone) : '+213500000000');
+        const generatedCode = 'HB-' + u.id.replace(/-/g, '').slice(0, 6).toUpperCase();
+
+        try {
+          const { data: insertedC } = await adminClient
+            .from('customers')
+            .upsert({
+              id: u.id,
+              auth_user_id: u.id,
+              name: uName,
+              phone: uPhone,
+              email: u.email || null,
+              points_balance: 0,
+              referral_code: generatedCode,
+              created_at: u.created_at || new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'id' })
+            .select()
+            .maybeSingle();
+          if (insertedC) dbCustomer = insertedC as Customer;
+        } catch (insertErr) {
+          console.warn('Customer auto-provision notice:', insertErr);
+        }
+
+        if (!dbCustomer) {
+          dbCustomer = {
+            id: u.id,
+            auth_user_id: u.id,
+            business_id: '',
+            name: uName,
+            phone: uPhone,
+            email: u.email || null,
+            points_balance: 0,
+            referral_code: generatedCode,
+            created_at: u.created_at || new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          } as unknown as Customer;
+        }
       }
 
       if (dbCustomer) {
+        // Guarantee passId & global_pass_id properties
+        (dbCustomer as any).passId = dbCustomer.id;
+        (dbCustomer as any).global_pass_id = dbCustomer.id;
+
         // Guarantee referral code if missing
         if (!dbCustomer.referral_code) {
           const generatedCode = 'HB-' + (dbCustomer.id.replace(/-/g, '').slice(0, 6).toUpperCase() || 'AMIS01');
           dbCustomer.referral_code = generatedCode;
-          supabase.from('customers').update({ referral_code: generatedCode }).eq('id', dbCustomer.id).then();
+          adminClient.from('customers').update({ referral_code: generatedCode }).eq('id', dbCustomer.id).then();
         }
 
         // Fetch referrals made by this customer
-        const { data: referralsData } = await supabase
+        const { data: referralsData } = await adminClient
           .from('referrals')
           .select('*, referred:customers!referrals_referred_id_fkey(name, phone)')
           .eq('referrer_id', dbCustomer.id)
           .order('created_at', { ascending: false });
 
         // Query isolated memberships for this customer across businesses
-        const { data: membershipsData } = await supabase
+        const { data: membershipsData } = await adminClient
           .from('customer_businesses')
           .select('*, businesses(*)')
           .eq('customer_id', dbCustomer.id);

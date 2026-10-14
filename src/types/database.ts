@@ -49,6 +49,9 @@ export interface Customer {
   points_balance: number;
   referral_code?: string | null;
   referred_by_customer_id?: string | null;
+  auth_user_id?: string | null;
+  passId?: string;
+  global_pass_id?: string;
   wallet_serial_number?: string | null;
   wallet_share_url?: string | null;
   wallet_google_url?: string | null;
