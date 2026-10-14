@@ -72,9 +72,9 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
           className="absolute ltr:right-3.5 rtl:left-3.5 top-1/2 -translate-y-1/2 p-1.5 rounded-xl text-black/60 hover:text-black hover:bg-black/5 active:scale-95 transition-all cursor-pointer flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-black disabled:opacity-40"
         >
           {isVisible ? (
-            <EyeOff className="w-4 h-4 stroke-[2.2]" />
-          ) : (
             <Eye className="w-4 h-4 stroke-[2.2]" />
+          ) : (
+            <EyeOff className="w-4 h-4 stroke-[2.2]" />
           )}
         </button>
       </div>

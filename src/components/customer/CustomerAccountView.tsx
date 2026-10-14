@@ -510,7 +510,7 @@ export function CustomerAccountView({
                 className="absolute inset-y-0 right-0 rtl:right-auto rtl:left-0 pr-3 rtl:pr-0 rtl:pl-3 flex items-center text-black/50 hover:text-black cursor-pointer"
                 aria-label={showCurrentPass ? 'Masquer' : 'Afficher'}
               >
-                {showCurrentPass ? <EyeOff className="w-4 h-4 stroke-[2.5]" /> : <Eye className="w-4 h-4 stroke-[2.5]" />}
+                {showCurrentPass ? <Eye className="w-4 h-4 stroke-[2.5]" /> : <EyeOff className="w-4 h-4 stroke-[2.5]" />}
               </button>
             </div>
           </div>
@@ -536,7 +536,7 @@ export function CustomerAccountView({
                   className="absolute inset-y-0 right-0 rtl:right-auto rtl:left-0 pr-3 rtl:pr-0 rtl:pl-3 flex items-center text-black/50 hover:text-black cursor-pointer"
                   aria-label={showNewPass ? 'Masquer' : 'Afficher'}
                 >
-                  {showNewPass ? <EyeOff className="w-4 h-4 stroke-[2.5]" /> : <Eye className="w-4 h-4 stroke-[2.5]" />}
+                  {showNewPass ? <Eye className="w-4 h-4 stroke-[2.5]" /> : <EyeOff className="w-4 h-4 stroke-[2.5]" />}
                 </button>
               </div>
             </div>
@@ -561,7 +561,7 @@ export function CustomerAccountView({
                   className="absolute inset-y-0 right-0 rtl:right-auto rtl:left-0 pr-3 rtl:pr-0 rtl:pl-3 flex items-center text-black/50 hover:text-black cursor-pointer"
                   aria-label={showConfirmPass ? 'Masquer' : 'Afficher'}
                 >
-                  {showConfirmPass ? <EyeOff className="w-4 h-4 stroke-[2.5]" /> : <Eye className="w-4 h-4 stroke-[2.5]" />}
+                  {showConfirmPass ? <Eye className="w-4 h-4 stroke-[2.5]" /> : <EyeOff className="w-4 h-4 stroke-[2.5]" />}
                 </button>
               </div>
             </div>
