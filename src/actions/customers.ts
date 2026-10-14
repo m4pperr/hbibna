@@ -397,21 +397,31 @@ export async function resolveCustomerFromQr(token: string): Promise<ResolveCusto
     return { error: 'Aucun code QR ou identifiant fourni.' };
   }
 
-  // 1. Parse token variants
+  // Step 1: Console Diagnostic Logging (Temporary Debugging)
+  console.log("SCANNED PAYLOAD RECEIVED:", trimmed);
+
+  // 1. Parse token variants - Standardize HB-USER-[user_id] format
   let idCandidate: string | null = null;
   let phoneCandidate: string | null = null;
 
-  // Check URL format (e.g. from customer portal or pass links)
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+  // Case 1: Standardized HB-USER-[user_id] format (case-insensitive)
+  if (trimmed.toUpperCase().startsWith('HB-USER-')) {
+    idCandidate = trimmed.slice(8).trim();
+  }
+  // Case 2: URL format (e.g. from customer portal or pass links)
+  else if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
     try {
       const url = new URL(trimmed);
+      const urlToken = url.searchParams.get('token') || url.searchParams.get('qrCode');
+      const urlId = url.searchParams.get('id') || url.searchParams.get('c');
       const urlPhone = url.searchParams.get('phone');
-      const urlId = url.searchParams.get('id');
-      const urlToken = url.searchParams.get('token');
       if (urlToken) {
-        if (urlToken.startsWith('hbibna:d:')) {
+        if (urlToken.toUpperCase().startsWith('HB-USER-')) {
+          idCandidate = urlToken.slice(8).trim();
+        } else if (urlToken.startsWith('hbibna:d:')) {
           const v = verifyDynamicQrToken(urlToken);
           if (v.valid && v.customerId) idCandidate = v.customerId;
+          else idCandidate = urlToken.slice(9).split(':')[0].trim();
         } else if (urlToken.startsWith('hbibna:c:')) {
           idCandidate = urlToken.slice(9).trim();
         } else {
@@ -424,46 +434,42 @@ export async function resolveCustomerFromQr(token: string): Promise<ResolveCusto
       }
     } catch {}
   }
-
-  // Dynamic anti-fraud token (hbibna:d:...)
-  if (!idCandidate && !phoneCandidate && trimmed.startsWith('hbibna:d:')) {
+  // Case 3: Dynamic anti-fraud token (hbibna:d:...)
+  else if (trimmed.startsWith('hbibna:d:')) {
     const verification = verifyDynamicQrToken(trimmed);
     if (verification.valid && verification.customerId) {
       idCandidate = verification.customerId;
     } else {
-      // Fallback: extract customerId from payload parts
       const parts = trimmed.slice('hbibna:d:'.length).split(':');
-      if (parts[0]) {
-        idCandidate = parts[0].trim();
-      }
+      if (parts[0]) idCandidate = parts[0].trim();
     }
   }
-
-  // Static token (hbibna:c:...)
-  if (!idCandidate && !phoneCandidate && trimmed.startsWith('hbibna:c:')) {
+  // Case 4: Static token (hbibna:c:...)
+  else if (trimmed.startsWith('hbibna:c:')) {
     idCandidate = trimmed.slice('hbibna:c:'.length).trim();
   }
-
-  // Raw UUID format
-  if (!idCandidate && !phoneCandidate) {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed);
-    if (isUuid) {
-      idCandidate = trimmed;
-    }
-  }
-
-  // Member ID or Referral code format (e.g. HB-XXXX-DZ or HB-XXXX)
-  if (!idCandidate && !phoneCandidate && trimmed.toUpperCase().startsWith('HB-')) {
+  // Case 5: Raw UUID format
+  else if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed)) {
     idCandidate = trimmed.trim();
   }
-
-  // Phone number (e.g. from Apple/Google Wallet barcode or manual pass scan)
-  if (!idCandidate && !phoneCandidate) {
+  // Case 6: Strip HB- if followed by a raw UUID
+  else if (
+    trimmed.toUpperCase().startsWith('HB-') &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed.slice(3).trim())
+  ) {
+    idCandidate = trimmed.slice(3).trim();
+  }
+  // Case 7: Member ID or Referral code format (e.g. HB-XXXX-DZ or HB-XXXX)
+  else if (trimmed.toUpperCase().startsWith('HB-')) {
+    idCandidate = trimmed.trim();
+  }
+  // Case 8: Phone number (e.g. from Apple/Google Wallet barcode or manual pass scan)
+  else {
     const cleanPhone = trimmed.replace(/[\s\-\.]/g, '');
     if (/^(\+213|213|0)?[567]\d{8}$/.test(cleanPhone) || /^\+?\d{9,15}$/.test(cleanPhone)) {
       phoneCandidate = cleanPhone;
-    } else if (trimmed.length >= 10 && !trimmed.includes(':') && !trimmed.includes('@')) {
-      idCandidate = trimmed;
+    } else if (trimmed.length >= 8 && !trimmed.includes(':') && !trimmed.includes('@')) {
+      idCandidate = trimmed.trim();
     }
   }
 
@@ -492,44 +498,24 @@ export async function resolveCustomerFromQr(token: string): Promise<ResolveCusto
   const admin = createAdminClient();
 
   // =========================================================================
-  // STEP 1: Global User Resolution across customers, users, and auth.users
+  // STEP 1: Global User Resolution across users, customers, and auth.users
   // =========================================================================
   try {
-    // 1a. Query customers table by ID, auth_user_id, referral_code, or wallet_serial
+    const isUuid = idCandidate ? /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idCandidate) : false;
+
+    // 1a. Query public.users table FIRST (Step A)
     if (idCandidate) {
-      const { data } = await admin
-        .from('customers')
-        .select('*')
-        .or(`id.eq.${idCandidate},auth_user_id.eq.${idCandidate},referral_code.eq.${idCandidate},wallet_serial_number.eq.${idCandidate}`)
-        .maybeSingle();
-
-      if (data) {
-        globalCustomer = data as Customer;
+      let userQuery = admin.from('users').select('*');
+      if (isUuid) {
+        userQuery = userQuery.or(`id.eq.${idCandidate},pass_id.eq.${idCandidate}`);
+      } else {
+        userQuery = userQuery.eq('pass_id', idCandidate);
       }
-
-      // If code had -DZ suffix (e.g. HB-8A12-DZ), check without suffix
-      if (!globalCustomer && idCandidate.toUpperCase().endsWith('-DZ')) {
-        const stripped = idCandidate.slice(0, -3);
-        const { data: codeData } = await admin
-          .from('customers')
-          .select('*')
-          .or(`referral_code.eq.${stripped},referral_code.ilike.%${stripped}%`)
-          .maybeSingle();
-        if (codeData) globalCustomer = codeData as Customer;
-      }
-    }
-
-    // 1b. Query public.users table (Registered Hbibna account)
-    if (!globalCustomer && idCandidate) {
-      const { data: uProfile } = await admin
-        .from('users')
-        .select('*')
-        .eq('id', idCandidate)
-        .maybeSingle();
+      const { data: uProfile } = await userQuery.maybeSingle();
 
       if (uProfile) {
         const genCode = 'HB-' + uProfile.id.replace(/-/g, '').slice(0, 6).toUpperCase();
-        // Check if customer already exists for this auth user
+        // Check if customer row already exists for this user
         const { data: existingC } = await admin
           .from('customers')
           .select('*')
@@ -556,6 +542,38 @@ export async function resolveCustomerFromQr(token: string): Promise<ResolveCusto
 
           if (createdC) globalCustomer = createdC as Customer;
         }
+      }
+    }
+
+    // 1b. Query customers table by ID, auth_user_id, referral_code, or wallet_serial
+    if (!globalCustomer && idCandidate) {
+      if (isUuid) {
+        const { data } = await admin
+          .from('customers')
+          .select('*')
+          .or(`id.eq.${idCandidate},auth_user_id.eq.${idCandidate},referral_code.eq.${idCandidate},wallet_serial_number.eq.${idCandidate}`)
+          .maybeSingle();
+
+        if (data) globalCustomer = data as Customer;
+      } else {
+        const { data } = await admin
+          .from('customers')
+          .select('*')
+          .or(`referral_code.eq.${idCandidate},referral_code.ilike.%${idCandidate}%,wallet_serial_number.eq.${idCandidate}`)
+          .maybeSingle();
+
+        if (data) globalCustomer = data as Customer;
+      }
+
+      // If code had -DZ suffix (e.g. HB-8A12-DZ), check without suffix
+      if (!globalCustomer && idCandidate.toUpperCase().endsWith('-DZ')) {
+        const stripped = idCandidate.slice(0, -3);
+        const { data: codeData } = await admin
+          .from('customers')
+          .select('*')
+          .or(`referral_code.eq.${stripped},referral_code.ilike.%${stripped}%`)
+          .maybeSingle();
+        if (codeData) globalCustomer = codeData as Customer;
       }
     }
 
@@ -617,6 +635,9 @@ export async function resolveCustomerFromQr(token: string): Promise<ResolveCusto
     );
     if (fallback) globalCustomer = fallback;
   }
+
+  // Diagnostic log
+  console.log("GLOBAL USER QUERY RESULT:", globalCustomer);
 
   // CASE C: Customer NOT found in ANY global registry (Unregistered / New Pass)
   if (!globalCustomer) {

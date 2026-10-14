@@ -7,6 +7,7 @@ import { getAuthenticatedBusiness } from '@/actions/auth';
 export const dynamic = 'force-dynamic';
 
 interface ScanLookupRequest {
+  qrCode?: string;
   token?: string;
   pass_id?: string;
   global_customer_id?: string;
@@ -14,18 +15,21 @@ interface ScanLookupRequest {
 }
 
 /**
- * Handle QR / Barcode Scan Lookup
- * Performs a 2-step verification:
- *   Step 1: Look up global_customer_id in global users/customers table.
- *   Step 2: Check relationship in merchant_customers (customer_businesses) for current business_id.
+ * Handle QR / Barcode Scan Lookup (/api/scan)
+ * 2-step verification:
+ *   Step A: Look up scanned_user_id in global users table FIRST (or customers/auth.users).
+ *   Step B: Check relationship in merchant_customers (customer_businesses) for business_id.
  *           Auto-enroll if first visit.
  */
 async function processScanLookup(params: ScanLookupRequest) {
-  const rawInput = (params.token || params.pass_id || params.global_customer_id || '').trim();
+  const rawInput = (params.qrCode || params.token || params.pass_id || params.global_customer_id || '').trim();
+
+  // Step 1: Diagnostic log
+  console.log("SCANNED PAYLOAD RECEIVED:", params.qrCode || rawInput);
 
   if (!rawInput) {
     return NextResponse.json(
-      { success: false, error: 'Token ou identifiant pass manquant.' },
+      { success: false, error: 'Token ou code QR manquant.' },
       { status: 400 }
     );
   }
@@ -41,20 +45,26 @@ async function processScanLookup(params: ScanLookupRequest) {
   let idCandidate: string | null = null;
   let phoneCandidate: string | null = null;
 
-  // Check URL format
-  if (rawInput.startsWith('http://') || rawInput.startsWith('https://')) {
+  // Case 1: Standardized HB-USER-[user_id] format (case-insensitive)
+  if (rawInput.toUpperCase().startsWith('HB-USER-')) {
+    idCandidate = rawInput.slice(8).trim();
+  }
+  // Case 2: URL format
+  else if (rawInput.startsWith('http://') || rawInput.startsWith('https://')) {
     try {
       const url = new URL(rawInput);
-      const urlToken = url.searchParams.get('token');
+      const urlToken = url.searchParams.get('qrCode') || url.searchParams.get('token');
       const urlId = url.searchParams.get('id') || url.searchParams.get('c');
       const urlPhone = url.searchParams.get('phone');
 
       if (urlToken) {
-        if (urlToken.startsWith('hbibna:d:')) {
-          const v = verifyDynamicQrToken(urlToken);
-          if (v.valid && v.customerId) idCandidate = v.customerId;
+        if (urlToken.toUpperCase().startsWith('HB-USER-')) {
+          idCandidate = urlToken.slice(8).trim();
         } else if (urlToken.startsWith('hbibna:c:')) {
           idCandidate = urlToken.slice(9).trim();
+        } else if (urlToken.startsWith('hbibna:d:')) {
+          const v = verifyDynamicQrToken(urlToken);
+          idCandidate = v.customerId || urlToken.slice(9).split(':')[0].trim();
         } else {
           idCandidate = urlToken.trim();
         }
@@ -65,9 +75,8 @@ async function processScanLookup(params: ScanLookupRequest) {
       }
     } catch {}
   }
-
-  // Dynamic anti-fraud token (hbibna:d:...)
-  if (!idCandidate && !phoneCandidate && rawInput.startsWith('hbibna:d:')) {
+  // Case 3: Dynamic anti-fraud token (hbibna:d:...)
+  else if (rawInput.startsWith('hbibna:d:')) {
     const verification = verifyDynamicQrToken(rawInput);
     if (verification.valid && verification.customerId) {
       idCandidate = verification.customerId;
@@ -76,32 +85,32 @@ async function processScanLookup(params: ScanLookupRequest) {
       if (parts[0]) idCandidate = parts[0].trim();
     }
   }
-
-  // Static token (hbibna:c:...)
-  if (!idCandidate && !phoneCandidate && rawInput.startsWith('hbibna:c:')) {
+  // Case 4: Static token (hbibna:c:...)
+  else if (rawInput.startsWith('hbibna:c:')) {
     idCandidate = rawInput.slice('hbibna:c:'.length).trim();
   }
-
-  // Raw UUID format
-  if (!idCandidate && !phoneCandidate) {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawInput);
-    if (isUuid) {
-      idCandidate = rawInput;
-    }
-  }
-
-  // Member ID format (e.g. HB-XXXX-DZ or HB-XXXX)
-  if (!idCandidate && !phoneCandidate && rawInput.toUpperCase().startsWith('HB-')) {
+  // Case 5: Raw UUID format
+  else if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawInput)) {
     idCandidate = rawInput.trim();
   }
-
-  // Phone candidate
-  if (!idCandidate && !phoneCandidate) {
+  // Case 6: Strip HB- if followed by a raw UUID
+  else if (
+    rawInput.toUpperCase().startsWith('HB-') &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawInput.slice(3).trim())
+  ) {
+    idCandidate = rawInput.slice(3).trim();
+  }
+  // Case 7: Member ID format (e.g. HB-XXXX-DZ or HB-XXXX)
+  else if (rawInput.toUpperCase().startsWith('HB-')) {
+    idCandidate = rawInput.trim();
+  }
+  // Case 8: Phone number
+  else {
     const cleanPhone = rawInput.replace(/[\s\-\.]/g, '');
     if (/^(\+213|213|0)?[567]\d{8}$/.test(cleanPhone) || /^\+?\d{9,15}$/.test(cleanPhone)) {
       phoneCandidate = cleanPhone;
     } else if (rawInput.length >= 8 && !rawInput.includes(':') && !rawInput.includes('@')) {
-      idCandidate = rawInput;
+      idCandidate = rawInput.trim();
     }
   }
 
@@ -122,7 +131,7 @@ async function processScanLookup(params: ScanLookupRequest) {
   }
 
   // =========================================================================
-  // STEP 1: Look up global user in users / customers / auth.users
+  // STEP A: Look up global user in users / profiles table FIRST
   // =========================================================================
   let globalUser: {
     id: string;
@@ -135,24 +144,103 @@ async function processScanLookup(params: ScanLookupRequest) {
   } | null = null;
 
   try {
-    // 1a. Query customers table
-    if (idCandidate) {
-      const { data: customerRow } = await admin
-        .from('customers')
-        .select('*')
-        .or(`id.eq.${idCandidate},auth_user_id.eq.${idCandidate},referral_code.eq.${idCandidate},wallet_serial_number.eq.${idCandidate}`)
-        .maybeSingle();
+    const isUuid = idCandidate ? /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idCandidate) : false;
 
-      if (customerRow) {
-        globalUser = {
-          id: customerRow.id,
-          name: customerRow.name,
-          phone: customerRow.phone,
-          email: customerRow.email,
-          referral_code: customerRow.referral_code,
-          wallet_serial_number: customerRow.wallet_serial_number,
-          business_id: customerRow.business_id,
-        };
+    // 1a. Query users table FIRST (Step A)
+    if (idCandidate) {
+      let userQuery = admin.from('users').select('*');
+      if (isUuid) {
+        userQuery = userQuery.or(`id.eq.${idCandidate},pass_id.eq.${idCandidate}`);
+      } else {
+        userQuery = userQuery.eq('pass_id', idCandidate);
+      }
+      const { data: userProfile } = await userQuery.maybeSingle();
+
+      if (userProfile) {
+        const genCode = 'HB-' + userProfile.id.replace(/-/g, '').slice(0, 6).toUpperCase();
+        // Check if customer row exists
+        const { data: existingC } = await admin
+          .from('customers')
+          .select('*')
+          .or(`id.eq.${userProfile.id},auth_user_id.eq.${userProfile.id}`)
+          .maybeSingle();
+
+        if (existingC) {
+          globalUser = {
+            id: existingC.id,
+            name: existingC.name,
+            phone: existingC.phone,
+            email: existingC.email,
+            referral_code: existingC.referral_code,
+            wallet_serial_number: existingC.wallet_serial_number,
+            business_id: existingC.business_id,
+          };
+        } else {
+          // Auto-provision customer row
+          const { data: synced } = await admin
+            .from('customers')
+            .upsert({
+              id: userProfile.id,
+              auth_user_id: userProfile.id,
+              name: userProfile.name || 'Client Hbibna',
+              email: userProfile.email || null,
+              phone: userProfile.phone ? normalizePhoneNumber(userProfile.phone) : '+213500000000',
+              points_balance: 0,
+              referral_code: genCode,
+            }, { onConflict: 'id' })
+            .select()
+            .maybeSingle();
+
+          globalUser = {
+            id: userProfile.id,
+            name: userProfile.name || 'Client Hbibna',
+            phone: userProfile.phone || '+213500000000',
+            email: userProfile.email || null,
+            referral_code: genCode,
+            wallet_serial_number: synced?.wallet_serial_number || null,
+          };
+        }
+      }
+    }
+
+    // 1b. Query customers table
+    if (!globalUser && idCandidate) {
+      if (isUuid) {
+        const { data: customerRow } = await admin
+          .from('customers')
+          .select('*')
+          .or(`id.eq.${idCandidate},auth_user_id.eq.${idCandidate},referral_code.eq.${idCandidate},wallet_serial_number.eq.${idCandidate}`)
+          .maybeSingle();
+
+        if (customerRow) {
+          globalUser = {
+            id: customerRow.id,
+            name: customerRow.name,
+            phone: customerRow.phone,
+            email: customerRow.email,
+            referral_code: customerRow.referral_code,
+            wallet_serial_number: customerRow.wallet_serial_number,
+            business_id: customerRow.business_id,
+          };
+        }
+      } else {
+        const { data: customerRow } = await admin
+          .from('customers')
+          .select('*')
+          .or(`referral_code.eq.${idCandidate},referral_code.ilike.%${idCandidate}%,wallet_serial_number.eq.${idCandidate}`)
+          .maybeSingle();
+
+        if (customerRow) {
+          globalUser = {
+            id: customerRow.id,
+            name: customerRow.name,
+            phone: customerRow.phone,
+            email: customerRow.email,
+            referral_code: customerRow.referral_code,
+            wallet_serial_number: customerRow.wallet_serial_number,
+            business_id: customerRow.business_id,
+          };
+        }
       }
 
       // Check stripped HB- code
@@ -177,43 +265,7 @@ async function processScanLookup(params: ScanLookupRequest) {
       }
     }
 
-    // 1b. Query users table (global profile)
-    if (!globalUser && idCandidate) {
-      const { data: userProfile } = await admin
-        .from('users')
-        .select('*')
-        .eq('id', idCandidate)
-        .maybeSingle();
-
-      if (userProfile) {
-        const genCode = 'HB-' + userProfile.id.replace(/-/g, '').slice(0, 6).toUpperCase();
-        // Upsert into customers table
-        const { data: synced } = await admin
-          .from('customers')
-          .upsert({
-            id: userProfile.id,
-            auth_user_id: userProfile.id,
-            name: userProfile.name || 'Client Hbibna',
-            email: userProfile.email || null,
-            phone: userProfile.phone ? normalizePhoneNumber(userProfile.phone) : '+213500000000',
-            points_balance: 0,
-            referral_code: genCode,
-          }, { onConflict: 'id' })
-          .select()
-          .maybeSingle();
-
-        globalUser = {
-          id: userProfile.id,
-          name: userProfile.name || 'Client Hbibna',
-          phone: userProfile.phone || '+213500000000',
-          email: userProfile.email || null,
-          referral_code: genCode,
-          wallet_serial_number: synced?.wallet_serial_number || null,
-        };
-      }
-    }
-
-    // 1c. Query auth.users table
+    // 1c. Query auth.users table directly
     if (!globalUser && idCandidate) {
       try {
         const { data: authData } = await admin.auth.admin.getUserById(idCandidate);
@@ -223,7 +275,7 @@ async function processScanLookup(params: ScanLookupRequest) {
           const auPhone = au.user_metadata?.phone ? normalizePhoneNumber(au.user_metadata.phone) : '+213500000000';
           const genCode = 'HB-' + au.id.replace(/-/g, '').slice(0, 6).toUpperCase();
 
-          await admin
+          const { data: provCustomer } = await admin
             .from('customers')
             .upsert({
               id: au.id,
@@ -233,10 +285,12 @@ async function processScanLookup(params: ScanLookupRequest) {
               phone: auPhone,
               points_balance: 0,
               referral_code: genCode,
-            }, { onConflict: 'id' });
+            }, { onConflict: 'id' })
+            .select()
+            .maybeSingle();
 
           globalUser = {
-            id: au.id,
+            id: provCustomer?.id || au.id,
             name: auName,
             phone: auPhone,
             email: au.email || null,
@@ -293,6 +347,9 @@ async function processScanLookup(params: ScanLookupRequest) {
     }
   }
 
+  // Step 1 Diagnostic Log
+  console.log("GLOBAL USER QUERY RESULT:", globalUser);
+
   // ONLY return "Client non inscrit" if NOT found anywhere in global users
   if (!globalUser) {
     return NextResponse.json(
@@ -308,7 +365,7 @@ async function processScanLookup(params: ScanLookupRequest) {
   }
 
   // =========================================================================
-  // STEP 2: Check Relationship in merchant_customers (customer_businesses)
+  // STEP B: Check Relationship in merchant_customers (customer_businesses)
   // =========================================================================
   let membership: { points_balance: number; created_at?: string } | null = null;
 
@@ -455,8 +512,8 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const token = searchParams.get('token') || searchParams.get('pass_id') || searchParams.get('q') || '';
+  const qrCode = searchParams.get('qrCode') || searchParams.get('token') || searchParams.get('pass_id') || searchParams.get('q') || '';
   const business_id = searchParams.get('business_id') || searchParams.get('b') || undefined;
 
-  return processScanLookup({ token, business_id });
+  return processScanLookup({ qrCode, business_id });
 }

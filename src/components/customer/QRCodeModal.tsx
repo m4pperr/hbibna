@@ -38,13 +38,16 @@ export function QRCodeModal({
   if (!isOpen) return null;
 
   const effectivePassId =
+    currentUser?.id ||
     currentUser?.passId ||
     currentUser?.global_pass_id ||
-    currentUser?.id ||
     passId ||
     '';
 
-  const qrPayload = effectivePassId ? `hbibna:c:${effectivePassId}` : 'hbibna:c:guest';
+  const qrPayload = effectivePassId ? `HB-USER-${effectivePassId}` : 'HB-USER-GUEST';
+  if (typeof window !== 'undefined') {
+    console.log("GENERATED QR PAYLOAD:", currentUser?.id || currentUser?.passId || effectivePassId);
+  }
   const displayName = currentUser?.name || customerName || (isAr ? 'العميل' : 'Client');
   const displayStore = businessName || (isAr ? 'حبيبنا • الجواز الموحد' : 'Pass Hbibna Universel');
 

@@ -158,18 +158,22 @@ export function CustomerLoyaltyCard({
     customer?.id ||
     (customer as any)?.passId ||
     (customer as any)?.global_pass_id ||
+    (customer as any)?.auth_user_id ||
     '';
 
+  const standardizedQrPayload = passId ? `HB-USER-${passId}` : 'HB-USER-GUEST';
+
+  if (typeof window !== 'undefined') {
+    console.log("GENERATED QR PAYLOAD:", passId || standardizedQrPayload);
+  }
+
   // Dynamic Ephemeral Anti-Fraud QR Token (Rotates every 60s)
-  const [dynamicQrToken, setDynamicQrToken] = useState<string>(() => {
-    return passId ? `hbibna:c:${passId}` : 'hbibna:c:guest';
-  });
+  const [dynamicQrToken, setDynamicQrToken] = useState<string>(() => standardizedQrPayload);
   const [secondsLeft, setSecondsLeft] = useState<number>(QR_ROTATION_INTERVAL_SECONDS);
 
   const renewToken = () => {
     if (!passId) return;
-    const generated = generateDynamicQrToken(passId);
-    setDynamicQrToken(generated.token);
+    setDynamicQrToken(standardizedQrPayload);
     setSecondsLeft(QR_ROTATION_INTERVAL_SECONDS);
   };
 

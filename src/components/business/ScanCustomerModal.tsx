@@ -191,6 +191,7 @@ export function ScanCustomerModal({
   // Process scanned token (either from camera, USB scanner gun, or manual paste)
   const handleTokenScanned = async (rawToken: string) => {
     if (!rawToken || resolving) return;
+    console.log("SCANNED PAYLOAD RECEIVED:", rawToken);
     setError(null);
     setResolving(true);
 

@@ -32,13 +32,17 @@ export function ClientPass({
   activeQueryStr,
   showQrStub = true,
 }: ClientPassProps) {
-  // Bind directly to currentUser.passId or fallback to customer properties
+  // Bind directly to currentUser.id or passId or customer.id
   const resolvedId =
+    currentUser?.id ||
     currentUser?.passId ||
     currentUser?.global_pass_id ||
-    currentUser?.id ||
     customer?.id ||
     '';
+
+  if (typeof window !== 'undefined') {
+    console.log("GENERATED QR PAYLOAD:", currentUser?.id || currentUser?.passId || resolvedId);
+  }
 
   const effectiveCustomer: Customer | null = (customer || currentUser)
     ? ({
