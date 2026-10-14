@@ -44,11 +44,11 @@ export function BusinessSidebar({
   ];
 
   const sidebarContent = (
-    <div className="flex flex-col justify-between h-full bg-white font-rounded">
+    <div className="flex flex-col justify-between h-full bg-white font-rounded overflow-y-auto">
       <div>
         {/* Brand header */}
-        <div className="h-20 px-6 flex items-center justify-between border-b-2 border-black/10">
-          <Link href="/dashboard" className="flex items-center gap-2.5">
+        <div className="h-20 px-6 flex items-center justify-between border-b-2 border-black/10 shrink-0">
+          <Link href="/dashboard" className="flex items-center gap-2.5" onClick={onClose}>
             <HbibnaLogo size="sm" />
             {businessName && (
               <span className="text-[10px] font-black text-black bg-[#FFDE59] border border-black px-2.5 py-0.5 rounded-full truncate max-w-[110px] shadow-2xs">
@@ -61,7 +61,8 @@ export function BusinessSidebar({
           {onClose && (
             <button
               onClick={onClose}
-              className="lg:hidden p-1.5 rounded-xl text-black hover:bg-black/5"
+              className="lg:hidden p-2 rounded-xl text-black hover:bg-black/5 active:scale-95 transition-all cursor-pointer border border-black/20"
+              aria-label="Close navigation"
             >
               <X className="w-5 h-5" />
             </button>
@@ -102,13 +103,13 @@ export function BusinessSidebar({
       </div>
 
       {/* Bottom section: Language, Account & Log out */}
-      <div className="p-4 border-t-2 border-black/10 space-y-3">
+      <div className="p-4 border-t-2 border-black/10 space-y-3 shrink-0 bg-white">
         <div className="flex items-center justify-between px-1">
           <span className="text-xs text-black/70 font-black">{t('common.language')}</span>
           <LanguageSelector variant="pill" />
         </div>
 
-        <div className="space-y-1.5 pt-2 border-t-2 border-black/10">
+        <div className="space-y-2 pt-2 border-t-2 border-black/10">
           <Link
             href="/settings"
             onClick={onClose}
@@ -122,10 +123,12 @@ export function BusinessSidebar({
             <span>{t('nav.account')}</span>
           </Link>
 
+          {/* Prominent High-Contrast Log Out Action */}
           <form action={signOutBusiness}>
             <button
               type="submit"
-              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl text-sm font-bold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+              onClick={onClose}
+              className="w-full flex items-center justify-center sm:justify-start gap-2.5 px-4 py-2.5 rounded-2xl text-xs font-black text-white bg-rose-600 hover:bg-rose-700 border-2 border-black shadow-[0_2px_0_#000] active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
             >
               <LogOut className="w-4 h-4 rtl:rotate-180" />
               <span>{t('nav.logout')}</span>
@@ -147,10 +150,10 @@ export function BusinessSidebar({
       {isOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-xs"
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
             onClick={onClose}
           />
-          <div className="relative w-64 max-w-[80vw] h-full shadow-2xl z-10 border-r-2 border-black">
+          <div className="relative w-72 max-w-[85vw] h-full shadow-2xl z-10 border-r-2 rtl:border-r-0 rtl:border-l-2 border-black bg-white flex flex-col">
             {sidebarContent}
           </div>
         </div>

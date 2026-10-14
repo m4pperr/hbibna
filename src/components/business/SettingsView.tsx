@@ -20,6 +20,7 @@ import {
   Check,
   Coins,
   Sparkles,
+  LogOut,
 } from 'lucide-react';
 import { PasswordInput } from '@/components/common/PasswordInput';
 
@@ -41,7 +42,7 @@ function InstagramIcon({ className }: { className?: string }) {
   );
 }
 import { updateBusinessSettings } from '@/actions/business';
-import { changePasswordAction } from '@/actions/auth';
+import { changePasswordAction, signOutBusiness } from '@/actions/auth';
 import { useToast } from '@/components/ui/ToastProvider';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { PhoneInput } from '@/components/common/PhoneInput';
@@ -73,7 +74,7 @@ const BRAND_COLORS = [
 ];
 
 export function SettingsView({ business }: SettingsViewProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { success: toastSuccess, error: toastError } = useToast();
 
   const [isPendingProfile, startProfileTransition] = useTransition();
@@ -572,6 +573,43 @@ export function SettingsView({ business }: SettingsViewProps) {
             {copiedUuid ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
             <span>{copiedUuid ? 'Copié' : 'Copier l’ID'}</span>
           </button>
+        </div>
+      </div>
+
+      {/* 5. SESSION & SIGN OUT CARD (Accessible on both Mobile & Desktop) */}
+      <div className="p-6 sm:p-7 rounded-3xl bg-rose-50/70 border-2 border-black shadow-[0_8px_0_#000] space-y-4 text-start font-rounded">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-rose-600 border-2 border-black text-white flex items-center justify-center shrink-0 shadow-[0_2px_0_#000]">
+              <LogOut className="w-5 h-5 rtl:rotate-180" />
+            </div>
+            <div className="space-y-0.5">
+              <h3 className="font-black text-lg text-black">
+                {language === 'ar'
+                  ? 'جلسة الحساب وتسجيل الخروج'
+                  : language === 'fr'
+                  ? 'Session & Déconnexion du Compte'
+                  : 'Account Session & Sign Out'}
+              </h3>
+              <p className="text-xs text-black/70 font-bold">
+                {language === 'ar'
+                  ? 'إنهاء الجلسة الحالية وتسجيل الخروج من لوحة التحكم بأمان على هذا الجهاز.'
+                  : language === 'fr'
+                  ? 'Fermer votre session active et vous déconnecter du portail commerçant sur cet appareil.'
+                  : 'End your active session and sign out of the business dashboard securely on this device.'}
+              </p>
+            </div>
+          </div>
+
+          <form action={signOutBusiness} className="shrink-0">
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs border-2 border-black shadow-[0_3px_0_#000] active:translate-y-0.5 active:shadow-none transition-all cursor-pointer w-full sm:w-auto"
+            >
+              <LogOut className="w-4 h-4 rtl:rotate-180" />
+              <span>{t('nav.logout')}</span>
+            </button>
+          </form>
         </div>
       </div>
     </div>
